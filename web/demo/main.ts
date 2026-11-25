@@ -1,3 +1,4 @@
+import { renderMelody } from '../src/music';
 import { listen, send, type Listening, type Sending, type BandId } from '../src/index';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -28,6 +29,26 @@ sendBtn.onclick = async () => {
     sendBtn.textContent = 'Send';
     sendBtn.classList.remove('active');
     if (status.textContent === 'Sending…') say('');
+  }
+};
+
+const musicBtn = $<HTMLButtonElement>('music');
+let playing: Sending | null = null;
+musicBtn.onclick = async () => {
+  if (playing) return playing.stop();
+  try {
+    musicBtn.classList.add('active');
+    musicBtn.textContent = 'Stop music';
+    const s = (playing = await send(text.value, { band: 'top', repeat: 'forever', backing: renderMelody }));
+    say('Playing music with the message on top…');
+    await s.done;
+  } catch (e) {
+    fail(e);
+  } finally {
+    playing = null;
+    musicBtn.textContent = '♪ Music + hidden message';
+    musicBtn.classList.remove('active');
+    if (status.textContent?.startsWith('Playing music')) say('');
   }
 };
 

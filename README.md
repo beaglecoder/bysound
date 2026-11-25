@@ -47,6 +47,17 @@ c/build/bysound encode "hello sound" -o hello.wav   # then play hello.wav near a
 c/build/bysound decode hello.wav                    # …or decode it straight away
 ```
 
+## Music + hidden message
+
+<img src="docs/assets/music.svg" alt="Music in the low band, the message above 18 kHz" width="100%">
+
+The playground's **♪ Music + hidden message** button plays a short original melody with the text riding above 18 kHz on the `top` band: you hear the song, and the other device reads the message. The same mix is in [`docs/assets/music-demo.wav`](docs/assets/music-demo.wav). Play it near a listening device, or decode the file directly:
+
+```sh
+c/build/bysound decode docs/assets/music-demo.wav
+# [  1.59 s] band=top profile=normal corrected=0 text=hello from the music
+```
+
 ## What is in the box
 
 | Folder | Language | What you get | Run the tests | Run the demo |

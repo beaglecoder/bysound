@@ -10,7 +10,8 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "make:music-demo": "node scripts/make-music-demo.mjs"
   },
   "devDependencies": {
     "@types/node": "26.6.10",

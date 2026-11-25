@@ -17,3 +17,6 @@ ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 li { border: 1px solid var(--line); border-radius: 8px; padding: 10px; overflow-wrap: anywhere; }
 li small { display: block; color: var(--muted); }
 li.empty { color: var(--muted); border-style: dashed; }
+button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+button.secondary.active { background: var(--stop); color: var(--on-accent); border-color: var(--stop); }
+.caption { margin: -8px 0 0; color: var(--muted); font-size: .85rem; }

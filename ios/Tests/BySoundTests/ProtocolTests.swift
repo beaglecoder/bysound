@@ -52,6 +52,6 @@ final class ProtocolTests: XCTestCase {
         for t in ["", "hello", "12", "123", "ñandú 🙂 2024", "a\nb", String(repeating: "ñ€", count: 400)] {
             XCTAssertEqual(TextPacking.unpack(TextPacking.pack(t)), t)
         }
-        XCTAssertEqual(TextPacking.pack("0123"), [0x81, 0x80 + 23])
+        XCTAssertEqual(TextPacking.pack("0123"), [0x81, 0x97] as [UInt8])
     }
 }

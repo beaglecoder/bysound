@@ -27,6 +27,14 @@ Here is a real frame as a spectrogram (time to the right, pitch upward). You can
 
 ![Spectrogram of a real frame](assets/spectrogram.svg)
 
+## Music + hidden message
+
+Music lives well below 5 kHz; the `top` band lives above 18 kHz. They do not overlap, so you can play a song and the message in the same speaker at the same time: you hear only the song, and a receiver that listens still decodes the text.
+
+![Music in the low band, data tones above 18 kHz](assets/music.svg)
+
+Download and decode it: `c/build/bysound decode docs/assets/music-demo.wav` ([music-demo.wav](assets/music-demo.wav): an 8.7 s original melody with "hello from the music" repeated underneath). In the web playground, the "Music + hidden message" button plays the same thing for another device to hear. It is rebuilt with `npm run make:music-demo` in `web/`.
+
 ## 3. From text to tones and back
 
 ![Encoder and decoder pipeline](assets/pipeline.svg)

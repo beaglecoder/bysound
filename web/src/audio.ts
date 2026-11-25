@@ -47,9 +47,21 @@ const FADE_SECONDS = 0.015; // stopping a loud high tone abruptly leaves an audi
 const RESUME_WAIT_MS = 1500;
 const resumed = (ctx: AudioContext) => Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, RESUME_WAIT_MS))]);
 
+/** Repeats `frame` end to end over the length of `backing` (whole frames only) and adds the two. */
+export function mix(frame: Float32Array, backing: Float32Array): Float32Array {
+  const out = Float32Array.from(backing);
+  for (let at = 0; at + frame.length <= out.length; at += frame.length) for (let i = 0; i < frame.length; i++) out[at + i]! += frame[i]!;
+  return out;
+}
+
 export interface SendOptions extends EncodeOptions {
   /** How many times to play the frame, or 'forever' until stop(). Default 1. */
   repeat?: number | 'forever';
+  /**
+   * Music (or any sound, peak <= 0.5) to play underneath. The frame is repeated over it; the music loops.
+   * The message stays inaudible on the 'top' band because the music lives far below it.
+   */
+  backing?: (sampleRate: number) => Float32Array;
 }
 export interface Sending {
   stop(): void;
@@ -64,7 +76,7 @@ export interface Sending {
 export async function send(text: string, options: SendOptions = {}): Promise<Sending> {
   const ctx = newContext(); // created synchronously, inside the gesture
   const ready = resumed(ctx);
-  const audio = encode(text, { ...options, sampleRate: ctx.sampleRate });
+  const audio = options.backing ? mix(encode(text, { ...options, level: 0.5, sampleRate: ctx.sampleRate }), options.backing(ctx.sampleRate)) : encode(text, { ...options, sampleRate: ctx.sampleRate });
   await ready;
   if (ctx.state !== 'running') { void ctx.close(); throw new SoundError('UNSUPPORTED', 'The browser did not start audio: tap a button first'); }
   const repeat = options.repeat ?? 1;

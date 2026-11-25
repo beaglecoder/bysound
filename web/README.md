@@ -10,6 +10,10 @@ npm test                        # modem tests + API tests
 npm run build                   # static site in dist/, usable from any static host
 ```
 
+The **Music + hidden message** button plays a short melody with the text hidden above 18 kHz; another device pressing Listen decodes it (`send(text, { backing })` does the same from code).
+
+![Music in the low band, data tones above 18 kHz](../docs/assets/music.svg)
+
 ## API
 
 ```ts
