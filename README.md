@@ -89,6 +89,7 @@ c/build/bysound decode hello.wav
 - 🎹 Text becomes **tones on a fixed grid**; each tone carries 4 bits.
 - 🚦 A **preamble** says "a message starts here" and which channel it uses.
 - 🧱 The text travels in **blocks with error correction**, plus a checksum over the whole message.
+- 📻 The receiver **listens to all channels at once**, so the sender can pick any of them and nothing has to be configured.
 - 👂 The receiver **learns the room's noise and echo**, repairs damaged bytes and **checks** everything before answering.
 
 <img src="docs/assets/spectrogram.svg" alt="Spectrogram of a real message" width="100%">
