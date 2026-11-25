@@ -66,6 +66,37 @@ Raw speeds go from 250 bit/s (`top`, 2 tones) to 750 bit/s (`wide`, 6 tones). A 
 
 If two senders play at the same time, the receiver could pick up the wrong one. The receiver watches for frames that overlap, or a preamble that appears in the middle of another frame. When it sees either, it reports a **clash** instead of delivering anything. It cannot catch a sender it cannot hear, and bysound does not encrypt or sign anything. Anyone nearby can listen, so applications should not send secrets in the clear, and should validate what they receive.
 
+## 6. bysound vs ggwave, feature by feature
+
+| | What you get with bysound | Compared with ggwave |
+|---|---|---|
+| ✅ **It never lies** | You get the exact message or nothing. A checksum over the whole text rejects anything doubtful. | ggwave delivered **349 wrong messages** in our tests, some with no noise at all. bysound delivered **0** in 88,220. |
+| 🏠 **Works in echoey rooms** | It measures the room's echo and subtracts it before reading each tone. | Handles **8–12 dB more noise** when there is echo, the normal case in a real room. |
+| 🔇 **Can be truly inaudible** | Channels at 17.25–19.5 kHz and 18–19.5 kHz that almost nobody hears; `top` is also the most noise-tolerant. | ggwave's "ultrasound" starts at 15 kHz, which many young people hear. |
+| ⚡ **More data in the same time** | 2× the bytes in 5 s on the same frequencies; messages beyond 140 bytes, up to 30 s per transmission. | ggwave stops at **140 bytes**. |
+| 🧩 **Rebuilds damaged data** | Doubtful bytes are marked and repaired (Reed–Solomon with erasures), block by block. | Corrects errors only, in a single codeword. |
+| 🔊 **More signal from the same speaker** | Fewer tones at once, so a speaker can play them louder before it distorts. | More useful power in the air at the same volume. |
+| 🔁 **Repetitions add up** | If a noise burst ruins part of one repetition, the next one fills the gap (TypeScript, Swift and Kotlin receivers). | ggwave reads each repetition on its own. |
+| 👥 **Two senders at once** | If another device transmits at the same time, the receiver reports a *clash* instead of mixing them. | Not detected. |
+| 🎵 **Rides on music** | The message can play above a song and still decode ([try it](../README.md#music--hidden-message)). | Not measured for ggwave. |
+
+### The numbers
+
+Both libraries, unmodified, on the same simulated channel with the same seeds (158,510 trials, reproducible in [`bench/`](../bench)). They share the same idea: MFSK on an orthogonal 46.875 Hz grid.
+
+<img src="../bench/results/charts/snr_ultrasonic_1x.svg" alt="Success rate vs SNR, near-ultrasonic modes" width="100%">
+
+| 32-byte message, 48 kHz | bysound `top` | bysound `top` robust | bysound `wide` | ggwave ultrasound fastest |
+|---|---|---|---|---|
+| Lowest SNR with ≥ 90 % success (full band) | −14 dB | −16 dB | −8 dB | −8 dB |
+| Same, with echo | −8 dB | −12 dB | −4 dB | 0 dB |
+| Airtime for 128 bytes | 6.3 s | 12.3 s | 2.5 s | 4.6 s |
+| Time for 140 bytes (ggwave's maximum) | 6.9 s | 13.2 s | **2.9 s** | 5.0 s |
+| Messages longer than 140 bytes | yes, up to 30 s | yes, up to 30 s | yes, up to 30 s | no |
+| Wrong texts delivered | 0 | 0 | 0 | 349 across all ggwave modes |
+
+ggwave is still the better pick when you need the smallest and fastest receiver (14–42× less CPU) or many language bindings. The [paper](../PAPER.md) explains each improvement and where the advantage comes from (narrower bands concentrate power, so in-band the two are within 0–3 dB). It also covers the limits: this is a simulation, and real speakers and microphones lose a lot above 17 kHz.
+
 ---
 
 For the precise, implementer-grade definition (every constant, formula and byte), see **[PROTOCOL.md](PROTOCOL.md)**.

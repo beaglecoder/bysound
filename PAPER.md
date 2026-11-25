@@ -24,7 +24,7 @@ We release byte-compatible implementations in TypeScript, Swift, Kotlin and allo
 
 At equal average signal power over the full band, bysound's normal channels reach 90 % success at −14 to −8 dB SNR, against −8 dB for ggwave's ultrasound and audible protocols, and its robust profile at −16 dB. With echo the gap widens to 8–12 dB. Measured in-band, the difference shrinks to 0–3 dB: most of the gain comes from concentrating power into narrower bands, not from a better detector.
 
-bysound also sends messages up to 12,236 bytes instead of 140, and it delivered **no wrong payload** in 88,220 trials. ggwave accepted 349 wrong payloads in 70,290 trials. ggwave remains far cheaper to run: its receiver needs 14–42× less CPU.
+bysound is not limited to ggwave's 140 bytes per transmission (it caps a transmission at 30 s instead), and it delivered **no wrong payload** in 88,220 trials. ggwave accepted 349 wrong payloads in 70,290 trials. ggwave remains far cheaper to run: its receiver needs 14–42× less CPU.
 
 ## 1. Introduction
 
@@ -100,7 +100,7 @@ Each item says what ggwave does, what bysound does, and the mechanism that makes
 | 5 | **Header decision** | — (length in the payload stream) | Maximum likelihood over the 259 valid headers (CRC-8 protected) | A header with a couple of wrong nibbles is still picked correctly, because only valid headers are candidates. |
 | 6 | **Soft symbols + echo** | Hard decision per symbol | Probabilities for all 16 tones; previous symbol's echo (measured on the preamble) subtracted | Reverberation leaves energy from the last chord. Removing it gives the biggest robustness gain under echo: −8 dB against 0 dB for ggwave (Section 6.3). |
 | 7 | **Erasure decoding** | RS errors only | Retry with the least-certain bytes marked as erasures (0/4/8/12, blocks 0/2/4) | RS fixes 2× as many erasures as unknown errors, and soft symbols tell us which bytes are doubtful. |
-| 8 | **Blocks + CRC-32** | One RS codeword, ≤ 140 B, no checksum | ≤ 255 blocks × 48 B with RS(+12) each, plus a CRC-32 over the whole text | Long messages (12,236 B) at constant per-block strength. The CRC turns "RS mis-corrected" into "rejected": 0 wrong payloads, against 349 for ggwave (Section 6.5). |
+| 8 | **Blocks + CRC-32** | One RS codeword, ≤ 140 B, no checksum | ≤ 255 blocks × 48 B with RS(+12) each, plus a CRC-32 over the whole text | Messages longer than 140 B at constant per-block strength. The CRC turns "RS mis-corrected" into "rejected": 0 wrong payloads, against 349 for ggwave (Section 6.5). |
 | 9 | **Combining repetitions** | Each transmission decoded alone | Up to 6 laps combined (summed or most-confident soft symbols) per block | A block hit by a door slam on lap 1 and a cough on lap 2 can still be recovered. TypeScript, Swift and Kotlin only; the C receiver does not combine yet. |
 | 10 | **Robust profile** | Speed variants change symbol length | `top/high/upper/mid` with 2× symbol, window and hop | About 2 dB more noise tolerance at half speed. Combined with item 1, `top/robust` reaches −16 dB. |
 | 11 | **Text packing** | Raw bytes | Digit pairs → 1 byte; ASCII as is; UTF-8 escaped | Numeric tokens (codes, amounts) take ~half the airtime. Not used in the benchmark payloads, to be fair. |
@@ -170,17 +170,17 @@ Echo is where the soft symbols and echo subtraction (item 6) show: 8–12 dB bet
 
 ### 6.4 Airtime, throughput and message size
 
-| Configuration | 8 B | 32 B | 128 B | 2048 B | B/s at 128 B |
+| Configuration | 8 B | 32 B | 128 B | 140 B | B/s at 128 B |
 |---|---:|---:|---:|---:|---:|
-| bysound `top` | 1.57 s | 2.33 s | 6.30 s | 85.7 s | 20.3 |
-| bysound `high/upper/mid` | 1.28 s | 1.79 s | 4.41 s | 57.3 s | 29.0 |
-| bysound `wide` | 0.96 s | 1.21 s | 2.53 s | 29.0 s | **50.7** |
-| bysound `top` robust | 2.78 s | 4.32 s | 12.25 s | 171 s | 10.4 |
-| ggwave fastest | **1.00 s** | 1.71 s | 4.59 s | — | 27.9 |
-| ggwave fast | 1.32 s | 2.73 s | 8.49 s | — | 15.1 |
-| ggwave normal | 1.64 s | 3.75 s | 12.39 s | — | 10.3 |
+| bysound `top` | 1.57 s | 2.33 s | 6.30 s | 6.89 s | 20.3 |
+| bysound `high/upper/mid` | 1.28 s | 1.79 s | 4.41 s | 4.87 s | 29.0 |
+| bysound `wide` | 0.96 s | 1.21 s | 2.53 s | 2.85 s | **50.7** |
+| bysound `top` robust | 2.78 s | 4.32 s | 12.25 s | 13.22 s | 10.4 |
+| ggwave fastest | **1.00 s** | 1.71 s | 4.59 s | 4.97 s | 27.9 |
+| ggwave fast | 1.32 s | 2.73 s | 8.49 s | 9.26 s | 15.1 |
+| ggwave normal | 1.64 s | 3.75 s | 12.39 s | 13.55 s | 10.3 |
 
-bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. The largest message is 12,236 B for bysound and 140 B for ggwave (64 B in fixed-length mode). Sending the largest message takes 169.5 s (2.8 min) on `wide`, 316.9 s on `audible`, 506.7 s (8.4 min) on `top` and 1,013 s (16.9 min) on `top/robust`; ggwave sends its 140 B in 5.0 s (fastest) to 13.5 s (normal). Long bysound messages are practical on the wider channels; on `top` they are a capability rather than a typical use.
+bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. 140 B is ggwave's maximum per transmission. bysound caps a transmission at **30 seconds** instead of at a byte count: anything longer is impractical over the air, so the encoder rejects it. That allows roughly 700 B on `top`, 1 KB on `mid` and 2 KB on `wide` (exact limits per channel in [PROTOCOL.md](docs/PROTOCOL.md)); for example, 1 KB takes 15.1 s on `wide`. The 140 B column for bysound was measured with the `bysound` CLI encoder, the rest by the benchmark.
 
 <p align="center"><img src="bench/results/charts/throughput_vs_size.svg" alt="Throughput vs payload size" width="100%"></p>
 
