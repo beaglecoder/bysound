@@ -25,7 +25,7 @@ A speaker and a microphone are on almost every device, so sound is a pairing-fre
 
 - **Robust:** Reed–Solomon in every 48-byte block, erasure decoding, soft combining of repetitions, a robust profile for noisy rooms.
 - **Exact:** CRC-32 over the whole message. In 88,220 simulated trials and 60 minutes of pure noise it **never delivered a wrong text**.
-- **Long messages:** up to **12 KB** in one transmission (ggwave: 140 B).
+- **Long messages:** up to **12 KB** in one transmission, about 2.8 minutes on the `wide` channel (ggwave: 140 B, 5 s).
 - **Everywhere:** byte-identical frames in four languages, checked against shared test vectors; the C version needs no `malloc` and fits an ESP32-S3 in ~60 KB of RAM.
 
 ## bysound vs ggwave, in plain words
@@ -37,7 +37,7 @@ A speaker and a microphone are on almost every device, so sound is a pairing-fre
 | ✅ **It never lies** | You get the exact message or nothing. A checksum over the whole text rejects anything doubtful. | ggwave delivered **349 wrong messages** in our tests, some with no noise at all. bysound delivered **0** in 88,220. |
 | 🏠 **Works in echoey rooms** | It measures the room's echo and subtracts it before reading each tone. | Handles **8–12 dB more noise** when there is echo, the normal case in a real room. |
 | 🔇 **Can be truly inaudible** | A channel at 18–19.5 kHz that almost nobody hears, and it is the most noise-tolerant one. | ggwave's "ultrasound" starts at 15 kHz, which many young people hear. |
-| 📏 **Long messages** | Up to **12 KB** in one go, cut into self-correcting blocks. | ggwave stops at **140 bytes**. |
+| 📏 **Long messages** | Up to **12 KB** in one go, cut into self-correcting blocks: about **2.8 min** on `wide`, 8.4 min on `top`. | ggwave stops at **140 bytes** (5 s at its fastest). |
 | ⚡ **Faster on the same frequencies** | On the same 15–19.5 kHz span, the `wide` channel sends 128 bytes in 2.5 s. | **1.8× faster** than ggwave's fastest mode (4.6 s). |
 | 🔊 **More signal from the same speaker** | Fewer tones at once, so a speaker can play them louder before it distorts. | More useful power in the air at the same volume. |
 | 🔁 **Repetitions add up** | If a noise burst ruins part of one repetition, the next one fills the gap (TypeScript, Swift and Kotlin receivers). | ggwave reads each repetition on its own. |
@@ -134,6 +134,7 @@ Both libraries, unmodified, on the same simulated channel with the same seeds (1
 | Same, with echo | −8 dB | −12 dB | −4 dB | 0 dB |
 | Airtime for 128 bytes | 6.3 s | 12.3 s | 2.5 s | 4.6 s |
 | Largest message | 12,236 B | 12,236 B | 12,236 B | 140 B |
+| Time to send the largest message | 8.4 min | 16.9 min | 2.8 min | 5.0 s |
 | Wrong texts delivered | 0 | 0 | 0 | 349 across all ggwave modes |
 
 ggwave is still the better pick when you need the smallest and fastest receiver (14–42× less CPU) or many language bindings. The [paper](PAPER.md) explains each improvement and where the advantage comes from (narrower bands concentrate power, so in-band the two are within 0–3 dB). It also covers the limits: this is a simulation, and real speakers and microphones lose a lot above 17 kHz.

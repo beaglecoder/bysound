@@ -180,7 +180,7 @@ Echo is where the soft symbols and echo subtraction (item 6) show: 8–12 dB bet
 | ggwave fast | 1.32 s | 2.73 s | 8.49 s | — | 15.1 |
 | ggwave normal | 1.64 s | 3.75 s | 12.39 s | — | 10.3 |
 
-bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. The largest message is 12,236 B for bysound and 140 B for ggwave (64 B in fixed-length mode).
+bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. The largest message is 12,236 B for bysound and 140 B for ggwave (64 B in fixed-length mode). Sending the largest message takes 169.5 s (2.8 min) on `wide`, 316.9 s on `audible`, 506.7 s (8.4 min) on `top` and 1,013 s (16.9 min) on `top/robust`; ggwave sends its 140 B in 5.0 s (fastest) to 13.5 s (normal). Long bysound messages are practical on the wider channels; on `top` they are a capability rather than a typical use.
 
 <p align="center"><img src="bench/results/charts/throughput_vs_size.svg" alt="Throughput vs payload size" width="100%"></p>
 
