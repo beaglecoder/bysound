@@ -24,6 +24,30 @@ class VectorsTest {
     }
 }
 
+class MaxDurationTest {
+    @Test fun capMatchesJson() {
+        val spec = com.google.gson.JsonParser.parseString(java.io.File(TestAudio.root, "protocol-v4.json").readText()).asJsonObject
+        assertEquals(spec["maxFrameSeconds"].asInt, Protocol.MAX_FRAME_SECONDS)
+        assertEquals(spec["gapSeconds"].asDouble, Protocol.GAP_SECONDS, 0.0)
+        assertEquals(spec["maxBlocks"].asInt, Protocol.MAX_BLOCKS)
+    }
+
+    @Test fun maximumEncodesAndOneMoreIsRejected() {
+        for (band in Band.entries) for (profile in Profile.entries) {
+            if (profile == Profile.ROBUST && !band.hasRobust) continue
+            val label = "${band.id} $profile"
+            val m = Modem.maxPayloadBytes(band, profile)
+            val ok = Codec.payloadFrame("a".repeat(m), band, profile)
+            assertTrue(label, ok.frameSeconds + Modem.GAP_SECONDS <= Modem.MAX_FRAME_SECONDS + 1e-9)
+            val e = try { Codec.payloadFrame("a".repeat(m + 1), band, profile); null } catch (e: TextTooLongException) { e }
+            assertNotNull(label, e)
+            assertEquals(label, m, e!!.maxPackedBytes)
+        }
+        assertEquals(700, Modem.maxPayloadBytes(Band.entries.first { it.id == "top" }))
+        assertEquals(2114, Modem.maxPayloadBytes(Band.entries.first { it.id == "wide" }))
+    }
+}
+
 class ReedSolomonTest {
     @Test fun roundTripWithErrorsAndErasures() {
         val data = IntArray(50) { (it * 37 + 5) and 255 }

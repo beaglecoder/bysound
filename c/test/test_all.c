@@ -32,7 +32,7 @@ static void test_constants(void) {
   CHECK(BYS_PREAMBLE_THRESHOLD_PERMILLE == J_THRESHOLD_PERMILLE); CHECK(BYS_HEADER_BYTES == J_HEADER_BYTES);
   CHECK(BYS_MAGIC_PAYLOAD == J_MAGIC_PAYLOAD); CHECK(BYS_MAGIC_ACK == J_MAGIC_ACK); CHECK(BYS_MAGIC_REFERENCE == J_MAGIC_REFERENCE); CHECK(BYS_MAGIC_RISK == J_MAGIC_RISK);
   CHECK(BYS_REF_BYTES == J_REF_BYTES); CHECK(BYS_REF_DATA == J_REF_DATA); CHECK(BYS_REF_PARITY == J_REF_PARITY); CHECK(BYS_MOTHER_PARITY == J_MOTHER_PARITY);
-  CHECK(BYS_BLOCK_DATA == J_BLOCK_DATA); CHECK(BYS_BLOCK_PARITY == J_BLOCK_PARITY); CHECK(BYS_BLOCK_HEADER == J_BLOCK_HEADER); CHECK(BYS_MAX_BLOCKS == J_MAX_BLOCKS);
+  CHECK(BYS_BLOCK_DATA == J_BLOCK_DATA); CHECK(BYS_BLOCK_PARITY == J_BLOCK_PARITY); CHECK(BYS_BLOCK_HEADER == J_BLOCK_HEADER); CHECK(BYS_MAX_BLOCKS == J_MAX_BLOCKS); CHECK(BYS_MAX_FRAME_SECONDS == J_MAX_FRAME_SECONDS);
   CHECK(BYS_RISK_LENGTH == J_RISK_LENGTH); CHECK(BYS_RISK_PARITY == J_RISK_PARITY); CHECK(BYS_RISK_MAX_HOPS == J_RISK_MAX_HOPS);
   CHECK(BYS_ACK_LENGTH == J_ACK_LENGTH); CHECK(BYS_ACK_PARITY == J_ACK_PARITY);
   for (int b = 0; b < BYS_BAND_COUNT; b++) {
@@ -186,6 +186,28 @@ static void test_frames(void) {
   memset(huge, '\n', sizeof huge); /* 3 packed bytes per character => far too long */
   CHECK(bys_frame_init_payload(&f, BYS_MID, BYS_NORMAL, huge, sizeof huge) == BYS_E_TOO_LONG);
   CHECK(bys_frame_init_payload(&f, BYS_MID, BYS_NORMAL, "", 0) == BYS_OK && bys_frame_symbols(&f) > 8);
+}
+
+/* One transmission (frame + gap) must not exceed BYS_MAX_FRAME_SECONDS: the largest payload encodes, one byte more is rejected. */
+static void test_max_duration(void) {
+  static char txt[4000];
+  memset(txt, 'a', sizeof txt); /* one packed byte per character */
+  for (int b = 0; b < BYS_BAND_COUNT; b++)
+    for (int pr = 0; pr < 2; pr++) {
+      if (pr && b > BYS_MID) { CHECK(bys_max_payload_bytes((bys_band_t)b, BYS_ROBUST) == BYS_E_PROFILE); continue; }
+      bys_band_info_t bi;
+      bys_band_info((bys_band_t)b, (bys_profile_t)pr, &bi);
+      int m = bys_max_payload_bytes((bys_band_t)b, (bys_profile_t)pr);
+      CHECK(m > 100 && (size_t)m + 1 < sizeof txt);
+      bys_frame_t f;
+      bys_tx_t tx;
+      CHECK(bys_frame_init_payload(&f, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m) == BYS_OK);
+      CHECK((uint64_t)bys_frame_symbols(&f) * bi.symbol_us + BYS_GAP_MS * 1000u <= 30000000u);
+      CHECK(bys_tx_init_payload(&tx, NULL, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m) == BYS_OK);
+      CHECK(bys_tx_total_samples(&tx) <= 30u * 44100u);
+      CHECK(bys_frame_init_payload(&f, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m + 1) == BYS_E_TOO_LONG);
+      CHECK(bys_tx_init_payload(&tx, NULL, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m + 1) == BYS_E_TOO_LONG);
+    }
 }
 
 /* ---------- decoding ---------- */
@@ -460,6 +482,7 @@ int main(void) {
   test_constants();
   test_crc_rs_pack();
   test_frames();
+  test_max_duration();
   test_decode();
   test_zero_parity();
   test_tx();

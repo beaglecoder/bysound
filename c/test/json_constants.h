@@ -21,6 +21,7 @@
 #define J_BLOCK_PARITY 12
 #define J_BLOCK_HEADER 2
 #define J_MAX_BLOCKS 255
+#define J_MAX_FRAME_SECONDS 30
 #define J_RISK_LENGTH 10
 #define J_RISK_PARITY 8
 #define J_RISK_MAX_HOPS 2

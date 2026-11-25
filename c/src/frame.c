@@ -22,6 +22,33 @@ static int setup(bys_frame_t *f, bys_band_t band, bys_profile_t profile, bys_kin
   return BYS_OK;
 }
 
+/* Symbols (preamble + header + body) of a payload frame with `packed` packed bytes. */
+static uint32_t payload_symbols(unsigned groups, uint32_t packed) {
+  uint32_t len = packed + 4, total = (len + BYS_BLOCK_DATA - 1) / BYS_BLOCK_DATA;
+  uint32_t body = len + total * (BYS_BLOCK_HEADER + BYS_BLOCK_PARITY);
+  return BYS_PREAMBLE_SYMBOLS + (2 * BYS_HEADER_BYTES + groups - 1) / groups + (2 * body + groups - 1) / groups;
+}
+
+/* Whole transmission (frame + default gap) within the cap? Exact, in microseconds. */
+static int fits(unsigned groups, uint32_t symbol_us, uint32_t packed) {
+  uint64_t us = (uint64_t)payload_symbols(groups, packed) * symbol_us + (uint64_t)BYS_GAP_MS * 1000u;
+  return us <= (uint64_t)BYS_MAX_FRAME_SECONDS * 1000000u;
+}
+
+int bys_max_payload_bytes(bys_band_t band, bys_profile_t profile) {
+  bys_band_info_t bi;
+  int r = bys_band_info(band, profile, &bi);
+  if (r < 0) return r;
+  uint32_t lo = 0, hi = 48u * BYS_MAX_BLOCKS - 4; /* binary search: fits() is monotonic */
+  if (!fits(bi.groups, bi.symbol_us, 0)) return 0;
+  if (fits(bi.groups, bi.symbol_us, hi)) return (int)hi;
+  while (hi - lo > 1) {
+    uint32_t mid = (lo + hi) / 2;
+    if (fits(bi.groups, bi.symbol_us, mid)) lo = mid; else hi = mid;
+  }
+  return (int)lo;
+}
+
 int bys_frame_init_payload(bys_frame_t *f, bys_band_t band, bys_profile_t profile, const char *utf8, size_t n) {
   if (!f || (!utf8 && n)) return BYS_E_ARG;
   /* First pass: packed length and CRC-32, storing nothing. */
@@ -33,6 +60,12 @@ int bys_frame_init_payload(bys_frame_t *f, bys_band_t band, bys_profile_t profil
   crc ^= 0xffffffffu;
   uint32_t total = (len + BYS_BLOCK_DATA - 1) / BYS_BLOCK_DATA;
   if (total > BYS_MAX_BLOCKS) return BYS_E_TOO_LONG;
+  { /* hard cap on the duration of one transmission */
+    bys_band_info_t bi;
+    int rb = bys_band_info(band, profile, &bi);
+    if (rb < 0) return rb;
+    if (!fits(bi.groups, bi.symbol_us, len - 4)) return BYS_E_TOO_LONG;
+  }
   int r = setup(f, band, profile, BYS_KIND_PAYLOAD, total, 0, len + total * (BYS_BLOCK_HEADER + BYS_BLOCK_PARITY));
   if (r < 0) return r;
   f->total = (uint8_t)total;

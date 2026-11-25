@@ -119,6 +119,11 @@ static int cmd_encode(int argc, char **argv) {
   bys_tx_t tx;
   int r = bys_tx_init_payload(&tx, &cfg, (bys_band_t)band, (bys_profile_t)profile, text, strlen(text));
   if (r != BYS_OK) {
+    if (r == BYS_E_TOO_LONG) {
+      fprintf(stderr, "text too long: one transmission cannot last more than %d s; the maximum for %s/%s is %d packed bytes (= %d ASCII letters; digit pairs pack 2:1, so numeric text fits up to twice as many characters)\n",
+              BYS_MAX_FRAME_SECONDS, BAND_NAMES[band], PROFILE_NAMES[profile], bys_max_payload_bytes((bys_band_t)band, (bys_profile_t)profile), bys_max_payload_bytes((bys_band_t)band, (bys_profile_t)profile));
+      return 1;
+    }
     fprintf(stderr, "cannot encode: error %d (%s)\n", r, r == BYS_E_PROFILE ? "robust exists only for top, high, upper and mid" : r == BYS_E_RATE ? "sample rate too low for this band" : r == BYS_E_TOO_LONG ? "text too long" : "see bysound.h");
     return 1;
   }
@@ -205,13 +210,16 @@ static int cmd_decode(int argc, char **argv) {
 
 /* ---------- bands ---------- */
 static int cmd_bands(void) {
-  puts("band     range (Hz)       tones  symbol  raw bit rate  robust");
+  printf("band     range (Hz)       tones  symbol  raw bit rate  robust           max text in %d s (packed bytes: normal / robust)\n", BYS_MAX_FRAME_SECONDS);
   for (int b = 0; b < BYS_BAND_COUNT; b++) {
     bys_band_info_t bi;
     bys_band_info((bys_band_t)b, BYS_NORMAL, &bi);
     const double lo = bi.bin * 46.875, hi = (bi.bin + bi.groups * 16 - 1) * 46.875;
     const double bps = bi.groups * 4.0 / (bi.symbol_us / 1e6);
-    printf("%-8s %6.0f-%6.0f   %5d  %3u ms  %7.0f bit/s  %s\n", BAND_NAMES[b], lo, hi, bi.groups * 16, (unsigned)(bi.symbol_us / 1000), bps, b <= BYS_MID ? "yes (2x symbol)" : "no");
+    const int mn = bys_max_payload_bytes((bys_band_t)b, BYS_NORMAL), mr = bys_max_payload_bytes((bys_band_t)b, BYS_ROBUST);
+    char rob[16];
+    if (mr > 0) snprintf(rob, sizeof rob, "%d", mr); else snprintf(rob, sizeof rob, "-");
+    printf("%-8s %6.0f-%6.0f   %5d  %3u ms  %7.0f bit/s  %-16s %d / %s\n", BAND_NAMES[b], lo, hi, bi.groups * 16, (unsigned)(bi.symbol_us / 1000), bps, b <= BYS_MID ? "yes (2x symbol)" : "no", mn, rob);
   }
   puts("(raw rate before preamble, header, Reed-Solomon and CRC overhead; tone spacing 46.875 Hz, 4 bits per tone group)");
   return 0;

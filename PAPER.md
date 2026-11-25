@@ -122,7 +122,7 @@ All four reproduce the frames in `test-vectors/v4-frames.json` byte for byte, de
 ### 6.1 Method
 
 Both libraries are compiled from source with the same compiler. ggwave is fetched at commit `060aec7` and used with its **default parameters**. Each trial:
-1. Encodes a payload: 8–128 B of ASCII without digits, so bysound's packing gives no advantage; 512 and 2048 B for bysound only; plus a UTF-8 case.
+1. Encodes a payload: 8–128 B of ASCII without digits, so bysound's packing gives no advantage; 512 and 2048 B for bysound only, where they fit in its 30 s cap (2048 B only on `wide`); plus a UTF-8 case.
 2. Passes it through a channel: white, pink or babble-like noise at a given SNR, optional echo (two delayed taps), ±100 ppm clock drift, lead silence.
 3. Feeds the result to each library's own streaming receiver in 1,024-sample chunks.
 
@@ -180,7 +180,7 @@ Echo is where the soft symbols and echo subtraction (item 6) show: 8–12 dB bet
 | ggwave fast | 1.32 s | 2.73 s | 8.49 s | 9.26 s | 15.1 |
 | ggwave normal | 1.64 s | 3.75 s | 12.39 s | 13.55 s | 10.3 |
 
-bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. 140 B is ggwave's maximum per transmission. bysound caps a transmission at **30 seconds** instead of at a byte count: anything longer is impractical over the air, so the encoder rejects it. That allows roughly 700 B on `top`, 1 KB on `mid` and 2 KB on `wide` (exact limits per channel in [PROTOCOL.md](docs/PROTOCOL.md)); for example, 1 KB takes 15.1 s on `wide`. The 140 B column for bysound was measured with the `bysound` CLI encoder, the rest by the benchmark.
+bysound airtime includes its 350 ms trailing gap. On the same span, `wide` is 1.8× faster than ggwave fastest at 128 B. For 8-byte messages ggwave fastest and bysound `wide` take about the same time, and the narrow bysound channels are slower. 140 B is ggwave's maximum per transmission. bysound caps a transmission at **30 seconds** instead of at a byte count: anything longer is impractical over the air, so the encoder rejects it. That allows 700 B on `top`, 1,052 B on `high`/`upper`/`mid` and 2,114 B on `wide` (335 B and 520 B in the robust profile) (exact limits per channel in [PROTOCOL.md](docs/PROTOCOL.md)); for example, 1 KB takes 15.1 s on `wide`. The 140 B column for bysound was measured with the `bysound` CLI encoder, the rest by the benchmark.
 
 <p align="center"><img src="bench/results/charts/throughput_vs_size.svg" alt="Throughput vs payload size" width="100%"></p>
 

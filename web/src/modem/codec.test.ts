@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { assemble, decodeBlock, decodeMother, pack, payloadFrame, referenceFrame, unpack } from './codec';
+import { assemble, decodeBlock, decodeMother, maxPayloadBytes, pack, payloadFrame, referenceFrame, unpack } from './codec';
 import { rsDecode, rsEncode } from './reedSolomon';
-import { BANDS, type BandId } from './protocol';
+import { BANDS, BAND_IDS, GAP_SECONDS, MAX_FRAME_SECONDS, hasRobust, type BandId, type Profile } from './protocol';
 
 const path = new URL('../../../test-vectors/v4-frames.json', import.meta.url);
 const file = JSON.parse(readFileSync(path, 'utf8'));
@@ -60,5 +60,24 @@ describe('codes', () => {
     const hurt = data.slice();
     for (let i = 0; i < 14; i += 2) hurt[i]! ^= 0x11;
     expect(decodeMother(hurt, [a.slice(14), b.slice(14)])?.fingerprint).toEqual(fp);
+  });
+});
+
+describe('maximum duration of one transmission', () => {
+  const cases = BAND_IDS.flatMap((id) => (['normal', 'robust'] as Profile[]).filter((p) => p === 'normal' || hasRobust(id)).map((p) => [id, p] as const));
+  it.each(cases)('%s/%s: the maximum encodes and one byte more is rejected', (id, p) => {
+    const m = maxPayloadBytes(id, p);
+    const ok = payloadFrame('a'.repeat(m), id, p);
+    expect(ok.frameSeconds + GAP_SECONDS).toBeLessThanOrEqual(MAX_FRAME_SECONDS + 1e-9);
+    expect(() => payloadFrame('a'.repeat(m + 1), id, p)).toThrowError(expect.objectContaining({ code: 'TOO_LONG' }));
+  });
+  it('digit pairs pack 2:1 so more characters fit', () => {
+    const m = maxPayloadBytes('top');
+    expect(payloadFrame('12'.repeat(m), 'top').body.length).toBeGreaterThan(0);
+    expect(() => payloadFrame('12'.repeat(m + 1), 'top')).toThrowError(expect.objectContaining({ code: 'TOO_LONG' }));
+  });
+  it('the table: top 700/335, high 1052/520, audible 1122, xhigh 1408, wide 2114', () => {
+    expect([maxPayloadBytes('top'), maxPayloadBytes('top', 'robust'), maxPayloadBytes('high'), maxPayloadBytes('mid', 'robust')]).toEqual([700, 335, 1052, 520]);
+    expect([maxPayloadBytes('audible'), maxPayloadBytes('xhigh'), maxPayloadBytes('wide')]).toEqual([1122, 1408, 2114]);
   });
 });

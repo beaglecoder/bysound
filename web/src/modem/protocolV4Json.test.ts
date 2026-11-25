@@ -13,6 +13,7 @@ describe('protocol-v4.json', () => {
     expect(P.TONES).toBe(spec.tonesPerGroup);
     expect(P.RAMP_SECONDS).toBe(spec.rampSeconds);
     expect(P.GAP_SECONDS).toBe(spec.gapSeconds);
+    expect(P.MAX_FRAME_SECONDS).toBe(spec.maxFrameSeconds);
     expect(P.HOP_SECONDS).toBe(spec.hopSeconds);
     expect(P.PREAMBLE_THRESHOLD).toBe(spec.preambleThreshold);
     expect(P.HEADER_BYTES).toBe(spec.headerBytes);

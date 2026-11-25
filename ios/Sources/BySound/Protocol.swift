@@ -104,6 +104,8 @@ public enum Protocol {
     public static let spacingHz = 46.875
     public static let tones = 16
     public static let gapSeconds = 0.35
+    /// Hard cap: one transmission (preamble + header + body + gap) never lasts longer than this.
+    public static let maxFrameSeconds = 30
     public static let rampSeconds = 0.003
     public static let hopSeconds = 0.004
     public static let windowSeconds = 1 / spacingHz

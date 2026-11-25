@@ -53,3 +53,13 @@ rx.feed(samples + samples)
 ```
 
 Set the device volume to maximum when sending; the sender always uses the loudspeaker.
+
+**Length limit.** One transmission (preamble + header + body + gap) never lasts more than 30 s (`Protocol.maxFrameSeconds`). A longer text throws `ModemError.exceedsMaxDuration(packedBytes:maxPackedBytes:)`; `Modem.maxPayloadBytes(band:profile:)` gives the limit in packed bytes. ASCII letters pack 1:1, digit pairs 2:1.
+
+| band | max text, normal | max text, robust |
+|---|---:|---:|
+| `top` | 700 | 335 |
+| `high`, `upper`, `mid` | 1 052 | 520 |
+| `audible` | 1 122 | - |
+| `xhigh` | 1 408 | - |
+| `wide` | 2 114 | - |

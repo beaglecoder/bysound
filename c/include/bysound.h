@@ -37,6 +37,7 @@ extern "C" {
 #define BYS_BLOCK_HEADER       2
 #define BYS_BLOCK_BYTES        (BYS_BLOCK_HEADER + BYS_BLOCK_DATA + BYS_BLOCK_PARITY)
 #define BYS_MAX_BLOCKS         255
+#define BYS_MAX_FRAME_SECONDS  30 /* hard cap: preamble + header + body + gap of one payload transmission */
 #define BYS_RISK_LENGTH        10
 #define BYS_RISK_PARITY        8
 #define BYS_RISK_BODY          (BYS_RISK_LENGTH + BYS_RISK_PARITY)
@@ -53,7 +54,7 @@ extern "C" {
 #define BYS_E_ARG      (-1)  /* invalid argument */
 #define BYS_E_PROFILE  (-2)  /* robust exists only on top, high, upper and mid */
 #define BYS_E_RATE     (-3)  /* the sample rate is too low for the band */
-#define BYS_E_TOO_LONG (-4)  /* more than 255 blocks */
+#define BYS_E_TOO_LONG (-4)  /* more than 255 blocks, or one transmission longer than BYS_MAX_FRAME_SECONDS */
 #define BYS_E_HEADER   (-5)  /* header: CRC-8, version, band or type do not check out */
 #define BYS_E_RS       (-6)  /* Reed-Solomon could not correct */
 #define BYS_E_CRC      (-7)  /* content CRC-16 or CRC-32 does not check out */
@@ -126,6 +127,8 @@ typedef struct {
 /* Payload frame: 48-byte blocks with RS(+12) and CRC-32. */
 int bys_frame_init_payload(bys_frame_t *f, bys_band_t band, bys_profile_t profile, const char *utf8, size_t n);
 /* Reference: fp[12] (the first 12 bytes of the payload's SHA-256) and parity set `set` (0 = A, 1 = B). */
+/* Largest packed payload (bytes after text packing, before the CRC-32) that fits in BYS_MAX_FRAME_SECONDS, or an error (BYS_E_ARG, BYS_E_PROFILE). */
+int bys_max_payload_bytes(bys_band_t band, bys_profile_t profile);
 int bys_frame_init_reference(bys_frame_t *f, bys_band_t band, bys_profile_t profile, unsigned set, const uint8_t fp[BYS_REF_BYTES]);
 /* Ack (receipt: 0 ack, 1 receipt) with the first 4 bytes of the payload's SHA-256. Always the normal profile. */
 int bys_frame_init_ack(bys_frame_t *f, bys_band_t band, int receipt, const uint8_t hash4[4]);

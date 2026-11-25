@@ -1,7 +1,15 @@
 system,config,max_payload_bytes,air_s_at_max
-bysound,bysound top/normal,12236,506.654
-bysound,bysound audible/normal,12236,316.95
-bysound,bysound top/robust,12236,1012.96
+bysound,bysound top/normal,700,29.982
+bysound,bysound high/normal,1052,29.822
+bysound,bysound upper/normal,1052,29.822
+bysound,bysound mid/normal,1052,29.822
+bysound,bysound audible/normal,1122,29.99
+bysound,bysound xhigh/normal,1408,29.982
+bysound,bysound wide/normal,2114,29.982
+bysound,bysound top/robust,335,29.982
+bysound,bysound high/robust,520,29.982
+bysound,bysound upper/robust,520,29.982
+bysound,bysound mid/robust,520,29.982
 ggwave,ggwave audible-normal,140,13.5467
 ggwave,ggwave audible-fast,140,9.25867
 ggwave,ggwave audible-fastest,140,4.97067

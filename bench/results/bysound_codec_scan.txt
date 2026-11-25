@@ -38,18 +38,18 @@ bysound mid/normal     512 B: 0 of 300 payloads fail the symbol-level round trip
 bysound audible/normal 512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
 bysound xhigh/normal   512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
 bysound wide/normal    512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
-bysound top/robust     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound top/robust     512 B: exceeds 30 s cap (not run)
 bysound high/robust    512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
 bysound upper/robust   512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
 bysound mid/robust     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
-bysound top/normal     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound high/normal    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound upper/normal   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound mid/normal     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound audible/normal 2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound xhigh/normal   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound top/normal     2048 B: exceeds 30 s cap (not run)
+bysound high/normal    2048 B: exceeds 30 s cap (not run)
+bysound upper/normal   2048 B: exceeds 30 s cap (not run)
+bysound mid/normal     2048 B: exceeds 30 s cap (not run)
+bysound audible/normal 2048 B: exceeds 30 s cap (not run)
+bysound xhigh/normal   2048 B: exceeds 30 s cap (not run)
 bysound wide/normal    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound top/robust     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound high/robust    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound upper/robust   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
-bysound mid/robust     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound top/robust     2048 B: exceeds 30 s cap (not run)
+bysound high/robust    2048 B: exceeds 30 s cap (not run)
+bysound upper/robust   2048 B: exceeds 30 s cap (not run)
+bysound mid/robust     2048 B: exceeds 30 s cap (not run)

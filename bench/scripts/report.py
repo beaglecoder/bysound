@@ -109,6 +109,14 @@ def airof(cfg, size, rate=48000):
     return None
 
 
+def statusof(cfg, size, rate=48000):
+    """Why a size could not be sent: 'exceeds 30 s cap' (bysound) or 'cannot send' (ggwave), '' if it was."""
+    for r in air:
+        if r["config"] == cfg and r["size"] == size and int(r["rate"]) == rate:
+            return "" if r["encoded"] == "1" else r.get("status", "cannot send")
+    return ""
+
+
 def median(v):
     v = sorted(v)
     if not v:
@@ -190,10 +198,10 @@ def line_chart(path, title, subtitle, xlabel, ylabel, series, xr, yr, xticks, yt
         f.write("\n".join(o) + "\n")
 
 
-def bar_chart(path, title, subtitle, rows, xlabel):
+def bar_chart(path, title, subtitle, rows, xlabel, left=250):
     """Horizontal bars on a log axis: rows = [(label, value, color)]."""
     W = 900
-    L, R, T = 250, 90, 64
+    L, R, T = left, 90, 64
     bh, gap = 24, 10
     H = T + len(rows) * (bh + gap) + 50
     pw = W - L - R
@@ -322,23 +330,35 @@ if air:
         else:
             yfmt = lambda v: "%g" % v
         p = os.path.join(CH, fn + ".svg")
-        line_chart(p, title, "computed from each encoder's output at 48 kHz (no channel); airtime includes bysound's 350 ms trailing gap and ggwave's start/end markers; ggwave stops at 140 B",
+        line_chart(p, title, "computed from each encoder's output at 48 kHz (no channel); airtime includes bysound's 350 ms trailing gap and ggwave's start/end markers; ggwave stops at 140 B and bysound at its 30 s cap",
                    "payload size (bytes, log scale)", ylab, ser, (8, 2048), yr, [8, 16, 32, 64, 128, 256, 512, 1024, 2048], yt, xlog=True, yfmt=yfmt, xfmt=lambda v: "%d" % v)
         charts.append(p)
 
 if maxp:
-    rows = []
-    sb = next((r for r in maxp if r["system"] == "bysound"), None)
-    if sb:
-        rows.append(("bysound (any channel/profile)", int(sb["max_payload_bytes"]), PALETTE[0]))
-    gv = next((r for r in maxp if r["config"] == "ggwave audible-normal"), None)
+    mp = {r["config"]: r for r in maxp}
+
+    def row(label, cfgs, col):
+        r = mp.get(cfgs[0])
+        return (label % float(r["air_s_at_max"]), int(r["max_payload_bytes"]), col) if r else None
+
+    rows = [x for x in (
+        row("bysound wide (%.1f s)", ["bysound wide/normal"], PALETTE[0]),
+        row("bysound xhigh (%.1f s)", ["bysound xhigh/normal"], PALETTE[0]),
+        row("bysound audible (%.1f s)", ["bysound audible/normal"], PALETTE[0]),
+        row("bysound high/upper/mid (%.1f s)", ["bysound high/normal"], PALETTE[0]),
+        row("bysound top (%.1f s)", ["bysound top/normal"], PALETTE[0]),
+        row("bysound high/upper/mid robust (%.1f s)", ["bysound high/robust"], PALETTE[5]),
+        row("bysound top robust (%.1f s)", ["bysound top/robust"], PALETTE[5]),
+    ) if x]
+    gv = [float(r["air_s_at_max"]) for r in maxp if r["system"] == "ggwave" and "fixed" not in r["config"]]
     if gv:
-        rows.append(("ggwave, variable length", int(gv["max_payload_bytes"]), PALETTE[1]))
-    gf = next((r for r in maxp if "fixed" in r["config"]), None)
+        rows.append(("ggwave variable length (%.1f-%.1f s)" % (min(gv), max(gv)), 140, PALETTE[1]))
+    gf = [float(r["air_s_at_max"]) for r in maxp if "fixed" in r["config"]]
     if gf:
-        rows.append(("ggwave, fixed length", int(gf["max_payload_bytes"]), PALETTE[2]))
+        rows.append(("ggwave fixed length (%.1f-%.1f s)" % (min(gf), max(gf)), 64, PALETTE[2]))
     p = os.path.join(CH, "max_payload.svg")
-    bar_chart(p, "Largest payload one transmission can carry", "ASCII bytes accepted by the encoder (binary search); ggwave silently truncates beyond its limit", rows, "bytes (log scale)")
+    bar_chart(p, "Max payload in one transmission", "ASCII bytes the encoder accepts; bysound is capped at 30 s of airtime (350 ms gap included), ggwave at 140 B (64 B fixed length); airtime at the maximum in brackets",
+              rows, "bytes (log scale)", left=300)
     charts.append(p)
 
 # ------------------------------------------------------------------ summary.md
@@ -402,7 +422,7 @@ if air:
     w("\n## 2. Airtime and throughput (deterministic, from the encoders, 48 kHz)\n")
     w("Airtime = length of one transmission as produced by the library's encoder: bysound includes its 350 ms trailing gap (part of `bys_tx_fill` output), "
       "ggwave includes its start and end sound markers. Throughput = payload bytes / airtime. Sound-on throughput excludes bysound's gap. "
-      "“—” = cannot be sent in one transmission.\n")
+      "“exceeds 30 s cap” = bysound's encoder refuses it (one transmission, gap included, lasts at most 30 s); “—” = ggwave cannot send it (140 B limit).\n")
     szs = ["8", "32", "64", "128", "utf8", "512", "2048"]
     w("| configuration | " + " | ".join("%s B air (s)" % ("48 UTF-8" if s == "utf8" else s) for s in szs) + " | 32 B (B/s) | 128 B (B/s) | 128 B sound-on (B/s) | PAPR (dB) |")
     w("|---|" + "---:|" * (len(szs) + 4))
@@ -410,18 +430,20 @@ if air:
         cellsx = []
         for s in szs:
             r = airof(cfg, s)
-            cellsx.append("%.2f" % float(r["air_s"]) if r else "—")
+            cellsx.append("%.2f" % float(r["air_s"]) if r else (statusof(cfg, s) or "—"))
         r32, r128 = airof(cfg, "32"), airof(cfg, "128")
         w("| %s | %s | %s | %s | %s | %s |" % (name(cfg), " | ".join(cellsx), "%.1f" % float(r32["throughput_Bps"]) if r32 else "—",
                                               "%.1f" % float(r128["throughput_Bps"]) if r128 else "—", "%.1f" % float(r128["throughput_active_Bps"]) if r128 else "—",
                                               r32["papr_db"] if r32 else "—"))
     if maxp:
-        w("\nMaximum payload per transmission (ASCII bytes accepted by the encoder):\n")
+        w("\n### Max payload in one transmission (ASCII bytes accepted by the encoder)\n")
         w("| configuration | max bytes | airtime at max (s) |")
         w("|---|---:|---:|")
         for r in maxp:
             w("| %s | %s | %.1f |" % (name(r["config"]), r["max_payload_bytes"], float(r["air_s_at_max"])))
-        w("\nbysound's limit is 255 blocks × 48 bytes of packed text (minus framing); ggwave's variable-length mode truncates anything above 140 bytes, fixed-length mode accepts at most 64.\n")
+        w("\nbysound's limit is the 30 s cap on one transmission (preamble + header + body + 350 ms gap; `maxFrameSeconds` in `protocol-v4.json`), so it depends on the channel and profile; "
+          "the figure is in packed bytes (ASCII letters pack 1:1; digit pairs pack 2:1, so numeric text can be twice as long). "
+          "ggwave's variable-length mode truncates anything above 140 bytes, fixed-length mode accepts at most 64; its airtime at the maximum ranges from 5.0 s to 38.9 s.\n")
 
 # latency & CPU from the snr plan (clean cells)
 if runs["snr"]:
@@ -456,7 +478,7 @@ if size_agg:
                 c = cells([r for r in runs["snr"] if r["snr_db"] == "" or float(r["snr_db"]) % 4 == 0]).get((cfg, 48000, "32", "awgn", 1))
             else:
                 c = size_agg.get((cfg, 48000, s, "awgn", 1))
-            row.append(fmt_thr(threshold(c)) if c else "—")
+            row.append(fmt_thr(threshold(c)) if c else (statusof(cfg, s) or "—"))
         w("| %s | %s |" % (name(cfg), " | ".join(row)))
     w("\n(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: %s.\n" % ", ".join(
         "%s B: %d" % (s, ntrials(size_agg, "bysound top/normal", size=s)) for s in szs if s != "32"))
@@ -469,7 +491,7 @@ if size_agg:
             if s == "32":
                 continue
             c = size_agg.get((cfg, 48000, s, "awgn", 1))
-            row.append(pct(c, CLEAN) if c else "—")
+            row.append(pct(c, CLEAN) if c else (statusof(cfg, s) or "—"))
         w("| %s | %s |" % (name(cfg), " | ".join(row)))
 
 # conditions

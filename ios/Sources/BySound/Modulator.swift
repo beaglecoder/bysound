@@ -3,9 +3,23 @@ import Foundation
 
 /// Builds the audio of v4 payload frames.
 public enum Modem {
-    /// The nibble grid of a payload frame: preamble, header and body. Throws if the text needs more than 255 blocks.
+    /// The nibble grid of a payload frame: preamble, header and body. Throws `ModemError.exceedsMaxDuration` if one transmission would last more than 30 s.
     public static func symbols(text: String, band: Band, profile: Profile = .normal) throws -> [[Int]] {
         try Codec.payloadFrame(text, band: band, profile: profile).symbols
+    }
+
+    /// Largest packed payload (bytes after text packing, before the CRC-32) that fits in `Protocol.maxFrameSeconds`
+    /// (preamble + header + body + gap) for the band and profile. ASCII letters pack 1:1; digit pairs pack 2:1.
+    public static func maxPayloadBytes(band: Band, profile: Profile = .normal) -> Int {
+        let ch = band.channel(profile)
+        let cap = Protocol.maxFrameSeconds * 1_000_000
+        var lo = 0, hi = Protocol.blockData * Protocol.maxBlocks - 4
+        if Codec.transmissionMicros(ch, packed: hi) <= cap { return hi }
+        while hi - lo > 1 {
+            let mid = (lo + hi) / 2
+            if Codec.transmissionMicros(ch, packed: mid) <= cap { lo = mid } else { hi = mid }
+        }
+        return lo
     }
 
     /// The payload frame (header, body, symbols) of `text`.

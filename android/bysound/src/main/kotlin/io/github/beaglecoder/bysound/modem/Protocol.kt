@@ -37,6 +37,8 @@ enum class Band(
 internal object Protocol {
     const val VERSION = 4
     const val GAP_SECONDS = 0.35
+    /** Hard cap: one transmission (preamble + header + body + gap) never lasts longer than this. */
+    const val MAX_FRAME_SECONDS = 30
     const val RAMP_SECONDS = 0.003
     const val HOP_SECONDS = 0.004
     const val PREAMBLE_THRESHOLD = 0.32

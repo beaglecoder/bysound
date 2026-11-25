@@ -116,6 +116,7 @@ struct Wave {
   std::vector<float> x;   // one message as emitted by the library's TX API (float, full scale = 1)
   size_t active = 0;      // sound-on samples (bysound: frame without its 350 ms trailing gap; ggwave: whole waveform)
   bool ok = false;
+  const char *why = nullptr;  // when !ok: "exceeds 30 s cap" (bysound, BYS_E_TOO_LONG) or "cannot send" (ggwave limits)
 };
 static int g_tx = -1;
 static int g_tx_fixed_len = 0;
@@ -135,7 +136,8 @@ static Wave encode(const Config &c, const std::string &msg, unsigned rate) {
   if (c.sys == SBSND) {
     bys_tx_cfg_t cfg; bys_tx_cfg_default(&cfg); cfg.sample_rate = rate;
     bys_tx_t tx;
-    if (bys_tx_init_payload(&tx, &cfg, (bys_band_t)c.band, (bys_profile_t)c.profile, msg.data(), msg.size()) != BYS_OK) return w;
+    int ri = bys_tx_init_payload(&tx, &cfg, (bys_band_t)c.band, (bys_profile_t)c.profile, msg.data(), msg.size());
+    if (ri != BYS_OK) { w.why = ri == BYS_E_TOO_LONG ? "exceeds 30 s cap" : "cannot send"; return w; }
     uint32_t total = bys_tx_total_samples(&tx);
     std::vector<int16_t> pcm(total + 4096);
     size_t n = 0;
@@ -149,7 +151,7 @@ static Wave encode(const Config &c, const std::string &msg, unsigned rate) {
   if (rate != 48000) return w;
   // ggwave silently truncates longer payloads to 140 bytes (variable length) and cannot prepare a fixed-length instance above
   // 64 bytes: both are reported as "cannot send" rather than encoded.
-  if (msg.size() > (c.fixed ? 64u : 140u) || msg.empty()) return w;
+  if (msg.size() > (c.fixed ? 64u : 140u) || msg.empty()) { w.why = "cannot send"; return w; }
   int inst = gg_tx_instance(c.fixed ? (int)msg.size() : 0);
   int nbytes = ggwave_encode(inst, msg.data(), (int)msg.size(), (ggwave_ProtocolId)c.proto, 10 /* GGWave::kDefaultVolume */, nullptr, 1);
   if (nbytes <= 0) return w;
@@ -426,7 +428,12 @@ static std::vector<Cell> make_plan(const std::string &plan) {
     auto g = grid(-32, 4, 4);
     for (auto &c : all) for (const char *sz : { "8", "64", "128", "utf8" }) add("size", c, 48000, sz, "awgn", g, true, 1, 30);
     auto gl = std::vector<double>{ -24, -20, -16, -12, -8, 0 };
-    for (auto &c : bys_configs()) for (const char *sz : { "512", "2048" }) add("size", c, 48000, sz, "awgn", gl, true, 1, sz[0] == '5' ? 20 : 10);
+    // bysound's encoder refuses what would last more than 30 s on that configuration (BYS_E_TOO_LONG): those cells are not run
+    // and airtime.csv reports them as "exceeds 30 s cap".
+    for (auto &c : bys_configs()) for (const char *sz : { "512", "2048" }) {
+      if (!encode(c, make_payload(sz, 0), 48000).ok) continue;
+      add("size", c, 48000, sz, "awgn", gl, true, 1, sz[0] == '5' ? 20 : 10);
+    }
   }
   // 3. impairments: echo, coloured noise, clock drift and a combination, 32 bytes, single and double transmission
   if (everything || plan == "cond") {
@@ -595,10 +602,12 @@ static void codec_scan(const char *size, int n) {
     int fails = 0, predicted = 0, agree = 0; std::string which;
     for (int t = 0; t < n; t++) {
       int st; std::string msg = make_payload(size, t);
+      if (t == 0) { bys_frame_t fr; if (bys_frame_init_payload(&fr, (bys_band_t)c.band, (bys_profile_t)c.profile, msg.data(), msg.size()) == BYS_E_TOO_LONG) { fails = -1; break; } }
       int bad = !codec_ok(c.band, c.profile, msg, &st), pz = last_parity_zero(msg) == 1;
       predicted += pz; agree += bad == pz;
       if (bad) { fails++; if (which.size() < 80) which += " " + std::to_string(t) + "(status " + std::to_string(st) + ")"; }
     }
+    if (fails < 0) { printf("%-22s %s B: exceeds 30 s cap (not run)\n", c.name.c_str(), size); continue; }
     printf("%-22s %s B: %d of %d payloads fail the symbol-level round trip%s%s | last parity byte 0x00 in %d; prediction matches %d of %d\n",
            c.name.c_str(), size, fails, n, fails ? ":" : "", which.c_str(), predicted, agree, n);
   }
@@ -681,7 +690,7 @@ static void info(const char *outdir) {
   std::string od(outdir);
   // airtime per configuration and payload size (no channel)
   FILE *f = fopen((od + "/airtime.csv").c_str(), "w");
-  fprintf(f, "system,config,rate,size,payload_bytes,encoded,air_s,active_s,throughput_Bps,throughput_active_Bps,papr_db\n");
+  fprintf(f, "system,config,rate,size,payload_bytes,encoded,air_s,active_s,throughput_Bps,throughput_active_Bps,papr_db,status\n");
   auto all = bys_configs();
   auto gg = gg_configs(true);
   all.insert(all.end(), gg.begin(), gg.end());
@@ -694,18 +703,18 @@ static void info(const char *outdir) {
       for (float v : w.x) { peak = std::max(peak, (double)std::fabs(v)); e += (double)v * v; }
       double papr = w.ok && e > 0 ? 10 * std::log10(peak * peak / (e / (double)w.active)) : 0;
       double air = (double)w.x.size() / rate, act = (double)w.active / rate;
-      fprintf(f, "%s,%s,%u,%s,%zu,%d,%s,%s,%s,%s,%s\n", c.sys == SBSND ? "bysound" : "ggwave", c.name.c_str(), rate, sz, msg.size(), w.ok ? 1 : 0,
+      fprintf(f, "%s,%s,%u,%s,%zu,%d,%s,%s,%s,%s,%s,%s\n", c.sys == SBSND ? "bysound" : "ggwave", c.name.c_str(), rate, sz, msg.size(), w.ok ? 1 : 0,
               w.ok ? fmt(air).c_str() : "", w.ok ? fmt(act).c_str() : "", w.ok ? fmt(msg.size() / air).c_str() : "", w.ok ? fmt(msg.size() / act).c_str() : "",
-              w.ok ? fmt(papr, 4).c_str() : "");
+              w.ok ? fmt(papr, 4).c_str() : "", w.ok ? "ok" : w.why ? w.why : "cannot send");
     }
   }
   fclose(f);
 
-  // maximum payload: largest ASCII size the encoder accepts (binary search over 1..20000)
+  // maximum payload of one transmission: largest ASCII size the encoder accepts (binary search over 1..20000). bysound: bounded by
+  // its 30 s cap, per channel and profile; ggwave: its own 140 B (variable length) or 64 B (fixed length) limit.
   f = fopen((od + "/max_payload.csv").c_str(), "w");
   fprintf(f, "system,config,max_payload_bytes,air_s_at_max\n");
   for (auto &c : all) {
-    if (c.sys == SBSND && c.band != 0 && c.band != 4) continue;  // limit is the same for every channel; show two
     int lo = 0, hi = 20000;
     while (lo < hi) { int mid = (lo + hi + 1) / 2; Wave w = encode(c, make_payload(std::to_string(mid), 0), 48000); if (w.ok) lo = mid; else hi = mid - 1; }
     Wave w = encode(c, make_payload(std::to_string(lo), 0), 48000);

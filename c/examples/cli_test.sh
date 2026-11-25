@@ -24,4 +24,7 @@ done
 [ "$("$BYSOUND" decode "$DIR/rep.wav" | grep -c 'text=twice')" = 2 ] && echo "ok   repeat 2" || { echo "FAIL repeat 2"; fail=1; }
 check "recording falso-v4.wav" "$REC" "text=000201010212264700"
 "$BYSOUND" bands >/dev/null && echo "ok   bands"
+"$BYSOUND" bands | grep -q "max text" && echo "ok   bands max" || { echo "FAIL bands max"; fail=1; }
+long=$(awk 'BEGIN{for(i=0;i<5000;i++)printf "a"}')
+if "$BYSOUND" encode "$long" -o "$DIR/long.wav" --band top 2>"$DIR/long.err"; then echo "FAIL too long accepted"; fail=1; else grep -q "text too long" "$DIR/long.err" && echo "ok   too long rejected" || { echo "FAIL too long message"; fail=1; }; fi
 exit $fail

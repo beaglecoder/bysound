@@ -5,7 +5,16 @@ object Modem {
     /** Pause after every frame, in seconds. */
     const val GAP_SECONDS = Protocol.GAP_SECONDS
 
-    /** Longest text that fits in one frame is limited to 255 blocks of 48 bytes; this throws [IllegalArgumentException] beyond that. */
+    /** Hard cap on one transmission (preamble + header + body + gap), in seconds. */
+    const val MAX_FRAME_SECONDS = Protocol.MAX_FRAME_SECONDS
+
+    /**
+     * Largest packed payload (bytes after text packing, before the CRC-32) that fits in [MAX_FRAME_SECONDS] for the band and profile.
+     * ASCII letters pack 1:1 (so it is also the letter count); digit pairs pack 2:1.
+     */
+    fun maxPayloadBytes(band: Band, profile: Profile = Profile.NORMAL): Int = Codec.maxPayloadBytes(band, profile)
+
+    /** A text whose transmission would last more than [MAX_FRAME_SECONDS] throws [TextTooLongException] (an [IllegalArgumentException]). */
     fun symbols(text: String, band: Band, profile: Profile = Profile.NORMAL): Array<IntArray> =
         Codec.payloadFrame(text, band, profile).symbols
 

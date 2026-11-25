@@ -46,3 +46,14 @@ val audio: FloatArray = Modem.encode("Hello", Band.MID, Profile.NORMAL, sampleRa
 val rx = Receiver(48000) { heard -> println(heard.text) }
 rx.feed(audio)
 ```
+
+**Length limit.** One transmission (preamble + header + body + gap) never lasts more than 30 s (`Modem.MAX_FRAME_SECONDS`). A longer text throws `TextTooLongException` (an `IllegalArgumentException`, with `maxPackedBytes`); `Modem.maxPayloadBytes(band, profile)` gives the limit in packed bytes. ASCII letters pack 1:1, digit pairs 2:1.
+
+| band | max text, normal | max text, robust |
+|---|---:|---:|
+| `TOP` | 700 | 335 |
+| `HIGH`, `UPPER`, `MID` | 1 052 | 520 |
+| `AUDIBLE` | 1 122 | - |
+| `XHIGH` | 1 408 | - |
+| `WIDE` | 2 114 | - |
+

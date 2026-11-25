@@ -17,7 +17,7 @@ def('RAMP_MS', Math.round(spec.rampSeconds * 1000)); def('GAP_MS', Math.round(sp
 def('THRESHOLD_PERMILLE', Math.round(spec.preambleThreshold * 1000)); def('HEADER_BYTES', spec.headerBytes);
 def('MAGIC_PAYLOAD', spec.magicPayload); def('MAGIC_ACK', spec.magicAck); def('MAGIC_REFERENCE', spec.magicReference); def('MAGIC_RISK', spec.magicRisk);
 def('REF_BYTES', spec.referenceBytes); def('REF_DATA', spec.referenceDataBytes); def('REF_PARITY', spec.referenceParity); def('MOTHER_PARITY', spec.motherParity);
-def('BLOCK_DATA', spec.blockData); def('BLOCK_PARITY', spec.blockParity); def('BLOCK_HEADER', spec.blockHeader); def('MAX_BLOCKS', spec.maxBlocks);
+def('BLOCK_DATA', spec.blockData); def('BLOCK_PARITY', spec.blockParity); def('BLOCK_HEADER', spec.blockHeader); def('MAX_BLOCKS', spec.maxBlocks); def('MAX_FRAME_SECONDS', spec.maxFrameSeconds);
 def('RISK_LENGTH', spec.riskLength); def('RISK_PARITY', spec.riskParity); def('RISK_MAX_HOPS', spec.riskMaxHops); def('ACK_LENGTH', spec.ackLength); def('ACK_PARITY', spec.ackParity);
 c += `static const unsigned char J_PREAMBLE[8][4] = {${spec.preamble.map(bytes).join(',')}};\n`;
 const names = Object.keys(ch);

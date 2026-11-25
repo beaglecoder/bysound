@@ -105,6 +105,16 @@ enum Codec {
         return stride(from: 0, to: n.count, by: groups).map { Array(n[$0..<($0 + groups)]) }
     }
 
+    /// Exact duration in microseconds of the transmission (frame + gap) of a payload with `packed` packed bytes (before the CRC-32).
+    static func transmissionMicros(_ ch: Channel, packed: Int) -> Int {
+        let len = packed + 4
+        let total = (len + Protocol.blockData - 1) / Protocol.blockData
+        let body = len + total * (Protocol.blockHeader + Protocol.blockParity)
+        let g = ch.groups
+        let symbols = Protocol.preamble.count + (2 * Protocol.headerBytes + g - 1) / g + (2 * body + g - 1) / g
+        return symbols * jsRound(ch.symbolSeconds * 1e6) + jsRound(Protocol.gapSeconds * 1e6)
+    }
+
     /// Dato completo: pack + CRC-32 in blocks of 48 bytes, each `RS([index, total] + data, 12)`.
     static func payloadFrame(_ text: String, band: Band, profile: Profile) throws -> Frame {
         let content = TextPacking.pack(text)
@@ -112,12 +122,15 @@ enum Codec {
         let data = content + [UInt8(c >> 24), UInt8((c >> 16) & 255), UInt8((c >> 8) & 255), UInt8(c & 255)]
         let total = (data.count + Protocol.blockData - 1) / Protocol.blockData
         guard total <= Protocol.maxBlocks else { throw ModemError.textTooLong }
+        let channel = band.channel(profile)
+        guard Codec.transmissionMicros(channel, packed: content.count) <= Protocol.maxFrameSeconds * 1_000_000 else {
+            throw ModemError.exceedsMaxDuration(packedBytes: content.count, maxPackedBytes: Modem.maxPayloadBytes(band: band, profile: profile))
+        }
         var body: [UInt8] = []
         for b in 0..<total {
             let chunk = data[(b * Protocol.blockData)..<min((b + 1) * Protocol.blockData, data.count)]
             body += rsEncode([UInt8(b), UInt8(total)] + chunk, parity: Protocol.blockParity)
         }
-        let channel = band.channel(profile)
         let header = Protocol.header(magic: Protocol.magicPayload, length: total, band: band, profile: channel.profile)
         let symbols = (0..<Protocol.preamble.count).map { channel.preambleSymbol($0) }
             + toSymbols(header, groups: channel.groups) + toSymbols(body, groups: channel.groups)
@@ -148,4 +161,6 @@ enum Codec {
 public enum ModemError: Error {
     /// More than 255 blocks (about 12 KB).
     case textTooLong
+    /// One transmission would last more than `Protocol.maxFrameSeconds` (30 s). `maxPackedBytes` is the limit for the band and profile.
+    case exceedsMaxDuration(packedBytes: Int, maxPackedBytes: Int)
 }

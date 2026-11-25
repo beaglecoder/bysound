@@ -32,6 +32,16 @@ const samples = encode('hello', { band: 'mid', profile: 'robust', sampleRate: 48
 const heard = decode(samples, 48000); // offline, e.g. samples read from a WAV file
 ```
 
+Limit: one transmission never lasts more than 30 s (preamble + header + body + gap), so `encode`/`send` throw an `Error` with `code === 'TOO_LONG'` for a longer text. `maxPayloadBytes(band, profile)` (in `src/modem/codec`) gives the limit in packed bytes; ASCII letters pack 1:1, digit pairs 2:1.
+
+| band | max text, normal | max text, robust |
+|---|---:|---:|
+| `top` | 700 | 335 |
+| `high`, `upper`, `mid` | 1 052 | 520 |
+| `audible` | 1 122 | - |
+| `xhigh` | 1 408 | - |
+| `wide` | 2 114 | - |
+
 Bands: `top` (18.0-19.5 kHz), `high`, `upper`, `mid` (15.0-17.2 kHz), `audible`, `xhigh`, `wide`. `profile: 'robust'` is twice as slow and more noise tolerant (top, high, upper, mid only); the receiver always listens for both.
 
 ## Browser notes

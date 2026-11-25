@@ -5,6 +5,7 @@
   "tonesPerGroup": 16,
   "rampSeconds": 0.003,
   "gapSeconds": 0.35,
+  "maxFrameSeconds": 30,
   "hopSeconds": 0.004,
   "preambleThreshold": 0.32,
   "headerBytes": 4,

@@ -137,7 +137,31 @@ Symbol `k` of a frame starts at sample `round(k · Ts · Fs)`, where `Fs` is the
 
 **Header length in symbols:** `top` 4, `high`/`upper`/`mid` 3, `audible`/`xhigh`/`wide` 2.
 
-**Maximum payload:** `B ≤ 255`, so `D ≤ 255 · 48 = 12 240` bytes, and the packed text is at most 12 236 bytes.
+**Maximum payload:** `B ≤ 255` is the format's own ceiling (`D ≤ 12 240` bytes, packed text at most 12 236 bytes), but the duration cap below is always reached first.
+
+### Maximum duration
+
+One transmission of a payload frame MUST NOT last more than **30 seconds**: preamble, header, body and the 350 ms gap together (`maxFrameSeconds` in `protocol-v4.json`):
+
+```
+S · Ts + 0.35 s  ≤  30 s          (Ts = 32 ms, 40 ms on audible, × 2 in robust)
+```
+
+The check is exact (integer microseconds). An encoder MUST reject a longer payload with a "too long" error (`BYS_E_TOO_LONG` in C, code `TOO_LONG` in TypeScript, `ModemError.exceedsMaxDuration` in Swift, `TextTooLongException` in Kotlin). Receivers keep their behaviour: the cap is a sender-side rule, and a receiver that decodes a longer frame is still conformant. Longer data needs several transmissions, which the application splits.
+
+The largest packed text (`P`, in bytes, before the CRC-32) that fits, per band and profile:
+
+| Band | Profile | `Ts` | Max `P` | Blocks `B` | Symbols `S` | Airtime at max (`T_lap`) |
+|---|---|---|---:|---:|---:|---:|
+| `top` | normal | 32 ms | 700 | 15 | 926 | 29.982 s |
+| `top` | robust | 64 ms | 335 | 8 | 463 | 29.982 s |
+| `high`, `upper`, `mid` | normal | 32 ms | 1 052 | 22 | 921 | 29.822 s |
+| `high`, `upper`, `mid` | robust | 64 ms | 520 | 11 | 463 | 29.982 s |
+| `audible` | normal | 40 ms | 1 122 | 24 | 741 | 29.990 s |
+| `xhigh` | normal | 32 ms | 1 408 | 30 | 926 | 29.982 s |
+| `wide` | normal | 32 ms | 2 114 | 45 | 926 | 29.982 s |
+
+The limit is in packed bytes. ASCII letters (and any printable ASCII character) pack 1:1, so the same number is the character limit for such text. Digit pairs pack 2:1, so a text of digits only can have up to twice as many characters (for example 1 400 digits on `top`). A text with characters outside printable ASCII costs more than one byte each (section 9.1).
 
 Here are the durations of the test vector `ejemplo` (166 characters, `P = 112`, `D = 116`, `B = 3`, `L = 158`) on each band, taken from `test-vectors/v4-frames.json` and matching the formula:
 

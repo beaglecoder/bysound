@@ -45,7 +45,7 @@ Audio is fed in chunks of 1024 samples to both. The TX side also uses library de
 
 - 8, 32, 64 and 128 bytes of random printable ASCII for both systems. **Digits are excluded**: bysound packs pairs of digits into one byte, which would make it look faster than its raw byte capacity.
 - A 48-byte UTF-8 case with multi-byte characters (accents, Cyrillic, CJK, emoji).
-- 512 and 2048 bytes for bysound only. ggwave carries at most 140 bytes per transmission: longer inputs are **silently truncated** by `ggwave_encode`, so they are reported as "cannot send".
+- 512 and 2048 bytes for bysound only. ggwave carries at most 140 bytes per transmission: longer inputs are **silently truncated** by `ggwave_encode`, so they are reported as "cannot send". bysound's encoder refuses any payload whose transmission (gap included) would last more than **30 s** (`BYS_E_TOO_LONG`): those sizes are not run on that configuration and are reported as "exceeds 30 s cap" (airtime table, `airtime.csv` column `status`). 512 B runs on every configuration except `top/robust` (cap 335 B); 2048 B runs only on `wide` (cap 2,114 B).
 - The payload text depends only on (size, trial index), so both systems send the same text in every trial.
 
 ### Channel (`channel()` in `src/bench.cpp`)
@@ -86,7 +86,7 @@ The RNG is xoshiro256\*\*. Its seed comes from (plan, rate, size, condition, SNR
 |---|---|---:|
 | `snr` | 32 B, AWGN, 48 kHz, −36…+4 dB in steps of 2 + clean, 1 and 2 transmissions, all 20 configurations | 50 |
 | `size` | 8, 64, 128 B and 48 B UTF-8, AWGN, −32…+4 dB in steps of 4 + clean, 1 transmission | 30 |
-| `size` | 512 and 2048 B, bysound only, −24…−8 dB in steps of 4, 0 dB and clean | 20 for 512 B, 10 for 2048 B |
+| `size` | 512 B (all configurations except `top/robust`) and 2048 B (`wide` only), bysound only, those under its 30 s cap; −24…−8 dB in steps of 4, 0 dB and clean | 20 for 512 B, 10 for 2048 B |
 | `cond` | 32 B, each of echo / pink / babble / drift +100 ppm / drift −100 ppm / combo (echo + drift +100 ppm + pink), −32…+4 dB in steps of 4 + clean, 1 and 2 transmissions | 30 |
 | `rate44` | bysound at 44.1 kHz, 32 B, AWGN | 30 |
 | `mtfixed` | ggwave `mt-*` in fixed-length mode, 8, 32 and 64 B | 30 |
@@ -108,11 +108,11 @@ Percentage of trials that decoded the exact payload:
 
 | configuration | −16 dB | −14 dB | −12 dB | −10 dB | −8 dB | −4 dB | 0 dB | clean | SNR90 full-band | SNR90 in-band | SNR90 peak-ref. | airtime 32 B |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 4 | 98 | 100 | 100 | 100 | 100 | 100 | 100 | −14 | −2 | −7 | 2.33 s |
+| bysound top/normal | 4 | 98 | 100 | 100 | 100 | exceeds 30 s cap | 100 | 100 | −14 | −2 | −7 | 2.33 s |
 | bysound high/normal | 0 | 10 | 96 | 100 | 100 | 100 | 100 | 100 | −12 | −2 | −4 | 1.79 s |
 | bysound wide/normal | 0 | 0 | 0 | 76 | 100 | 100 | 100 | 100 | −8 | −1 | +3 | 1.21 s |
-| bysound audible/normal | 0 | 0 | 38 | 100 | 100 | 100 | 100 | 100 | −10 | −1 | −1 | 1.75 s |
-| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | −16 | −4 | −10 | 4.32 s |
+| bysound audible/normal | 0 | 0 | 38 | 100 | 100 | exceeds 30 s cap | 100 | 100 | −10 | −1 | −1 | 1.75 s |
+| bysound top/robust | 100 | 100 | 100 | 100 | exceeds 30 s cap | exceeds 30 s cap | 100 | 100 | −16 | −4 | −10 | 4.32 s |
 | ggwave ultrasound-fast | 0 | 0 | 12 | 64 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
 | ggwave ultrasound-fastest | 0 | 0 | 24 | 78 | 98 | 100 | 100 | 100 | −8 | −1 | +5 | 1.71 s |
 | ggwave audible-fast | 0 | 0 | 14 | 52 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
@@ -144,25 +144,38 @@ The "babble" column hits the bottom of the grid (−32 dB) for every near-ultras
 
 | configuration | 8 B | 32 B | 64 B | 128 B | 512 B | 2048 B | B/s at 32 B | B/s at 128 B |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 1.57 s | 2.33 s | 3.81 s | 6.30 s | 22.17 s | 85.66 s | 13.7 | 20.3 |
-| bysound high/normal (= upper, mid) | 1.28 s | 1.79 s | 2.75 s | 4.41 s | 15.01 s | 57.34 s | 17.9 | 29.0 |
-| bysound xhigh/normal | 1.09 s | 1.47 s | 2.21 s | 3.45 s | 11.39 s | 43.13 s | 21.8 | 37.1 |
+| bysound top/normal | 1.57 s | 2.33 s | 3.81 s | 6.30 s | 22.17 s | exceeds 30 s cap | 13.7 | 20.3 |
+| bysound high/normal (= upper, mid) | 1.28 s | 1.79 s | 2.75 s | 4.41 s | 15.01 s | exceeds 30 s cap | 17.9 | 29.0 |
+| bysound xhigh/normal | 1.09 s | 1.47 s | 2.21 s | 3.45 s | 11.39 s | exceeds 30 s cap | 21.8 | 37.1 |
 | bysound wide/normal | 0.96 s | 1.21 s | 1.69 s | 2.53 s | 7.84 s | 28.99 s | 26.4 | 50.7 |
-| bysound audible/normal | 1.27 s | 1.75 s | 2.67 s | 4.23 s | 14.15 s | 53.83 s | 18.3 | 30.3 |
-| bysound top/robust | 2.78 s | 4.32 s | 7.26 s | 12.25 s | 44.00 s | 170.97 s | 7.4 | 10.4 |
+| bysound audible/normal | 1.27 s | 1.75 s | 2.67 s | 4.23 s | 14.15 s | exceeds 30 s cap | 18.3 | 30.3 |
+| bysound top/robust | 2.78 s | 4.32 s | 7.26 s | 12.25 s | exceeds 30 s cap | exceeds 30 s cap | 7.4 | 10.4 |
 | ggwave normal (audible = ultrasound) | 1.64 s | 3.75 s | 6.63 s | 12.39 s | — | — | 8.5 | 10.3 |
 | ggwave fast | 1.32 s | 2.73 s | 4.65 s | 8.49 s | — | — | 11.7 | 15.1 |
 | ggwave fastest | 1.00 s | 1.71 s | 2.67 s | 4.59 s | — | — | 18.8 | 27.9 |
 | ggwave dt-fastest | 1.64 s | 3.69 s | 6.51 s | 12.27 s | — | — | 8.7 | 10.4 |
 
-Maximum payload per transmission:
-- bysound: **12,236** ASCII bytes (255 blocks), which takes 506.7 s on `top`.
-- ggwave, variable-length mode: **140** bytes.
-- ggwave, fixed-length mode: **64** bytes.
+Sizes that would last more than 30 s on a configuration are not sent by bysound; the 512 B and 2048 B columns of `results/summary.md` show "exceeds 30 s cap" there (`wide`: 28.99 s at 2048 B is the only 2048 B that fits; `high/robust`, `upper/robust` and `mid/robust` fit 512 B in 29.66 s).
+
+**Max payload in one transmission** (ASCII bytes the encoder accepts; bysound is capped at 30 s of airtime, 350 ms gap included):
+
+| configuration | max bytes | airtime at max |
+|---|---:|---:|
+| bysound wide | 2,114 | 30.0 s |
+| bysound xhigh | 1,408 | 30.0 s |
+| bysound audible | 1,122 | 30.0 s |
+| bysound high / upper / mid | 1,052 | 29.8 s |
+| bysound top | 700 | 30.0 s |
+| bysound high / upper / mid robust | 520 | 30.0 s |
+| bysound top robust | 335 | 30.0 s |
+| ggwave, variable-length mode | 140 | 5.0 s (fastest) to 38.9 s (dt-normal) |
+| ggwave, fixed-length mode | 64 | 11.3 s to 33.8 s |
+
+The figures are packed bytes: letters pack 1:1, digit pairs 2:1.
 
 ![throughput](results/charts/throughput_vs_size.svg)
 ![airtime](results/charts/airtime_vs_size.svg)
-![max payload](results/charts/max_payload.svg)
+![max payload in one transmission](results/charts/max_payload.svg)
 
 ### Receiver CPU and latency (32 B, median over the `snr` plan)
 
@@ -191,7 +204,7 @@ ggwave produced 0 detections in the 30 minutes of pure noise.
 **Where bysound is better in this simulation:**
 - **Noise:** SNR90 is 0–6 dB lower than ggwave's ultrasound and audible protocols at equal average power (normal profile; 6–8 dB lower for robust). At equal peak level it is 1–15 dB lower (for example, −7 dB for top/normal against +4 dB for ggwave ultrasound-fast). Most of the full-band advantage comes from using a narrower band; at equal in-band SNR the detectors are within about 0–3 dB.
 - **Echo:** −8 dB against +0 dB for the near-ultrasonic modes.
-- **Payload size:** up to 12,236 bytes against 140.
+- **Payload size:** up to 2,114 bytes in one 30 s transmission (`wide`; 700 on `top`, 335 on `top/robust`) against 140 for ggwave, whose longest transmission (dt-normal) takes 38.9 s.
 - **Throughput above about 32 bytes:** `wide` reaches 50.7 B/s at 128 B and 70.6 B/s at 2048 B. The best ggwave figure is 27.9 B/s at 128 B.
 - **No false decodes:** CRC-32 over the payload plus RS per block. ggwave delivered wrong 8-byte payloads.
 
@@ -294,6 +307,6 @@ Without any channel (`bench scan 32 500`), bugs 1 and 2 together lost 15/500 pay
   - the plans;
   - the commands `info`, `jobs`, `run`, `trial`, `repro`, `scan` and `codec`.
 - `scripts/report.py`: `results/summary.md` and the SVG charts (Python standard library only; transparent background, mid-tone palette validated for contrast and colour-vision deficiency on both `#ffffff` and `#0d1117`).
-- `results/*.csv`: raw results, one row per trial; `airtime.csv`, `bands.csv` and `max_payload.csv` are deterministic.
+- `results/*.csv`: raw results, one row per trial; `airtime.csv` (with a `status` column: ok, exceeds 30 s cap, cannot send), `bands.csv` and `max_payload.csv` are deterministic. A `success` of −1 means the payload could not be sent.
 - `results/*.txt`: noiseless scans, codec scan, resampler check.
 - `results/charts/*.svg`: 17 charts.

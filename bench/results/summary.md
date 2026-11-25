@@ -62,41 +62,49 @@ In-band SNR = full-band SNR + offset, where the offset uses the band holding 99 
 
 ## 2. Airtime and throughput (deterministic, from the encoders, 48 kHz)
 
-Airtime = length of one transmission as produced by the library's encoder: bysound includes its 350 ms trailing gap (part of `bys_tx_fill` output), ggwave includes its start and end sound markers. Throughput = payload bytes / airtime. Sound-on throughput excludes bysound's gap. “—” = cannot be sent in one transmission.
+Airtime = length of one transmission as produced by the library's encoder: bysound includes its 350 ms trailing gap (part of `bys_tx_fill` output), ggwave includes its start and end sound markers. Throughput = payload bytes / airtime. Sound-on throughput excludes bysound's gap. “exceeds 30 s cap” = bysound's encoder refuses it (one transmission, gap included, lasts at most 30 s); “—” = ggwave cannot send it (140 B limit).
 
 | configuration | 8 B air (s) | 32 B air (s) | 64 B air (s) | 128 B air (s) | 48 UTF-8 B air (s) | 512 B air (s) | 2048 B air (s) | 32 B (B/s) | 128 B (B/s) | 128 B sound-on (B/s) | PAPR (dB) |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 1.57 | 2.33 | 3.81 | 6.30 | 3.81 | 22.17 | 85.66 | 13.7 | 20.3 | 21.5 | 6.563 |
-| bysound high/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | 57.34 | 17.9 | 29.0 | 31.5 | 8.335 |
-| bysound upper/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | 57.34 | 17.9 | 29.0 | 31.5 | 8.337 |
-| bysound mid/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | 57.34 | 17.9 | 29.0 | 31.5 | 8.333 |
-| bysound xhigh/normal | 1.09 | 1.47 | 2.21 | 3.45 | 2.21 | 11.39 | 43.13 | 21.8 | 37.1 | 41.2 | 9.587 |
+| bysound top/normal | 1.57 | 2.33 | 3.81 | 6.30 | 3.81 | 22.17 | exceeds 30 s cap | 13.7 | 20.3 | 21.5 | 6.563 |
+| bysound high/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | exceeds 30 s cap | 17.9 | 29.0 | 31.5 | 8.335 |
+| bysound upper/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | exceeds 30 s cap | 17.9 | 29.0 | 31.5 | 8.337 |
+| bysound mid/normal | 1.28 | 1.79 | 2.75 | 4.41 | 2.75 | 15.01 | exceeds 30 s cap | 17.9 | 29.0 | 31.5 | 8.333 |
+| bysound xhigh/normal | 1.09 | 1.47 | 2.21 | 3.45 | 2.21 | 11.39 | exceeds 30 s cap | 21.8 | 37.1 | 41.2 | 9.587 |
 | bysound wide/normal | 0.96 | 1.21 | 1.69 | 2.53 | 1.69 | 7.84 | 28.99 | 26.4 | 50.7 | 58.8 | 11.35 |
-| bysound audible/normal | 1.27 | 1.75 | 2.67 | 4.23 | 2.67 | 14.15 | 53.83 | 18.3 | 30.3 | 33.0 | 9.46 |
-| bysound top/robust | 2.78 | 4.32 | 7.26 | 12.25 | 7.26 | 44.00 | 170.97 | 7.4 | 10.4 | 10.8 | 6.284 |
-| bysound high/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | 114.33 | 9.9 | 15.1 | 15.7 | 8.051 |
-| bysound upper/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | 114.33 | 9.9 | 15.1 | 15.7 | 8.053 |
-| bysound mid/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | 114.33 | 9.9 | 15.1 | 15.7 | 8.052 |
-| ggwave ultrasound-normal | 1.64 | 3.75 | 6.63 | 12.39 | 5.10 | — | — | 8.5 | 10.3 | 10.3 | 12.15 |
-| ggwave ultrasound-fast | 1.32 | 2.73 | 4.65 | 8.49 | 3.63 | — | — | 11.7 | 15.1 | 15.1 | 12.36 |
-| ggwave ultrasound-fastest | 1.00 | 1.71 | 2.67 | 4.59 | 2.15 | — | — | 18.8 | 27.9 | 27.9 | 12.88 |
-| ggwave audible-normal | 1.64 | 3.75 | 6.63 | 12.39 | 5.10 | — | — | 8.5 | 10.3 | 10.3 | 12.06 |
-| ggwave audible-fast | 1.32 | 2.73 | 4.65 | 8.49 | 3.63 | — | — | 11.7 | 15.1 | 15.1 | 12.27 |
-| ggwave audible-fastest | 1.00 | 1.71 | 2.67 | 4.59 | 2.15 | — | — | 18.8 | 27.9 | 27.9 | 12.79 |
-| ggwave dt-normal | 3.56 | 9.71 | 18.15 | 35.43 | 13.93 | — | — | 3.3 | 3.6 | 3.6 | 7.265 |
-| ggwave dt-fast | 2.60 | 6.70 | 12.33 | 23.85 | 9.51 | — | — | 4.8 | 5.4 | 5.4 | 7.396 |
-| ggwave dt-fastest | 1.64 | 3.69 | 6.51 | 12.27 | 5.10 | — | — | 8.7 | 10.4 | 10.4 | 7.758 |
-| ggwave mt-normal (fixed-len) | 4.61 | 16.90 | 33.79 | — | 25.34 | — | — | 1.9 | — | — | 3.979 |
-| ggwave mt-fast (fixed-len) | 3.07 | 11.26 | 22.53 | — | 16.90 | — | — | 2.8 | — | — | 3.979 |
-| ggwave mt-fastest (fixed-len) | 1.54 | 5.63 | 11.26 | — | 8.45 | — | — | 5.7 | — | — | 3.979 |
+| bysound audible/normal | 1.27 | 1.75 | 2.67 | 4.23 | 2.67 | 14.15 | exceeds 30 s cap | 18.3 | 30.3 | 33.0 | 9.46 |
+| bysound top/robust | 2.78 | 4.32 | 7.26 | 12.25 | 7.26 | exceeds 30 s cap | exceeds 30 s cap | 7.4 | 10.4 | 10.8 | 6.284 |
+| bysound high/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | exceeds 30 s cap | 9.9 | 15.1 | 15.7 | 8.051 |
+| bysound upper/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | exceeds 30 s cap | 9.9 | 15.1 | 15.7 | 8.053 |
+| bysound mid/robust | 2.21 | 3.23 | 5.15 | 8.48 | 5.15 | 29.66 | exceeds 30 s cap | 9.9 | 15.1 | 15.7 | 8.052 |
+| ggwave ultrasound-normal | 1.64 | 3.75 | 6.63 | 12.39 | 5.10 | cannot send | cannot send | 8.5 | 10.3 | 10.3 | 12.15 |
+| ggwave ultrasound-fast | 1.32 | 2.73 | 4.65 | 8.49 | 3.63 | cannot send | cannot send | 11.7 | 15.1 | 15.1 | 12.36 |
+| ggwave ultrasound-fastest | 1.00 | 1.71 | 2.67 | 4.59 | 2.15 | cannot send | cannot send | 18.8 | 27.9 | 27.9 | 12.88 |
+| ggwave audible-normal | 1.64 | 3.75 | 6.63 | 12.39 | 5.10 | cannot send | cannot send | 8.5 | 10.3 | 10.3 | 12.06 |
+| ggwave audible-fast | 1.32 | 2.73 | 4.65 | 8.49 | 3.63 | cannot send | cannot send | 11.7 | 15.1 | 15.1 | 12.27 |
+| ggwave audible-fastest | 1.00 | 1.71 | 2.67 | 4.59 | 2.15 | cannot send | cannot send | 18.8 | 27.9 | 27.9 | 12.79 |
+| ggwave dt-normal | 3.56 | 9.71 | 18.15 | 35.43 | 13.93 | cannot send | cannot send | 3.3 | 3.6 | 3.6 | 7.265 |
+| ggwave dt-fast | 2.60 | 6.70 | 12.33 | 23.85 | 9.51 | cannot send | cannot send | 4.8 | 5.4 | 5.4 | 7.396 |
+| ggwave dt-fastest | 1.64 | 3.69 | 6.51 | 12.27 | 5.10 | cannot send | cannot send | 8.7 | 10.4 | 10.4 | 7.758 |
+| ggwave mt-normal (fixed-len) | 4.61 | 16.90 | 33.79 | cannot send | 25.34 | cannot send | cannot send | 1.9 | — | — | 3.979 |
+| ggwave mt-fast (fixed-len) | 3.07 | 11.26 | 22.53 | cannot send | 16.90 | cannot send | cannot send | 2.8 | — | — | 3.979 |
+| ggwave mt-fastest (fixed-len) | 1.54 | 5.63 | 11.26 | cannot send | 8.45 | cannot send | cannot send | 5.7 | — | — | 3.979 |
 
-Maximum payload per transmission (ASCII bytes accepted by the encoder):
+### Max payload in one transmission (ASCII bytes accepted by the encoder)
 
 | configuration | max bytes | airtime at max (s) |
 |---|---:|---:|
-| bysound top/normal | 12236 | 506.7 |
-| bysound audible/normal | 12236 | 316.9 |
-| bysound top/robust | 12236 | 1013.0 |
+| bysound top/normal | 700 | 30.0 |
+| bysound high/normal | 1052 | 29.8 |
+| bysound upper/normal | 1052 | 29.8 |
+| bysound mid/normal | 1052 | 29.8 |
+| bysound audible/normal | 1122 | 30.0 |
+| bysound xhigh/normal | 1408 | 30.0 |
+| bysound wide/normal | 2114 | 30.0 |
+| bysound top/robust | 335 | 30.0 |
+| bysound high/robust | 520 | 30.0 |
+| bysound upper/robust | 520 | 30.0 |
+| bysound mid/robust | 520 | 30.0 |
 | ggwave audible-normal | 140 | 13.5 |
 | ggwave audible-fast | 140 | 9.3 |
 | ggwave audible-fastest | 140 | 5.0 |
@@ -110,7 +118,7 @@ Maximum payload per transmission (ASCII bytes accepted by the encoder):
 | ggwave mt-fast (fixed-len) | 64 | 22.5 |
 | ggwave mt-fastest (fixed-len) | 64 | 11.3 |
 
-bysound's limit is 255 blocks × 48 bytes of packed text (minus framing); ggwave's variable-length mode truncates anything above 140 bytes, fixed-length mode accepts at most 64.
+bysound's limit is the 30 s cap on one transmission (preamble + header + body + 350 ms gap; `maxFrameSeconds` in `protocol-v4.json`), so it depends on the channel and profile; the figure is in packed bytes (ASCII letters pack 1:1; digit pairs pack 2:1, so numeric text can be twice as long). ggwave's variable-length mode truncates anything above 140 bytes, fixed-length mode accepts at most 64; its airtime at the maximum ranges from 5.0 s to 38.9 s.
 
 
 ## 3. Decode latency and receiver CPU cost (32 B, AWGN plan, 1 transmission)
@@ -144,54 +152,54 @@ Latency = time from the first sample of the transmission to the moment the decod
 
 | configuration | 8 B | 32 B | 64 B | 128 B | 48 B UTF-8 | 512 B | 2048 B |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | -12 | -12 | -12 | -12 | -12 | -12 | -12 |
-| bysound high/normal | -12 | -12 | -12 | -12 | -12 | -8 | -8 |
-| bysound upper/normal | -12 | -12 | -12 | -12 | -12 | -12 | -8 |
-| bysound mid/normal | -12 | -12 | -12 | -12 | -12 | -8 | -8 |
-| bysound xhigh/normal | -12 | -8 | -8 | -8 | -8 | -8 | -8 |
+| bysound top/normal | -12 | -12 | -12 | -12 | -12 | -12 | exceeds 30 s cap |
+| bysound high/normal | -12 | -12 | -12 | -12 | -12 | -8 | exceeds 30 s cap |
+| bysound upper/normal | -12 | -12 | -12 | -12 | -12 | -12 | exceeds 30 s cap |
+| bysound mid/normal | -12 | -12 | -12 | -12 | -12 | -8 | exceeds 30 s cap |
+| bysound xhigh/normal | -12 | -8 | -8 | -8 | -8 | -8 | exceeds 30 s cap |
 | bysound wide/normal | -8 | -8 | -8 | -8 | -8 | -8 | -8 |
-| bysound audible/normal | -12 | -8 | -8 | -8 | -8 | -8 | -8 |
-| bysound top/robust | -16 | -16 | -16 | -16 | -16 | -12 | -16 |
-| bysound high/robust | -12 | -12 | -12 | -12 | -12 | -12 | -12 |
-| bysound upper/robust | -12 | -12 | -12 | -12 | -12 | -12 | -12 |
-| bysound mid/robust | -16 | -12 | -12 | -12 | -12 | -12 | -12 |
-| ggwave ultrasound-normal | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave ultrasound-fast | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave ultrasound-fastest | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave audible-normal | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave audible-fast | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave audible-fastest | -8 | -8 | -8 | -8 | -8 | — | — |
-| ggwave dt-normal | — | — | — | — | — | — | — |
-| ggwave dt-fast | -4 | — | — | — | — | — | — |
-| ggwave dt-fastest | -4 | -4 | +0 | +0 | -4 | — | — |
+| bysound audible/normal | -12 | -8 | -8 | -8 | -8 | -8 | exceeds 30 s cap |
+| bysound top/robust | -16 | -16 | -16 | -16 | -16 | exceeds 30 s cap | exceeds 30 s cap |
+| bysound high/robust | -12 | -12 | -12 | -12 | -12 | -12 | exceeds 30 s cap |
+| bysound upper/robust | -12 | -12 | -12 | -12 | -12 | -12 | exceeds 30 s cap |
+| bysound mid/robust | -16 | -12 | -12 | -12 | -12 | -12 | exceeds 30 s cap |
+| ggwave ultrasound-normal | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave ultrasound-fast | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave ultrasound-fastest | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave audible-normal | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave audible-fast | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave audible-fastest | -8 | -8 | -8 | -8 | -8 | cannot send | cannot send |
+| ggwave dt-normal | — | — | — | — | — | cannot send | cannot send |
+| ggwave dt-fast | -4 | — | — | — | — | cannot send | cannot send |
+| ggwave dt-fastest | -4 | -4 | +0 | +0 | -4 | cannot send | cannot send |
 
-(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: 8 B: 30, 64 B: 30, 128 B: 30, utf8 B: 30, 512 B: 20, 2048 B: 10.
+(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: 8 B: 30, 64 B: 30, 128 B: 30, utf8 B: 30, 512 B: 20, 2048 B: 0.
 
 
 Success at the noiseless point (%):
 
 | configuration | 8 B | 64 B | 128 B | 48 B UTF-8 | 512 B | 2048 B |
 |---|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound high/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound upper/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound mid/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound xhigh/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound top/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound high/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound upper/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound mid/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound xhigh/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
 | bysound wide/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound audible/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound high/robust | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound upper/robust | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound mid/robust | 100 | 100 | 100 | 100 | 100 | 100 |
-| ggwave ultrasound-normal | 100 | 97 | 100 | 100 | — | — |
-| ggwave ultrasound-fast | 97 | 100 | 100 | 100 | — | — |
-| ggwave ultrasound-fastest | 100 | 100 | 100 | 100 | — | — |
-| ggwave audible-normal | 100 | 100 | 100 | 100 | — | — |
-| ggwave audible-fast | 93 | 100 | 100 | 100 | — | — |
-| ggwave audible-fastest | 97 | 100 | 100 | 100 | — | — |
-| ggwave dt-normal | 87 | 67 | 33 | 87 | — | — |
-| ggwave dt-fast | 90 | 73 | 63 | 77 | — | — |
-| ggwave dt-fastest | 100 | 100 | 97 | 100 | — | — |
+| bysound audible/normal | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound top/robust | 100 | 100 | 100 | 100 | exceeds 30 s cap | exceeds 30 s cap |
+| bysound high/robust | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound upper/robust | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| bysound mid/robust | 100 | 100 | 100 | 100 | 100 | exceeds 30 s cap |
+| ggwave ultrasound-normal | 100 | 97 | 100 | 100 | cannot send | cannot send |
+| ggwave ultrasound-fast | 97 | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave ultrasound-fastest | 100 | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave audible-normal | 100 | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave audible-fast | 93 | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave audible-fastest | 97 | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave dt-normal | 87 | 67 | 33 | 87 | cannot send | cannot send |
+| ggwave dt-fast | 90 | 73 | 63 | 77 | cannot send | cannot send |
+| ggwave dt-fastest | 100 | 100 | 97 | 100 | cannot send | cannot send |
 
 ## 5. Channel impairments — SNR90 (full-band dB, grid step 4), 32 B
 
@@ -305,7 +313,7 @@ Wrong payloads accepted during the transmission trials (any decoded payload that
 
 | system | trials | wrong payloads accepted |
 |---|---:|---:|
-| bysound | 88220 | 0 |
+| bysound | 87380 | 0 |
 | ggwave | 70290 | 349 |
 
 Noise only, no transmission (60 s segments at −20 dBFS RMS):
@@ -385,7 +393,6 @@ bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`by
 | 32 B | 0 / 300 | 1 | 0 |
 | 128 B | 0 / 300 | 2 | 0 |
 | 512 B | 0 / 300 | 1 | 0 |
-| 2048 B | 0 / 300 | 2 | 0 |
 
 ## Charts
 

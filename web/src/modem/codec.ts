@@ -1,7 +1,7 @@
 // v4 frames: packing, CRC, reference (fingerprint) and payload in blocks. Port of Codec.swift (ios/Sources/BySound) and its Kotlin counterpart (android/bysound).
 import { rsDecode, rsEncode } from './reedSolomon';
 import {
-  BANDS, BLOCK_BYTES, BLOCK_DATA, BLOCK_HEADER, BLOCK_PARITY, MAGIC_PAYLOAD, MAGIC_REFERENCE, MAX_BLOCKS, MOTHER_PARITY,
+  BANDS, BLOCK_BYTES, BLOCK_DATA, BLOCK_HEADER, BLOCK_PARITY, GAP_SECONDS, HEADER_BYTES, MAGIC_PAYLOAD, MAGIC_REFERENCE, MAX_BLOCKS, MAX_FRAME_SECONDS, MOTHER_PARITY,
   PREAMBLE, REF_BYTES, REF_DATA, REF_PARITY, hasRobust, headerBytes, inProfile, preambleSymbol, type Band, type BandId, type Profile,
 } from './protocol';
 
@@ -117,17 +117,56 @@ export function referenceFrame(fingerprint: number[], bandId: BandId, set = 0, p
   return frame(inProfile(BANDS[bandId], p), headerBytes(MAGIC_REFERENCE, REF_DATA, bandId, set, p), data.concat(parity));
 }
 
+/** Thrown when a payload does not fit in one transmission (`code` is 'TOO_LONG'). */
+export class TooLongError extends Error {
+  readonly code = 'TOO_LONG';
+  constructor(message: string) { super(message); this.name = 'TooLongError'; }
+}
+
+const US = (seconds: number) => Math.round(seconds * 1e6);
+
+/** Symbols (preamble + header + body) of a payload frame with `packed` packed bytes (before the CRC-32). */
+function payloadSymbols(groups: number, packed: number): number {
+  const len = packed + 4;
+  const total = Math.ceil(len / BLOCK_DATA);
+  const body = len + total * (BLOCK_HEADER + BLOCK_PARITY);
+  return PREAMBLE.length + Math.ceil((2 * HEADER_BYTES) / groups) + Math.ceil((2 * body) / groups);
+}
+
+/** Exact duration in microseconds of the transmission (frame + gap) of a payload with `packed` packed bytes. */
+const payloadMicros = (b: Band, packed: number) => payloadSymbols(b.groups, packed) * US(b.sym) + US(GAP_SECONDS);
+
+/**
+ * Largest packed payload (bytes after text packing, before the CRC-32) that fits in MAX_FRAME_SECONDS for the band and profile.
+ * ASCII letters pack 1:1 (so it is also the letter count); digit pairs pack 2:1.
+ */
+export function maxPayloadBytes(bandId: BandId, profile: Profile = 'normal'): number {
+  const b = inProfile(BANDS[bandId], profileOf(bandId, profile));
+  const cap = US(MAX_FRAME_SECONDS);
+  let lo = 0, hi = BLOCK_DATA * MAX_BLOCKS - 4;
+  if (payloadMicros(b, hi) <= cap) return hi;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (payloadMicros(b, mid) <= cap) lo = mid; else hi = mid;
+  }
+  return lo;
+}
+
 /** Payload frame: pack + CRC-32 in 48-byte blocks, each one RS([index, total] + data, 12). */
 export function payloadFrame(text: string, bandId: BandId, profile: Profile = 'normal'): Frame {
   const content = pack(text);
   const c = crc32(content);
   const data = content.concat([(c >>> 24) & 255, (c >>> 16) & 255, (c >>> 8) & 255, c & 255]);
   const total = Math.ceil(data.length / BLOCK_DATA);
-  if (total > MAX_BLOCKS) throw new Error('The data is too long to send by sound');
+  if (total > MAX_BLOCKS) throw new TooLongError('The data is too long to send by sound');
+  const p = profileOf(bandId, profile);
+  const b = inProfile(BANDS[bandId], p);
+  if (payloadMicros(b, content.length) > US(MAX_FRAME_SECONDS)) {
+    throw new TooLongError(`The data is too long: one transmission cannot last more than ${MAX_FRAME_SECONDS} s (maximum for ${bandId}/${p}: ${maxPayloadBytes(bandId, p)} packed bytes, you have ${content.length})`);
+  }
   const body: number[] = [];
   for (let b = 0; b < total; b++) body.push(...rsEncode([b, total].concat(data.slice(b * BLOCK_DATA, (b + 1) * BLOCK_DATA)), BLOCK_PARITY));
-  const p = profileOf(bandId, profile);
-  return frame(inProfile(BANDS[bandId], p), headerBytes(MAGIC_PAYLOAD, total, bandId, 0, p), body);
+  return frame(b, headerBytes(MAGIC_PAYLOAD, total, bandId, 0, p), body);
 }
 
 export interface Block { index: number; total: number; chunk: number[] }

@@ -12,6 +12,8 @@ export const SPACING_HZ = 46.875;
 export const TONES = 16;
 export const VERSION = 4;
 export const GAP_SECONDS = 0.35;
+/** Hard cap: one transmission (preamble + header + body + gap) never lasts longer than this. */
+export const MAX_FRAME_SECONDS = 30;
 export const RAMP_SECONDS = 0.003;
 export const HOP_SECONDS = 0.004;
 export const WINDOW_SECONDS = 1 / SPACING_HZ;

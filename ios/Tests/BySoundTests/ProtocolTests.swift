@@ -20,6 +20,32 @@ final class ProtocolTests: XCTestCase {
         XCTAssertEqual(checked, 22)
     }
 
+    func testMaxDurationCapMatchesJSON() throws {
+        let spec = try JSONSerialization.jsonObject(with: Data(contentsOf: Repo.url("protocol-v4.json"))) as! [String: Any]
+        XCTAssertEqual(Protocol.maxFrameSeconds, spec["maxFrameSeconds"] as? Int)
+        XCTAssertEqual(Protocol.gapSeconds, spec["gapSeconds"] as? Double)
+        XCTAssertEqual(Protocol.maxBlocks, spec["maxBlocks"] as? Int)
+    }
+
+    func testMaxDuration() throws {
+        for band in Band.allCases {
+            for profile in Profile.allCases where profile == .normal || band.hasRobust {
+                let m = Modem.maxPayloadBytes(band: band, profile: profile)
+                let ok = try Modem.frame(text: String(repeating: "a", count: m), band: band, profile: profile)
+                XCTAssertLessThanOrEqual(ok.frameSeconds + Protocol.gapSeconds, Double(Protocol.maxFrameSeconds) + 1e-9, "\(band) \(profile)")
+                XCTAssertThrowsError(try Modem.frame(text: String(repeating: "a", count: m + 1), band: band, profile: profile), "\(band) \(profile)") { e in
+                    guard case ModemError.exceedsMaxDuration(let n, let mx) = e else { return XCTFail("wrong error \(e)") }
+                    XCTAssertEqual(n, m + 1)
+                    XCTAssertEqual(mx, m)
+                }
+            }
+        }
+        XCTAssertEqual(Modem.maxPayloadBytes(band: .top), 700)
+        XCTAssertEqual(Modem.maxPayloadBytes(band: .top, profile: .robust), 335)
+        XCTAssertEqual(Modem.maxPayloadBytes(band: .high), 1052)
+        XCTAssertEqual(Modem.maxPayloadBytes(band: .wide), 2114)
+    }
+
     func testChecksums() {
         let s = Array("123456789".utf8)
         XCTAssertEqual(crc32(s), 0xcbf4_3926)

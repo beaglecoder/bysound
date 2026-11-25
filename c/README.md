@@ -30,17 +30,22 @@ build/bysound decode hello.wav
 `decode` reads 16-bit PCM WAV at 16000, 44100 or 48000 Hz (mono, or the first channel of a multichannel file), listens on every
 band that fits under Nyquist with both profiles, and feeds the streaming demodulator in 1024-sample chunks.
 
-| band | range (Hz) | tones | symbol | raw rate | robust |
-|---|---|---|---|---|---|
-| top | 18000-19453 | 32 | 32 ms | 250 bit/s | yes |
-| high | 17250-19453 | 48 | 32 ms | 375 bit/s | yes |
-| upper | 16500-18703 | 48 | 32 ms | 375 bit/s | yes |
-| mid | 15000-17203 | 48 | 32 ms | 375 bit/s | yes |
-| audible | 1875-4828 | 64 | 40 ms | 400 bit/s | no |
-| xhigh | 16500-19453 | 64 | 32 ms | 500 bit/s | no |
-| wide | 15000-19453 | 96 | 32 ms | 750 bit/s | no |
+| band | range (Hz) | tones | symbol | raw rate | robust | max text in 30 s (normal / robust) |
+|---|---|---|---|---|---|---|
+| top | 18000-19453 | 32 | 32 ms | 250 bit/s | yes | 700 / 335 |
+| high | 17250-19453 | 48 | 32 ms | 375 bit/s | yes | 1052 / 520 |
+| upper | 16500-18703 | 48 | 32 ms | 375 bit/s | yes | 1052 / 520 |
+| mid | 15000-17203 | 48 | 32 ms | 375 bit/s | yes | 1052 / 520 |
+| audible | 1875-4828 | 64 | 40 ms | 400 bit/s | no | 1122 / - |
+| xhigh | 16500-19453 | 64 | 32 ms | 500 bit/s | no | 1408 / - |
+| wide | 15000-19453 | 96 | 32 ms | 750 bit/s | no | 2114 / - |
 
 Raw rate is before preamble, header, Reed-Solomon and CRC overhead. Robust doubles the symbol time.
+
+**30 s cap.** One transmission (preamble + header + body + the 350 ms gap) never lasts more than `BYS_MAX_FRAME_SECONDS` (30 s, `maxFrameSeconds` in `protocol-v4.json`).
+`bys_frame_init_payload` and `bys_tx_init_payload` return `BYS_E_TOO_LONG` for a longer payload, and `bys_max_payload_bytes(band, profile)` gives the limit.
+The last column is in packed bytes: ASCII letters pack 1:1, so it is also the letter count; digit pairs pack 2:1, so a numeric text can be up to twice as long.
+`bysound bands` prints this column, and `bysound encode` names the limit for the band when the text is too long. The receiver is unchanged.
 
 ## Library API
 
