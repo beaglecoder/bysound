@@ -80,6 +80,19 @@ If two senders play at the same time, the receiver could pick up the wrong one. 
 | 👥 **Two senders at once** | If another device transmits at the same time, the receiver reports a *clash* instead of mixing them. | Not detected. |
 | 🎵 **Rides on music** | The message can play above a song and still decode ([try it](../README.md#music--hidden-message)). | Not measured for ggwave. |
 
+### From lab noise to real places
+
+The README describes the noise results with everyday places. This is how they map to what the benchmark actually simulated (32-byte message, success ≥ 90 %, full-band SNR; `×N` = noise power N times the message's power, i.e. 10^(−SNR/10)):
+
+| Place in the README | Simulated noise | bysound `top` | ggwave ultrasound fastest |
+|---|---|---|---|
+| Fan, hiss, static | white Gaussian noise | −14 dB (×25) | −8 dB (×6) |
+| Room with echo | two echo taps + white noise | −8 dB (×6); robust −12 dB (×16) | 0 dB (×1) |
+| Street, air conditioning | pink (1/f) noise | −20 dB (×100) | −16 dB (×40) |
+| Bar, people talking | babble-like noise (speech-shaped, synthetic) | −32 dB | −32 dB |
+
+These are analogies, not field measurements: real places also bring speaker and microphone limits, distance and reflections that the simulation does not model. See the paper's limitations section.
+
 ### The numbers
 
 Both libraries, unmodified, on the same simulated channel with the same seeds (158,510 trials, reproducible in [`bench/`](../bench)). They share the same idea: MFSK on an orthogonal 46.875 Hz grid.

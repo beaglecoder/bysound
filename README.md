@@ -37,12 +37,25 @@ Good for: pairing codes, links, payment references, Wi-Fi setup for IoT boards, 
 
 - ⚡ **More data in the same time:** on the same frequencies, **twice as much** in 5 seconds.
 - 🔇 **Or the same speed, unheard:** the `high` channel matches ggwave's speed at 17–19.5 kHz, where almost nobody hears it.
-- 🏠 **Better with noise and echo:** it reads messages in **8–12 dB more noise** when the room echoes.
-- 🧩 **Rebuilds damaged data:** doubtful bytes are marked and repaired, and repetitions add up.
-- ✅ **Never lies:** **0 wrong messages** in 88,220 tests. ggwave delivered 349.
-- 👥 **Notices a second sender** talking at the same time instead of mixing them up.
 
-ggwave still wins on CPU (14–42× lighter) and maturity. Everything was measured on the same simulated channel; the details, charts and caveats are in the **[paper](PAPER.md)** and **[how it works](docs/HOW-IT-WORKS.md#6-bysound-vs-ggwave-feature-by-feature)**.
+## Works in noisy places
+
+<img src="docs/assets/noise.svg" alt="How much louder than the message the noise can be, bysound vs ggwave" width="100%">
+
+- 🌬️ **Next to a fan or with static hiss:** still reads when the noise is **25×** stronger than the message. ggwave: 6×.
+- 🏠 **In a room with echo:** **6×** (16× with the robust profile). ggwave: only up to the message's own level.
+- 🚗 **Street noise, air conditioning:** **100×**. ggwave: 40×.
+- 🍻 **Bar, people talking:** both work. Voices live below 5 kHz and the message above 15 kHz.
+- 🎶 **Over music:** the message decodes on top of a song ([try it](#music--hidden-message)). A loud nightclub has not been tested yet.
+- 🧩 **Repairs damage:** doubtful bytes are marked and fixed, and if a noise burst ruins part of one repetition, the next one fills the gap.
+
+## Safe to trust
+
+- ✅ **Never a wrong message:** three checks before anything is accepted (header checksum, error correction in every block, checksum over the whole text). **0 wrong messages** in 88,220 tests. ggwave delivered **349**, some with no noise at all.
+- 👥 **Notices a second sender:** if two devices transmit at once, the receiver reports a *clash* instead of mixing them up.
+- 🔓 **Not secret:** anyone nearby can hear the sound, just like anyone can photograph a QR code. Don't send passwords in the clear; sign or encrypt in your app if it matters.
+
+ggwave still wins on CPU (14–42× lighter) and maturity. Everything above was measured on the same simulated channel. Details, charts and caveats: **[paper](PAPER.md)**, **[how it works](docs/HOW-IT-WORKS.md#6-bysound-vs-ggwave-feature-by-feature)**, **[benchmark](bench/README.md)**.
 
 ## Try it in one minute
 
