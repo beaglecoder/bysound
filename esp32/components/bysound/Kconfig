@@ -1,0 +1,2 @@
+# Demodulator options of the bysound library (defined in c/Kconfig).
+rsource "../../../c/Kconfig"

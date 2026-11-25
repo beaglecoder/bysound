@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="216" viewBox="0 0 900 216" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12">
+<title>Largest payload one transmission can carry</title>
+<text x="24" y="24" fill="#888888" font-size="15" font-weight="600">Largest payload one transmission can carry</text>
+<text x="24" y="44" fill="#888888">ASCII bytes accepted by the encoder (binary search); ggwave silently truncates beyond its limit</text>
+<line x1="250.0" x2="250.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="250.0" y="188" fill="#888888" text-anchor="middle">1</text>
+<line x1="362.0" x2="362.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="362.0" y="188" fill="#888888" text-anchor="middle">10</text>
+<line x1="474.0" x2="474.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="474.0" y="188" fill="#888888" text-anchor="middle">100</text>
+<line x1="586.0" x2="586.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="586.0" y="188" fill="#888888" text-anchor="middle">1,000</text>
+<line x1="698.0" x2="698.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="698.0" y="188" fill="#888888" text-anchor="middle">10,000</text>
+<line x1="810.0" x2="810.0" y1="58" y2="172" stroke="#888888" stroke-opacity="0.2"/>
+<text x="810.0" y="188" fill="#888888" text-anchor="middle">100,000</text>
+<text x="530.0" y="208" fill="#888888" text-anchor="middle">bytes (log scale)</text>
+<text x="240" y="76.0" fill="#888888" text-anchor="end" dominant-baseline="middle">bysound (any channel/profile)</text>
+<path d="M250 64 H703.8 a4 4 0 0 1 4 4 V84.0 a4 4 0 0 1 -4 4 H250 Z" fill="#3987e5"><title>bysound (any channel/profile): 12,236 bytes</title></path>
+<text x="715.8" y="76.0" fill="#888888" dominant-baseline="middle">12,236 B</text>
+<text x="240" y="110.0" fill="#888888" text-anchor="end" dominant-baseline="middle">ggwave, variable length</text>
+<path d="M250 98 H486.4 a4 4 0 0 1 4 4 V118.0 a4 4 0 0 1 -4 4 H250 Z" fill="#d95926"><title>ggwave, variable length: 140 bytes</title></path>
+<text x="498.4" y="110.0" fill="#888888" dominant-baseline="middle">140 B</text>
+<text x="240" y="144.0" fill="#888888" text-anchor="end" dominant-baseline="middle">ggwave, fixed length</text>
+<path d="M250 132 H448.3 a4 4 0 0 1 4 4 V152.0 a4 4 0 0 1 -4 4 H250 Z" fill="#199e70"><title>ggwave, fixed length: 64 bytes</title></path>
+<text x="460.3" y="144.0" fill="#888888" dominant-baseline="middle">64 B</text>
+</svg>

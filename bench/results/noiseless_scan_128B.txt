@@ -1,0 +1,20 @@
+bysound top/normal           128 B: 4 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 50 225 261 264
+bysound high/normal          128 B: 3 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 42 261 264
+bysound upper/normal         128 B: 2 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264
+bysound mid/normal           128 B: 2 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264
+bysound audible/normal       128 B: 2 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264
+bysound xhigh/normal         128 B: 2 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264
+bysound wide/normal          128 B: 2 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264
+bysound top/robust           128 B: 7 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 56 84 99 216 220 261 264
+bysound high/robust          128 B: 4 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 93 241 261 264
+bysound upper/robust         128 B: 4 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 243 261 264 279
+bysound mid/robust           128 B: 3 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 261 264 277
+ggwave audible-normal      128 B: 1 of 300 payloads not delivered without noise, 0 wrong payloads accepted; trials: 47
+ggwave audible-fast        128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave audible-fastest     128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave ultrasound-normal   128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave ultrasound-fast     128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave ultrasound-fastest  128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-normal           128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fast             128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fastest          128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted

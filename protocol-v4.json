@@ -1,0 +1,115 @@
+{
+  "name": "bysound v4",
+  "version": 4,
+  "spacingHz": 46.875,
+  "tonesPerGroup": 16,
+  "rampSeconds": 0.003,
+  "gapSeconds": 0.35,
+  "hopSeconds": 0.004,
+  "preambleThreshold": 0.32,
+  "headerBytes": 4,
+  "magicPayload": 86,
+  "magicAck": 65,
+  "magicReference": 82,
+  "magicRisk": 88,
+  "referenceBytes": 12,
+  "referenceDataBytes": 14,
+  "referenceParity": 16,
+  "motherParity": 32,
+  "blockData": 48,
+  "blockParity": 12,
+  "blockHeader": 2,
+  "maxBlocks": 255,
+  "riskLength": 10,
+  "riskParity": 8,
+  "riskMaxHops": 2,
+  "ackLength": 7,
+  "ackParity": 8,
+  "preamble": [
+    [0, 8, 4, 12],
+    [15, 7, 11, 3],
+    [2, 10, 6, 14],
+    [13, 5, 9, 1],
+    [4, 12, 0, 8],
+    [11, 3, 15, 7],
+    [6, 14, 2, 10],
+    [9, 1, 13, 5]
+  ],
+  "channelIds": {
+    "top": 0,
+    "high": 1,
+    "upper": 2,
+    "mid": 3,
+    "audible": 4,
+    "xhigh": 5,
+    "wide": 6
+  },
+  "preambleKeys": {
+    "normal": {
+      "top": [0, 3],
+      "high": [3, 9],
+      "upper": [2, 14],
+      "mid": [1, 13],
+      "audible": [0, 0],
+      "xhigh": [1, 5],
+      "wide": [3, 14]
+    },
+    "robust": {
+      "top": [1, 13],
+      "high": [3, 11],
+      "upper": [0, 8],
+      "mid": [2, 9]
+    }
+  },
+  "bands": {
+    "top": {
+      "bin": 384,
+      "groups": 2,
+      "toneAmplitude": 0.3,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    },
+    "high": {
+      "bin": 368,
+      "groups": 3,
+      "toneAmplitude": 0.3,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    },
+    "upper": {
+      "bin": 352,
+      "groups": 3,
+      "toneAmplitude": 0.3,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    },
+    "mid": {
+      "bin": 320,
+      "groups": 3,
+      "toneAmplitude": 0.3,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    },
+    "audible": {
+      "bin": 40,
+      "groups": 4,
+      "toneAmplitude": 0.2,
+      "symbolSeconds": 0.04,
+      "windowStartSeconds": 0.005
+    },
+    "xhigh": {
+      "bin": 352,
+      "groups": 4,
+      "toneAmplitude": 0.25,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    },
+    "wide": {
+      "bin": 320,
+      "groups": 6,
+      "toneAmplitude": 0.2,
+      "symbolSeconds": 0.032,
+      "windowStartSeconds": 0.004
+    }
+  }
+}

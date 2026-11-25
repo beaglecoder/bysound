@@ -1,0 +1,103 @@
+menu "bysound demo"
+
+    choice BYSOUND_DEMO_BAND
+        prompt "Band"
+        default BYSOUND_DEMO_BAND_TOP
+        help
+            Band used to send and listen. "top" (18-19.5 kHz) is nearly inaudible. Run `bysound bands` on the host for the table.
+        config BYSOUND_DEMO_BAND_TOP
+            bool "top (18.0-19.5 kHz, 250 bit/s)"
+        config BYSOUND_DEMO_BAND_HIGH
+            bool "high (17.2-19.5 kHz, 375 bit/s)"
+        config BYSOUND_DEMO_BAND_UPPER
+            bool "upper (16.5-18.7 kHz, 375 bit/s)"
+        config BYSOUND_DEMO_BAND_MID
+            bool "mid (15.0-17.2 kHz, 375 bit/s)"
+        config BYSOUND_DEMO_BAND_AUDIBLE
+            bool "audible (1.9-4.8 kHz, 400 bit/s, needs ~10 KB more RAM)"
+            select BYSOUND_DEMOD_LOW_BANK
+        config BYSOUND_DEMO_BAND_XHIGH
+            bool "xhigh (16.5-19.5 kHz, 500 bit/s)"
+        config BYSOUND_DEMO_BAND_WIDE
+            bool "wide (15.0-19.5 kHz, 750 bit/s)"
+    endchoice
+
+    config BYSOUND_DEMO_BAND
+        int
+        default 0 if BYSOUND_DEMO_BAND_TOP
+        default 1 if BYSOUND_DEMO_BAND_HIGH
+        default 2 if BYSOUND_DEMO_BAND_UPPER
+        default 3 if BYSOUND_DEMO_BAND_MID
+        default 4 if BYSOUND_DEMO_BAND_AUDIBLE
+        default 5 if BYSOUND_DEMO_BAND_XHIGH
+        default 6 if BYSOUND_DEMO_BAND_WIDE
+
+    config BYSOUND_DEMO_PROFILE_ROBUST
+        bool "Robust profile (twice the symbol time; only top, high, upper and mid)"
+        default n
+        depends on BYSOUND_DEMO_BAND_TOP || BYSOUND_DEMO_BAND_HIGH || BYSOUND_DEMO_BAND_UPPER || BYSOUND_DEMO_BAND_MID
+        select BYSOUND_DEMOD_ROBUST
+        help
+            Slower but more tolerant of noise. Costs ~20 KB more demodulator state.
+
+    config BYSOUND_DEMO_TEXT
+        string "Text sent when the button is pressed"
+        default "hello from esp32"
+
+    config BYSOUND_DEMO_REPEAT
+        int "Times the text is sent per button press"
+        default 3
+        range 1 10
+
+    config BYSOUND_DEMO_TX_LEVEL
+        int "Output level (percent of full scale)"
+        default 100
+        range 1 100
+        help
+            The modem is meant to run at full scale; lower this only if your amplifier clips.
+
+    config BYSOUND_DEMO_MIC_GAIN_SHIFT
+        int "Digital microphone gain (left shift, 2^n)"
+        default 2
+        range 0 6
+        help
+            The INMP441 is quiet at 18 kHz. The 16 top bits of its 24-bit sample are multiplied by 2^n (with saturation).
+
+    config BYSOUND_DEMO_RX_MAX_BYTES
+        int "Largest received payload (packed bytes)"
+        default 1024
+        range 48 12244
+        help
+            Size of the buffer handed to the demodulator. A frame that does not fit is dropped.
+
+    config BYSOUND_DEMO_BUTTON_GPIO
+        int "Button GPIO (active low)"
+        default 0
+        help
+            GPIO0 is the BOOT button on most ESP32-S3 dev boards.
+
+    menu "Microphone (INMP441, I2S port 1)"
+        config BYSOUND_DEMO_MIC_BCLK
+            int "SCK (bit clock) GPIO"
+            default 4
+        config BYSOUND_DEMO_MIC_WS
+            int "WS (word select) GPIO"
+            default 5
+        config BYSOUND_DEMO_MIC_SD
+            int "SD (data out of the microphone) GPIO"
+            default 6
+    endmenu
+
+    menu "Amplifier (MAX98357A, I2S port 0)"
+        config BYSOUND_DEMO_SPK_BCLK
+            int "BCLK GPIO"
+            default 15
+        config BYSOUND_DEMO_SPK_WS
+            int "LRC (word select) GPIO"
+            default 16
+        config BYSOUND_DEMO_SPK_DIN
+            int "DIN (data into the amplifier) GPIO"
+            default 17
+    endmenu
+
+endmenu

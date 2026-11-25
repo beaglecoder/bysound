@@ -1,0 +1,21 @@
+{
+  "name": "bysound",
+  "version": "0.1.0",
+  "description": "bysound v4: send text over sound (near-inaudible multi-tone FSK) in the browser.",
+  "license": "MIT",
+  "private": false,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.10",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.2"
+  }
+}

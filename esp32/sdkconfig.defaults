@@ -1,0 +1,10 @@
+# Generic ESP32-S3 module (no PSRAM needed: the demodulator state is ~46 KB of internal RAM).
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y
+CONFIG_COMPILER_OPTIMIZATION_PERF=y
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# Demodulator: FFT float32 engine, one profile, one rate, no audible bank (smallest state). Enable
+# BYSOUND_DEMO_PROFILE_ROBUST or BYSOUND_DEMO_BAND_AUDIBLE in menuconfig and the matching options are selected for you.
+CONFIG_BYSOUND_DEMOD_ENGINE_FFT=y
+CONFIG_BYSOUND_DEMOD_MAX_RATE=48000

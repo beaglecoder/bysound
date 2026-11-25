@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12">
+<title>bysound robust profile</title>
+<text x="64" y="24" fill="#888888" font-size="15" font-weight="600">bysound robust profile</text>
+<text x="64" y="44" fill="#888888" font-size="12">32-byte ASCII payload, AWGN, 48 kHz, 1 transmission, 50 trials per point</text>
+<line x1="64" x2="700" y1="418.0" y2="418.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="418.0" fill="#888888" text-anchor="end" dominant-baseline="middle">0%</text>
+<line x1="64" x2="700" y1="330.5" y2="330.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="330.5" fill="#888888" text-anchor="end" dominant-baseline="middle">25%</text>
+<line x1="64" x2="700" y1="243.0" y2="243.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="243.0" fill="#888888" text-anchor="end" dominant-baseline="middle">50%</text>
+<line x1="64" x2="700" y1="155.5" y2="155.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="155.5" fill="#888888" text-anchor="end" dominant-baseline="middle">75%</text>
+<line x1="64" x2="700" y1="68.0" y2="68.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="68.0" fill="#888888" text-anchor="end" dominant-baseline="middle">100%</text>
+<line x1="64.0" x2="64.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="64.0" y="436" fill="#888888" text-anchor="middle">-36</text>
+<line x1="127.6" x2="127.6" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="127.6" y="436" fill="#888888" text-anchor="middle">-32</text>
+<line x1="191.2" x2="191.2" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="191.2" y="436" fill="#888888" text-anchor="middle">-28</text>
+<line x1="254.8" x2="254.8" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="254.8" y="436" fill="#888888" text-anchor="middle">-24</text>
+<line x1="318.4" x2="318.4" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="318.4" y="436" fill="#888888" text-anchor="middle">-20</text>
+<line x1="382.0" x2="382.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="382.0" y="436" fill="#888888" text-anchor="middle">-16</text>
+<line x1="445.6" x2="445.6" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="445.6" y="436" fill="#888888" text-anchor="middle">-12</text>
+<line x1="509.2" x2="509.2" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="509.2" y="436" fill="#888888" text-anchor="middle">-8</text>
+<line x1="572.8" x2="572.8" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="572.8" y="436" fill="#888888" text-anchor="middle">-4</text>
+<line x1="636.4" x2="636.4" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="636.4" y="436" fill="#888888" text-anchor="middle">0</text>
+<line x1="700.0" x2="700.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="700.0" y="436" fill="#888888" text-anchor="middle">4</text>
+<line x1="64" x2="700" y1="418" y2="418" stroke="#888888" stroke-opacity="0.6" stroke-width="1"/>
+<text x="382.0" y="460" fill="#888888" text-anchor="middle">SNR (dB): sound-on signal power / white-noise power in 0–24 kHz</text>
+<text transform="translate(16 243.0) rotate(-90)" fill="#888888" text-anchor="middle">exact payload decoded (%)</text>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 362.0 L382.0 68.0 L413.8 68.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 82.0 L572.8 82.0 L604.6 82.0 L636.4 82.0 L668.2 82.0 L700.0 82.0" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -20 → 0%</title></circle>
+<circle cx="350.2" cy="362.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -18 → 16%</title></circle>
+<circle cx="382.0" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -16 → 100%</title></circle>
+<circle cx="413.8" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -14 → 100%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -8 → 100%</title></circle>
+<circle cx="541.0" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -6 → 96%</title></circle>
+<circle cx="572.8" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -4 → 96%</title></circle>
+<circle cx="604.6" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: -2 → 96%</title></circle>
+<circle cx="636.4" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: 0 → 96%</title></circle>
+<circle cx="668.2" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: 2 → 96%</title></circle>
+<circle cx="700.0" cy="82.0" r="3.5" fill="#3987e5"><title>bysound top/robust: 4 → 96%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 243.0 L413.8 68.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -18 → 0%</title></circle>
+<circle cx="382.0" cy="243.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -16 → 50%</title></circle>
+<circle cx="413.8" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -14 → 100%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/robust: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 278.0 L413.8 68.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/robust: -18 → 0%</title></circle>
+<circle cx="382.0" cy="278.0" r="3.5" fill="#199e70"><title>bysound high/robust: -16 → 40%</title></circle>
+<circle cx="413.8" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -14 → 100%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/robust: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 299.0 L413.8 68.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -18 → 0%</title></circle>
+<circle cx="382.0" cy="299.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -16 → 34%</title></circle>
+<circle cx="413.8" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -14 → 100%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#c98500"><title>bysound mid/robust: 4 → 100%</title></circle>
+<line x1="718" x2="744" y1="74" y2="74" stroke="#3987e5" stroke-width="2"/>
+<circle cx="731" cy="74" r="3.5" fill="#3987e5"/>
+<text x="752" y="74" fill="#888888" dominant-baseline="middle">bysound top/robust</text>
+<line x1="718" x2="744" y1="96" y2="96" stroke="#d95926" stroke-width="2"/>
+<circle cx="731" cy="96" r="3.5" fill="#d95926"/>
+<text x="752" y="96" fill="#888888" dominant-baseline="middle">bysound upper/robust</text>
+<line x1="718" x2="744" y1="118" y2="118" stroke="#199e70" stroke-width="2"/>
+<circle cx="731" cy="118" r="3.5" fill="#199e70"/>
+<text x="752" y="118" fill="#888888" dominant-baseline="middle">bysound high/robust</text>
+<line x1="718" x2="744" y1="140" y2="140" stroke="#c98500" stroke-width="2"/>
+<circle cx="731" cy="140" r="3.5" fill="#c98500"/>
+<text x="752" y="140" fill="#888888" dominant-baseline="middle">bysound mid/robust</text>
+</svg>

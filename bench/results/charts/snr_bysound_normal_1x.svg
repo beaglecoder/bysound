@@ -1,0 +1,215 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="470" viewBox="0 0 1000 470" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12">
+<title>bysound normal profile, every channel</title>
+<text x="64" y="24" fill="#888888" font-size="15" font-weight="600">bysound normal profile, every channel</text>
+<text x="64" y="44" fill="#888888" font-size="12">32-byte ASCII payload, AWGN, 48 kHz, 1 transmission, 50 trials per point</text>
+<line x1="64" x2="700" y1="418.0" y2="418.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="418.0" fill="#888888" text-anchor="end" dominant-baseline="middle">0%</text>
+<line x1="64" x2="700" y1="330.5" y2="330.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="330.5" fill="#888888" text-anchor="end" dominant-baseline="middle">25%</text>
+<line x1="64" x2="700" y1="243.0" y2="243.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="243.0" fill="#888888" text-anchor="end" dominant-baseline="middle">50%</text>
+<line x1="64" x2="700" y1="155.5" y2="155.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="155.5" fill="#888888" text-anchor="end" dominant-baseline="middle">75%</text>
+<line x1="64" x2="700" y1="68.0" y2="68.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="68.0" fill="#888888" text-anchor="end" dominant-baseline="middle">100%</text>
+<line x1="64.0" x2="64.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="64.0" y="436" fill="#888888" text-anchor="middle">-36</text>
+<line x1="127.6" x2="127.6" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="127.6" y="436" fill="#888888" text-anchor="middle">-32</text>
+<line x1="191.2" x2="191.2" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="191.2" y="436" fill="#888888" text-anchor="middle">-28</text>
+<line x1="254.8" x2="254.8" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="254.8" y="436" fill="#888888" text-anchor="middle">-24</text>
+<line x1="318.4" x2="318.4" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="318.4" y="436" fill="#888888" text-anchor="middle">-20</text>
+<line x1="382.0" x2="382.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="382.0" y="436" fill="#888888" text-anchor="middle">-16</text>
+<line x1="445.6" x2="445.6" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="445.6" y="436" fill="#888888" text-anchor="middle">-12</text>
+<line x1="509.2" x2="509.2" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="509.2" y="436" fill="#888888" text-anchor="middle">-8</text>
+<line x1="572.8" x2="572.8" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="572.8" y="436" fill="#888888" text-anchor="middle">-4</text>
+<line x1="636.4" x2="636.4" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="636.4" y="436" fill="#888888" text-anchor="middle">0</text>
+<line x1="700.0" x2="700.0" y1="68" y2="418" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="700.0" y="436" fill="#888888" text-anchor="middle">4</text>
+<line x1="64" x2="700" y1="418" y2="418" stroke="#888888" stroke-opacity="0.6" stroke-width="1"/>
+<text x="382.0" y="460" fill="#888888" text-anchor="middle">SNR (dB): sound-on signal power / white-noise power in 0–24 kHz</text>
+<text transform="translate(16 243.0) rotate(-90)" fill="#888888" text-anchor="middle">exact payload decoded (%)</text>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 404.0 L413.8 75.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="404.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -16 → 4%</title></circle>
+<circle cx="413.8" cy="75.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -14 → 98%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 397.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="397.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -14 → 6%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#d95926"><title>bysound upper/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 383.0 L445.6 82.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="383.0" r="3.5" fill="#199e70"><title>bysound high/normal: -14 → 10%</title></circle>
+<circle cx="445.6" cy="82.0" r="3.5" fill="#199e70"><title>bysound high/normal: -12 → 96%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 418.0 L445.6 201.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="418.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -14 → 0%</title></circle>
+<circle cx="445.6" cy="201.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -12 → 62%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#c98500"><title>bysound xhigh/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 404.0 L445.6 68.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#d55181" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="404.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -14 → 4%</title></circle>
+<circle cx="445.6" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -12 → 100%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#d55181"><title>bysound mid/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 418.0 L445.6 285.0 L477.4 68.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -14 → 0%</title></circle>
+<circle cx="445.6" cy="285.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -12 → 38%</title></circle>
+<circle cx="477.4" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound audible/normal: 4 → 100%</title></circle>
+<path d="M64.0 418.0 L95.8 418.0 L127.6 418.0 L159.4 418.0 L191.2 418.0 L223.0 418.0 L254.8 418.0 L286.6 418.0 L318.4 418.0 L350.2 418.0 L382.0 418.0 L413.8 418.0 L445.6 418.0 L477.4 152.0 L509.2 68.0 L541.0 68.0 L572.8 68.0 L604.6 68.0 L636.4 68.0 L668.2 68.0 L700.0 68.0" fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -16 → 0%</title></circle>
+<circle cx="413.8" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -14 → 0%</title></circle>
+<circle cx="445.6" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -12 → 0%</title></circle>
+<circle cx="477.4" cy="152.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -10 → 76%</title></circle>
+<circle cx="509.2" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: 4 → 100%</title></circle>
+<line x1="718" x2="744" y1="74" y2="74" stroke="#3987e5" stroke-width="2"/>
+<circle cx="731" cy="74" r="3.5" fill="#3987e5"/>
+<text x="752" y="74" fill="#888888" dominant-baseline="middle">bysound top/normal</text>
+<line x1="718" x2="744" y1="96" y2="96" stroke="#d95926" stroke-width="2"/>
+<circle cx="731" cy="96" r="3.5" fill="#d95926"/>
+<text x="752" y="96" fill="#888888" dominant-baseline="middle">bysound upper/normal</text>
+<line x1="718" x2="744" y1="118" y2="118" stroke="#199e70" stroke-width="2"/>
+<circle cx="731" cy="118" r="3.5" fill="#199e70"/>
+<text x="752" y="118" fill="#888888" dominant-baseline="middle">bysound high/normal</text>
+<line x1="718" x2="744" y1="140" y2="140" stroke="#c98500" stroke-width="2"/>
+<circle cx="731" cy="140" r="3.5" fill="#c98500"/>
+<text x="752" y="140" fill="#888888" dominant-baseline="middle">bysound xhigh/normal</text>
+<line x1="718" x2="744" y1="162" y2="162" stroke="#d55181" stroke-width="2"/>
+<circle cx="731" cy="162" r="3.5" fill="#d55181"/>
+<text x="752" y="162" fill="#888888" dominant-baseline="middle">bysound mid/normal</text>
+<line x1="718" x2="744" y1="184" y2="184" stroke="#0ca30c" stroke-width="2"/>
+<circle cx="731" cy="184" r="3.5" fill="#0ca30c"/>
+<text x="752" y="184" fill="#888888" dominant-baseline="middle">bysound audible/normal</text>
+<line x1="718" x2="744" y1="206" y2="206" stroke="#9085e9" stroke-width="2"/>
+<circle cx="731" cy="206" r="3.5" fill="#9085e9"/>
+<text x="752" y="206" fill="#888888" dominant-baseline="middle">bysound wide/normal</text>
+</svg>

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Transfer by Sound</title>
+  <link rel="stylesheet" href="./demo/style.css">
+</head>
+<body>
+  <main>
+    <h1>Transfer by Sound</h1>
+    <p class="lead">Send text through the speaker, receive it with the microphone. Turn the volume up and use the speaker.</p>
+
+    <textarea id="text" rows="3" maxlength="2000" aria-label="Text to send">Hello from sound</textarea>
+    <label>Band
+      <select id="band">
+        <option value="top" selected>top (18.0–19.5 kHz, near inaudible)</option>
+        <option value="high">high (17.3–19.5 kHz)</option>
+        <option value="upper">upper (16.5–18.7 kHz)</option>
+        <option value="mid">mid (15.0–17.2 kHz)</option>
+        <option value="audible">audible (1.9–4.8 kHz)</option>
+      </select>
+    </label>
+    <div class="row">
+      <button id="send">Send</button>
+      <button id="listen">Listen</button>
+    </div>
+    <div class="meter" aria-label="Input level"><div id="level"></div></div>
+    <p id="status" role="status"></p>
+
+    <h2>Received</h2>
+    <ul id="received"><li class="empty">Nothing yet</li></ul>
+  </main>
+  <script type="module" src="./demo/main.ts"></script>
+</body>
+</html>

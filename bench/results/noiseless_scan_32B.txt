@@ -1,0 +1,20 @@
+bysound top/normal           32 B: 8 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 149 164 229 268 314 423 446 493
+bysound high/normal          32 B: 5 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 25 125 268 413 449
+bysound upper/normal         32 B: 2 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 92 268
+bysound mid/normal           32 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 146 268 314
+bysound audible/normal       32 B: 1 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 268
+bysound xhigh/normal         32 B: 1 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 268
+bysound wide/normal          32 B: 1 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 268
+bysound top/robust           32 B: 15 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 4 37 114 132 179 238 267 268 294 347 369 383 398 431 499
+bysound high/robust          32 B: 2 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 268 275
+bysound upper/robust         32 B: 1 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 268
+bysound mid/robust           32 B: 5 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 122 268 346 358 494
+ggwave audible-normal      32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave audible-fast        32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave audible-fastest     32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave ultrasound-normal   32 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 94 368 422
+ggwave ultrasound-fast     32 B: 1 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 94
+ggwave ultrasound-fastest  32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-normal           32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fast             32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fastest          32 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted

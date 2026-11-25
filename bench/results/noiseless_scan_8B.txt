@@ -1,0 +1,20 @@
+bysound top/normal           8 B: 5 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 381 428 438 463 488
+bysound high/normal          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound upper/normal         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound mid/normal           8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound audible/normal       8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound xhigh/normal         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound wide/normal          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound top/robust           8 B: 6 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 147 349 427 428 463 488
+bysound high/robust          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound upper/robust         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound mid/robust           8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+ggwave audible-normal      8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave audible-fast        8 B: 14 of 500 payloads not delivered without noise, 14 wrong payloads accepted; trials: 37 91 119 120 188 211 286 315 329 373 415 451 477 480
+ggwave audible-fastest     8 B: 21 of 500 payloads not delivered without noise, 21 wrong payloads accepted; trials: 39 45 99 111 170 186 203 220 222 287 299 300 316 325 326 329
+ggwave ultrasound-normal   8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave ultrasound-fast     8 B: 11 of 500 payloads not delivered without noise, 11 wrong payloads accepted; trials: 50 78 91 211 267 284 286 315 406 415 477
+ggwave ultrasound-fastest  8 B: 21 of 500 payloads not delivered without noise, 21 wrong payloads accepted; trials: 39 61 87 99 105 111 114 139 151 186 203 218 220 246 256 268
+ggwave dt-normal           8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fast             8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fastest          8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted

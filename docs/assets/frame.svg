@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 290" width="820" height="290" role="img" aria-labelledby="t d">
+<title id="t">bysound v4 frame anatomy</title>
+<desc id="d">Frame anatomy: preamble, 4-byte header, Reed-Solomon protected data blocks, and the silent gap before the next repetition.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#8b949e} .b{font-weight:600} @media (prefers-reduced-motion: reduce){*{animation:none!important}}</style>
+<defs><linearGradient id="sw" x1="0" x2="1"><stop offset="0" stop-color="#4c8dd6" stop-opacity="0"/><stop offset="0.5" stop-color="#4c8dd6" stop-opacity="0.35"/><stop offset="1" stop-color="#4c8dd6" stop-opacity="0"/></linearGradient><pattern id="hz" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#8b949e" fill-opacity="0.08"/><line x1="0" y1="0" x2="0" y2="6" stroke="#8b949e" stroke-opacity="0.45" stroke-width="2"/></pattern></defs>
+<rect x="30.0" y="70" width="100.0" height="46" rx="5" fill="#a371f7" fill-opacity="0.22" stroke="#a371f7" stroke-width="1.5"/>
+<text x="80.0" y="90" font-size="13" text-anchor="middle" class="b" style="fill:#a371f7">preamble</text><text x="80.0" y="106" font-size="11" text-anchor="middle">8 symbols</text>
+<rect x="134.0" y="70" width="70.0" height="46" rx="5" fill="#e8913a" fill-opacity="0.22" stroke="#e8913a" stroke-width="1.5"/>
+<text x="169.0" y="90" font-size="13" text-anchor="middle" class="b" style="fill:#e8913a">header</text><text x="169.0" y="106" font-size="11" text-anchor="middle">4 bytes</text>
+<rect x="208.0" y="70" width="9.7" height="46" rx="5" fill="#d29922" fill-opacity="0.5" stroke="#d29922" stroke-width="1.5"/>
+<rect x="217.7" y="70" width="136.8" height="46" rx="5" fill="#26a69a" fill-opacity="0.22" stroke="#26a69a" stroke-width="1.5"/>
+<rect x="354.5" y="70" width="34.2" height="46" rx="5" fill="#4c8dd6" fill-opacity="0.45" stroke="#4c8dd6" stroke-width="1.5"/>
+<text x="298.4" y="132" font-size="11.5" text-anchor="middle">block 0</text>
+<rect x="392.7" y="70" width="9.7" height="46" rx="5" fill="#d29922" fill-opacity="0.5" stroke="#d29922" stroke-width="1.5"/>
+<rect x="402.4" y="70" width="136.8" height="46" rx="5" fill="#26a69a" fill-opacity="0.22" stroke="#26a69a" stroke-width="1.5"/>
+<rect x="539.2" y="70" width="34.2" height="46" rx="5" fill="#4c8dd6" fill-opacity="0.45" stroke="#4c8dd6" stroke-width="1.5"/>
+<text x="483.0" y="132" font-size="11.5" text-anchor="middle">block 1</text>
+<rect x="577.4" y="70" width="9.7" height="46" rx="5" fill="#d29922" fill-opacity="0.5" stroke="#d29922" stroke-width="1.5"/>
+<rect x="587.1" y="70" width="45.6" height="46" rx="5" fill="#26a69a" fill-opacity="0.22" stroke="#26a69a" stroke-width="1.5"/>
+<rect x="632.7" y="70" width="11.4" height="46" rx="5" fill="#3fb950" fill-opacity="0.55" stroke="#3fb950" stroke-width="1.5"/>
+<rect x="644.1" y="70" width="34.2" height="46" rx="5" fill="#4c8dd6" fill-opacity="0.45" stroke="#4c8dd6" stroke-width="1.5"/>
+<text x="627.9" y="132" font-size="11.5" text-anchor="middle">block 2 (last)</text>
+<path d="M208.0 60 V54 H678.3 V60" fill="none" stroke="#26a69a" stroke-width="1.5"/><text x="445.1" y="48" font-size="12.5" text-anchor="middle" class="b" style="fill:#26a69a">body · 158 bytes in this example</text>
+<rect x="682.3" y="70" width="107.7" height="46" rx="5" fill="url(#hz)" stroke="#8b949e" stroke-dasharray="4 3"/><text x="736.1" y="90" font-size="13" text-anchor="middle" class="b">gap</text><text x="736.1" y="106" font-size="11" text-anchor="middle">350 ms</text>
+<text x="30" y="48" font-size="12.5" class="b">one repetition (“lap”)</text>
+<rect y="64" height="58" width="90" fill="url(#sw)" x="-90"><animate attributeName="x" values="-90;800" dur="4.5s" repeatCount="indefinite"/></rect>
+<rect x="30" y="172" width="14" height="14" rx="3" fill="#d29922" fill-opacity="0.5" stroke="#d29922"/><text x="50" y="183.5" font-size="12">block index, block count (2 B)</text>
+<rect x="236" y="172" width="14" height="14" rx="3" fill="#26a69a" fill-opacity="0.22" stroke="#26a69a"/><text x="256" y="183.5" font-size="12">packed text (≤ 48 B per block)</text>
+<rect x="444" y="172" width="14" height="14" rx="3" fill="#3fb950" fill-opacity="0.55" stroke="#3fb950"/><text x="464" y="183.5" font-size="12">CRC-32 (4 B, end of data)</text>
+<rect x="622" y="172" width="14" height="14" rx="3" fill="#4c8dd6" fill-opacity="0.45" stroke="#4c8dd6"/><text x="642" y="183.5" font-size="12">Reed–Solomon parity (12 B)</text>
+<text x="30" y="212" font-size="12.5" class="b" style="fill:#e8913a">header</text><rect x="90" y="198" width="84.0" height="20" rx="4" fill="#e8913a" fill-opacity="0.15" stroke="#e8913a"/><text x="132.0" y="212" font-size="11.5" text-anchor="middle">magic 0x56</text><rect x="180.0" y="198" width="110.4" height="20" rx="4" fill="#e8913a" fill-opacity="0.15" stroke="#e8913a"/><text x="235.2" y="212" font-size="11.5" text-anchor="middle">blocks (1–255)</text><rect x="296.4" y="198" width="97.2" height="20" rx="4" fill="#e8913a" fill-opacity="0.15" stroke="#e8913a"/><text x="345.0" y="212" font-size="11.5" text-anchor="middle">CRC-8 (0x2F)</text><rect x="399.59999999999997" y="198" width="169.8" height="20" rx="4" fill="#e8913a" fill-opacity="0.15" stroke="#e8913a"/><text x="484.5" y="212" font-size="11.5" text-anchor="middle">version · channel · set</text>
+<text x="30" y="242" font-size="12.5" class="b" style="fill:#26a69a">block</text><text x="90" y="242" font-size="12">RS(62,50) over GF(256): 2 + 48 + 12 = 62 bytes; the last block is shorter (2 + n + 12).</text>
+<text x="30" y="268" font-size="11">Not to scale. Example: test vector “ejemplo”, payload, band mid — 8 + 3 + 106 symbols × 32 ms = 3.744 s, then 0.35 s of silence.</text>
+</svg>

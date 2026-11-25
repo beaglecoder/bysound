@@ -1,0 +1,23 @@
+menu "bysound"
+    choice BYSOUND_DEMOD_ENGINE
+        prompt "Demodulator per-tone energy engine"
+        default BYSOUND_DEMOD_ENGINE_FFT if IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32 || IDF_TARGET_ESP32P4
+        default BYSOUND_DEMOD_ENGINE_GOERTZEL
+        help
+            float32 FFT (chips with an FPU: ESP32-S3, ESP32, P4) or fixed-point Goertzel (C3, C6, S2, H2: no FPU).
+        config BYSOUND_DEMOD_ENGINE_FFT
+            bool "float32 FFT"
+        config BYSOUND_DEMOD_ENGINE_GOERTZEL
+            bool "Integer Goertzel"
+    endchoice
+    config BYSOUND_DEMOD_ROBUST
+        bool "Demodulator supports the robust profile (double window, about 20 KB more state)"
+        default n
+    config BYSOUND_DEMOD_LOW_BANK
+        bool "Demodulator supports the audible band (64 more history bins, about 10 KB more)"
+        default n
+    config BYSOUND_DEMOD_MAX_RATE
+        int "Maximum demodulator sample rate (Hz)"
+        default 48000
+        range 8000 96000
+endmenu

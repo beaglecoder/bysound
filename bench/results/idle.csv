@@ -1,0 +1,91 @@
+receiver,noise,segment,seconds,detections,failed,cpu_s
+bysound normal (7 channels),white,0,60,0,0,0.159334
+bysound normal (7 channels),pink,2,60,0,0,0.140843
+bysound normal (7 channels),babble,4,60,0,0,0.14523
+bysound robust (4 channels),white,6,60,0,0,0.121283
+bysound robust (4 channels),pink,8,60,0,0,0.135146
+ggwave (all protocols; variable length),white,0,60,0,0,0.00269963
+ggwave (all protocols; variable length),pink,2,60,0,0,0.00317025
+ggwave (all protocols; variable length),babble,4,60,0,0,0.00316371
+bysound normal (7 channels),white,1,60,0,0,0.157761
+bysound normal (7 channels),pink,3,60,0,0,0.162832
+bysound normal (7 channels),babble,5,60,0,0,0.153709
+bysound robust (4 channels),white,7,60,0,0,0.111266
+bysound robust (4 channels),pink,9,60,0,0,0.111779
+ggwave (all protocols; variable length),white,1,60,0,0,0.00355433
+ggwave (all protocols; variable length),pink,3,60,0,0,0.00321138
+ggwave (all protocols; variable length),babble,5,60,0,0,0.00310633
+bysound normal (7 channels),pink,0,60,0,0,0.150918
+bysound normal (7 channels),babble,2,60,0,0,0.153762
+bysound robust (4 channels),white,4,60,0,0,0.127615
+bysound robust (4 channels),pink,6,60,0,0,0.121849
+bysound robust (4 channels),babble,8,60,0,0,0.104147
+ggwave (all protocols; variable length),pink,0,60,0,0,0.00273129
+ggwave (all protocols; variable length),babble,2,60,0,0,0.00303692
+bysound normal (7 channels),pink,1,60,0,0,0.152573
+bysound normal (7 channels),babble,3,60,0,0,0.139082
+bysound robust (4 channels),white,5,60,0,0,0.110402
+bysound robust (4 channels),pink,7,60,0,0,0.12265
+bysound robust (4 channels),babble,9,60,0,0,0.11832
+ggwave (all protocols; variable length),pink,1,60,0,0,0.00272646
+ggwave (all protocols; variable length),babble,3,60,0,0,0.00360246
+bysound normal (7 channels),white,2,60,0,0,0.150017
+bysound normal (7 channels),pink,4,60,0,0,0.157675
+bysound normal (7 channels),babble,6,60,0,0,0.140767
+bysound robust (4 channels),white,8,60,0,0,0.12887
+bysound robust (4 channels),babble,0,60,0,0,0.115434
+ggwave (all protocols; variable length),white,2,60,0,0,0.00272258
+ggwave (all protocols; variable length),pink,4,60,0,0,0.00315171
+ggwave (all protocols; variable length),babble,6,60,0,0,0.00286021
+bysound normal (7 channels),white,3,60,0,0,0.151042
+bysound normal (7 channels),pink,5,60,0,0,0.14157
+bysound normal (7 channels),babble,7,60,0,0,0.148731
+bysound robust (4 channels),white,9,60,0,0,0.121491
+bysound robust (4 channels),babble,1,60,0,0,0.11629
+ggwave (all protocols; variable length),white,3,60,0,0,0.00273713
+ggwave (all protocols; variable length),pink,5,60,0,0,0.00319092
+ggwave (all protocols; variable length),babble,7,60,0,0,0.00277171
+bysound normal (7 channels),white,4,60,0,0,0.159787
+bysound normal (7 channels),pink,6,60,0,0,0.144338
+bysound normal (7 channels),babble,8,60,0,0,0.151254
+bysound robust (4 channels),pink,0,60,0,0,0.117054
+bysound robust (4 channels),babble,2,60,0,0,0.100682
+ggwave (all protocols; variable length),white,4,60,0,0,0.00273092
+ggwave (all protocols; variable length),pink,6,60,0,0,0.00327775
+ggwave (all protocols; variable length),babble,8,60,0,0,0.00283975
+bysound normal (7 channels),white,5,60,0,0,0.145811
+bysound normal (7 channels),pink,7,60,0,0,0.145552
+bysound normal (7 channels),babble,9,60,0,0,0.141185
+bysound robust (4 channels),pink,1,60,0,0,0.136847
+bysound robust (4 channels),babble,3,60,0,0,0.115286
+ggwave (all protocols; variable length),white,5,60,0,0,0.00415146
+ggwave (all protocols; variable length),pink,7,60,0,0,0.00318933
+ggwave (all protocols; variable length),babble,9,60,0,0,0.00313125
+bysound normal (7 channels),white,6,60,0,0,0.168769
+bysound normal (7 channels),pink,8,60,0,0,0.16681
+bysound robust (4 channels),white,0,60,0,0,0.102477
+bysound robust (4 channels),pink,2,60,0,0,0.122907
+bysound robust (4 channels),babble,4,60,0,0,0.122731
+ggwave (all protocols; variable length),white,6,60,0,0,0.00508588
+ggwave (all protocols; variable length),pink,8,60,0,0,0.00356537
+bysound normal (7 channels),white,7,60,0,0,0.141803
+bysound normal (7 channels),pink,9,60,0,0,0.14789
+bysound robust (4 channels),white,1,60,0,0,0.121234
+bysound robust (4 channels),pink,3,60,0,0,0.121042
+bysound robust (4 channels),babble,5,60,0,0,0.128143
+ggwave (all protocols; variable length),white,7,60,0,0,0.0027305
+ggwave (all protocols; variable length),pink,9,60,0,0,0.00315333
+bysound normal (7 channels),white,8,60,0,0,0.154339
+bysound normal (7 channels),babble,0,60,0,0,0.150316
+bysound robust (4 channels),white,2,60,0,0,0.131163
+bysound robust (4 channels),pink,4,60,0,0,0.119686
+bysound robust (4 channels),babble,6,60,0,0,0.105268
+ggwave (all protocols; variable length),white,8,60,0,0,0.00275254
+ggwave (all protocols; variable length),babble,0,60,0,0,0.00316413
+bysound normal (7 channels),white,9,60,0,0,0.149323
+bysound normal (7 channels),babble,1,60,0,0,0.149429
+bysound robust (4 channels),white,3,60,0,0,0.111844
+bysound robust (4 channels),pink,5,60,0,0,0.122376
+bysound robust (4 channels),babble,7,60,0,0,0.120914
+ggwave (all protocols; variable length),white,9,60,0,0,0.00272475
+ggwave (all protocols; variable length),babble,1,60,0,0,0.003144

@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "bysound: a robust near-ultrasonic data-over-sound modem"
+authors:
+  - family-names: Gandara
+    given-names: Agustin
+version: 4.0.0
+date-released: 2026-11-25
+license: MIT
+repository-code: "https://github.com/beaglecoder/bysound"
+keywords:
+  - data-over-sound
+  - acoustic communication
+  - near-ultrasonic
+  - MFSK
+  - Reed-Solomon
+  - ESP32

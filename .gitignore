@@ -1,0 +1,16 @@
+.DS_Store
+node_modules/
+dist/
+build/
+.build/
+.gradle/
+.idea/
+*.iml
+local.properties
+xcuserdata/
+DerivedData/
+.swiftpm/
+sdkconfig
+sdkconfig.old
+managed_components/
+bench/third_party/

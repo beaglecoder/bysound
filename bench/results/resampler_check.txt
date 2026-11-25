@@ -1,0 +1,7 @@
+sine 1000 Hz, drift -100 ppm: worst 100 ms RMS deviation 0.0004 dB
+sine 1000 Hz, drift +100 ppm: worst 100 ms RMS deviation 0.0004 dB
+sine 15000 Hz, drift -100 ppm: worst 100 ms RMS deviation 0.0009 dB
+sine 15000 Hz, drift +100 ppm: worst 100 ms RMS deviation 0.0009 dB
+sine 19500 Hz, drift -100 ppm: worst 100 ms RMS deviation 0.0025 dB
+sine 19500 Hz, drift +100 ppm: worst 100 ms RMS deviation 0.0026 dB
+sizeof(bys_demod_t) = 76728 bytes (FFT engine, robust + audible enabled, max rate 48000)
