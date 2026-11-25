@@ -15,7 +15,7 @@ make                # builds build/bench (Apple clang, -O2): harness + ../c/src/
 make run            # every plan sharded over all CPUs, then the scans, then results/summary.md and results/charts/*.svg
 ```
 
-On the machine below, `make run` took 7 min 46 s of wall time (4310 s of CPU time on 12 processes), plus about 1 min for the scans. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` re-runs only the noiseless scans.
+On the machine below, `make run` took 7 min 46 s of wall time (4310 s of CPU time on 12 processes), plus about 1 min for the scans; the rerun after the receiver fixes took 7 min 13 s for the plans. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` re-runs only the noiseless scans.
 
 Results are deterministic. Re-running reproduces every CSV column except `cpu_s` and the `audio_s / cpu_s` ratios; this was checked by re-running 110 `snr` trials with the final binary and comparing them row by row. Single trials can be replayed verbosely (same seed as in the CSV): `build/bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial>`, for example `build/bench trial snr "bysound top/robust" 32 awgn 4 1 4`.
 
@@ -112,7 +112,7 @@ Percentage of trials that decoded the exact payload:
 | bysound high/normal | 0 | 10 | 96 | 100 | 100 | 100 | 100 | 100 | −12 | −2 | −4 | 1.79 s |
 | bysound wide/normal | 0 | 0 | 0 | 76 | 100 | 100 | 100 | 100 | −8 | −1 | +3 | 1.21 s |
 | bysound audible/normal | 0 | 0 | 38 | 100 | 100 | 100 | 100 | 100 | −10 | −1 | −1 | 1.75 s |
-| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 96 | 96 | 96 | −16 | −4 | −10 | 4.32 s |
+| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | −16 | −4 | −10 | 4.32 s |
 | ggwave ultrasound-fast | 0 | 0 | 12 | 64 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
 | ggwave ultrasound-fastest | 0 | 0 | 24 | 78 | 98 | 100 | 100 | 100 | −8 | −1 | +5 | 1.71 s |
 | ggwave audible-fast | 0 | 0 | 14 | 52 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
@@ -166,13 +166,13 @@ Maximum payload per transmission:
 
 ### Receiver CPU and latency (32 B, median over the `snr` plan)
 
-- bysound: 434–508× real time, 7–13 ms of CPU per 3–7 s trial, while listening to 7 channels (4 for robust).
-- ggwave: 7,690–17,452× real time, 0.3–0.7 ms per trial.
-- **ggwave's receiver used 15–40× less CPU** in this setup (by median real-time factor).
+- bysound: 436–534× real time, 7–12 ms of CPU per 3–7 s trial, while listening to 7 channels (4 for robust).
+- ggwave: 7,585–18,319× real time, 0.3–0.6 ms per trial.
+- **ggwave's receiver used 14–42× less CPU** in this setup (by median real-time factor).
 - Decode latency (clean) is airtime minus 0.25–0.35 s for both: bysound returns before its trailing gap ends, and ggwave before its end marker ends.
 
 Code size of the built objects (arm64, -O2, `size`; one host measurement, not a microcontroller figure):
-- bysound `../c/src`: 34,268 bytes of `__TEXT`, from 1,947 lines of source.
+- bysound `../c/src`: 34,648 bytes of `__TEXT`, from 2,000 lines of source.
 - ggwave `ggwave.o`: 59,880 bytes of `__TEXT`, from about 4,800 lines including its Reed-Solomon and FFT headers.
 
 ### False decodes
@@ -196,48 +196,74 @@ ggwave produced 0 detections in the 30 minutes of pure noise.
 - **No false decodes:** CRC-32 over the payload plus RS per block. ggwave delivered wrong 8-byte payloads.
 
 **Where ggwave is better:**
-- **CPU:** its receiver costs 15–40× less in this configuration, partly because bysound evaluates 7 channels with a 4 ms search step.
+- **CPU:** its receiver costs 14–42× less in this configuration, partly because bysound evaluates 7 channels with a 4 ms search step.
 - **Short messages:** for 8–32 byte payloads, ggwave `fastest` (1.00 s at 8 B, 1.71 s at 32 B) is faster than every bysound channel except `wide` and `xhigh`. bysound's mandatory 350 ms trailing gap is a large share of a short message.
-- **Maturity and reach:** years of public use, bindings for many languages and platforms (JS/WASM, Python, Arduino, ESP32, iOS/Android examples), and a single self-contained C++ file. bysound v4 is new, and the bugs below were found by this benchmark.
+- **Maturity and reach:** years of public use, bindings for many languages and platforms (JS/WASM, Python, Arduino, ESP32, iOS/Android examples), and a single self-contained C++ file. bysound v4 is new, and this benchmark found two receiver bugs in it (described below, now fixed).
 - **Low audible band:** the DT/MT protocols sit at 1.1–2.6 kHz. In fixed-length mode, MT reaches SNR90 = −16 to −20 dB, but its receiver must know the payload length and it is very slow (1.9–5.7 B/s).
 
 **Two transmissions** help both systems only a little (section 1 and 5 of the summary).
 - The C streaming demodulator in `../c` **does not combine laps**. `src/demod.c` says so: memory is bounded. Each lap is decided on its own, so the 2-lap gain is just "two independent chances".
 - The lap combining described in the protocol exists in the TypeScript receiver (`../web/src/modem`), which this benchmark does not exercise.
 
-## Known bysound issues found by this benchmark (not fixed here; `../c` was not modified)
+## bysound bugs found by this benchmark (now fixed)
 
-The `bysound top/robust` row shows 96 % at −4 dB, 0 dB, +4 dB and clean, but 100 % from −16 to −8 dB. This is **not a harness artefact**:
+The first run of this benchmark found two receiver bugs in bysound. Both are fixed in all four receivers (C, TypeScript, Swift, Kotlin), each with regression tests, and every result in `results/` was regenerated with the fixed library. The on-air format did not change: the test vectors and the C golden audio are identical. This section keeps the history.
+
+**What the first run showed.** The `bysound top/robust` row was 96 % at −4 dB, 0 dB and clean, but 100 % from −16 to −8 dB. This was **not a harness artefact**:
 - Same seeds as every other configuration.
 - No clipping (`clip_frac` = 0).
-- It fails identically with 20 different lead offsets.
-- It fails with 480- or 1024-sample chunks.
-- It fails with the FFT and the Goertzel engine.
+- It failed identically with 20 different lead offsets.
+- It failed with 480- or 1024-sample chunks.
+- It failed with the FFT and the Goertzel engine.
 
-Two separate library bugs cause it:
+Without any channel (`bench scan 32 500`), bugs 1 and 2 together lost 15/500 payloads on top/robust, 8/500 on top/normal, 5/500 on high/normal and mid/robust, 3/500 on mid/normal and 1–2/500 on the other channels. They also caused every other bysound clean-point figure below 100 % (for example, 90 % at 2048 B was the single trial-5 payload, which hit bug 1). The first run reported these as measured; nothing was filtered out or re-run.
 
-**1. `bys_rx_finish` closes the last block one byte short when its final Reed-Solomon parity byte is 0x00 (codec bug; no audio involved).**
-- The last block's length is not transmitted, so `bys_rx_finish` (`../c/src/rx.c`, around line 178) tries lengths from shortest to longest and returns the result of the first one RS accepts.
+**1. The last block closed one byte short when its final Reed–Solomon parity byte was 0x00 (codec bug; no audio involved).**
+- The last block's length is not transmitted, so the receiver tries lengths from shortest to longest. It used to accept the first one RS accepted (`bys_rx_finish` in `../c/src/rx.c`, and the per-symbol probe in `../c/src/demod.c`).
 - If the codeword's last parity byte is 0x00, then c(x) = x·c′(x), and c′ (the block without that byte) is also a valid codeword with zero corrections.
-- So the block closes one byte short. The CRC-32 check in `finish_payload` then fails with `BYS_E_CRC`, and the loop does not go on to try the true length.
-- This affects about 1/256 of all payloads, on every channel and profile.
-- `bench codec <size> <n>` checks it for 8, 32, 128, 512 and 2048 B (`results/bysound_codec_scan.txt`): the prediction "last parity byte = 0x00" matches the failing set in 300/300 payloads at each size.
-- Minimal repro, symbol level and audio: `build/bench repro 0 0 32 268`. Arguments are band 0 = top, profile 0 = normal, 32 B, payload of trial 268. It prints `symbol-level decode (no audio): status -7, payload MISMATCH`.
+- So the block closed one byte short. The CRC-32 check then failed with `BYS_E_CRC`, and the receiver did not go on to try the true length. The message was lost, never delivered wrong.
+- This affected about 1/256 of all payloads, on every channel and profile.
+- `bench codec <size> <n>` showed it for 8, 32, 128, 512 and 2048 B: the prediction "last parity byte = 0x00" matched the failing set in 300 of 300 payloads at each size.
+- Repro: `build/bench repro 0 0 32 268` (band 0 = top, profile 0 = normal, 32 B, payload of trial 268). It used to print `symbol-level decode (no audio): status -7, payload MISMATCH`.
+- **Fix.** Among the lengths RS accepts with the expected index and total, the receiver now takes the first one for which the whole assembled payload passes the CRC-32. On a CRC failure it goes on to the next length, so no candidate that the CRC rejects is ever delivered.
+  - C: `close_last` in `rx.c` is used by `bys_rx_finish` and by a last block that reaches full length. The demodulator's probe calls the new `bys_rx_last_fits`, which checks RS and the CRC-32, before it closes the frame.
+  - TypeScript, Swift and Kotlin: `tryBlocks` (each length as it arrives) and `closeLast` (laps combined) call `lastBlockCheck`. These receivers combine laps, so another block may still be missing when the last one closes. Then the CRC cannot be checked yet. The first length RS accepts is kept, but marked as unchecked. If the assembled payload then fails the CRC, only that last block is forgotten, and a later lap closes it again with the check.
 
-**2. The demodulator fails some payloads only at high SNR (demodulator bug; codec OK).**
-- For some payloads the symbol-level round trip succeeds, but the audio decode fails without noise or at SNR ≥ −6 dB, while it succeeds between −16 and −8 dB.
-- Example: payload `q(qs@TgOXJfdn<NXK<f,h?<StQ*yJq)b` (32 B, trial 4) on top/robust. The header is read (`BYS_EV_HEADER`), then the demodulator reports 2 failures and no frame.
-- Minimal repro: `build/bench repro 0 1 32 4 [lead] [chunk]`. Arguments are top, robust, 32 B, trial 4; lead defaults to 0 zero samples and chunk to 1024. It prints `symbol-level decode (no audio): status 1, payload matches` and then `audio decode ...: correct 0 ... headers 1 failures 2`.
-- Trial 37 is a second example.
-- Noiseless rates without the channel (`results/noiseless_scan_32B.txt`, 500 payloads), bugs 1 and 2 together:
-  - top/robust: 15/500
-  - top/normal: 8/500
-  - high/normal and mid/robust: 5/500 each
-  - mid/normal: 3/500
-  - the other channels: 1–2/500
-- Root cause not identified. Because it happens only at high SNR, the noise-floor or echo estimate in `demod.c` is a plausible place to look; this is a guess, not verified.
+**2. A body that looks like the preamble cut off the read, only at high SNR (demodulator bug; codec OK).**
+- Example: payload `q(qs@TgOXJfdn<NXK<f,h?<StQ*yJq)b` (32 B, trial 4) on top/robust; trial 37 is a second one. The symbol-level round trip succeeded, but the audio decode failed without noise and at SNR ≥ −6 dB, while it succeeded between −16 and −8 dB. The header was read (`BYS_EV_HEADER`); then the demodulator reported 2 failures and no frame.
+- Repro: `build/bench repro 0 1 32 4 [lead] [chunk]` (top, robust, 32 B, trial 4). It used to print `audio decode ...: correct 0 ... headers 1 failures 2`.
+- The TypeScript receiver failed the same payload the same way (clean and up to moderate noise), so the cause is in the shared algorithm, not in the C port.
+- **Root cause.** The receiver also searches for the preamble inside a body. A preamble found after the frame's earliest possible end is taken as the next repetition, and the read of the current frame stops there. That is needed because the last block's length is unknown, so the read cannot otherwise tell where the frame ends.
+- In this payload, body symbols 50–57 match the top/robust preamble in 6 of its 16 nibbles (top has 2 groups per symbol, so the preamble has 16 nibbles).
+- In a clean channel, each matching nibble carries almost all of its symbol's energy, so the preamble score is about 6/16 = 0.375, over the 0.32 threshold. With noise, each nibble's share of the energy drops and the score falls below the threshold. That is why the failure appeared only at high SNR.
+- The false "next repetition" started after the frame's minimum length. So the read stopped after 46 of the 50 body symbols, the last block could not close (failure 1), and the false frame's header was unreadable (failure 2).
+- It was not the noise floor, the echo estimate or a header tie: the floor and echo of the real frame were normal, and the header was read correctly.
+- top/robust was hit most because its preamble has the fewest nibbles, so chance matches reach the threshold most often.
+- **Fix.** A preamble inside a body cuts off the read only if it scores at least 0.7 of the current frame's own preamble score (`REPEAT_SCORE_SHARE`). A real next repetition comes from the same sender, so it scores about the same; a look-alike in the data scores only its share of matching nibbles.
+  - At low SNR the frame's score is near the threshold, so the condition does not change anything there.
+  - The candidate's score also no longer overwrites the score reported for the frame being read.
+  - The change is the same in `demod.c` (`search_in_body`) and in `searchInBody` of the TypeScript, Swift and Kotlin receivers.
 
-Both bugs show up in the results as measured. Nothing was filtered out or re-run. They explain the bysound clean-point figures below 100 % (for example, the 90 % at 2048 B is the single trial-5 payload, which hits bug 1).
+**Tests added.**
+- C: `test_zero_parity` in `../c/test/test_all.c` (symbol level) and `test_regressions` in `../c/test/test_demod.c` (audio, both engines).
+- TypeScript: `../web/src/modem/regressions.test.ts`.
+- Swift: `../ios/Tests/BySoundTests/RegressionTests.swift`.
+- Kotlin: `../android/bysound/src/test/kotlin/io/github/beaglecoder/bysound/modem/RegressionTest.kt`.
+- Each one covers:
+  - one- and two-block payloads whose last parity byte is 0x00, found by counting up a number in the text, in the normal and robust profiles;
+  - the bug 2 payload on top/robust in a clean channel at 48 kHz and 44.1 kHz, and in 2 repetitions.
+- All of them fail without the fixes.
+
+**Effect on the results (rerun with the same seeds).**
+- 160 trials changed from failure to success:
+  - 28 in `snr`;
+  - 43 in `size`;
+  - 85 in `cond`;
+  - 4 in `rate44`.
+- No trial changed from success to failure, and no false-decode count changed. ggwave's rows are unchanged except for the CPU columns.
+- Noiseless scans: bysound now delivers every payload on every channel, 0 of 500 lost at 8 B and 32 B and 0 of 300 at 128 B (`results/noiseless_scan_*B.txt`).
+- Codec scan: 0 of 300 payloads fail at every size, including the 1–2 per size whose last parity byte is 0x00 (`results/bysound_codec_scan.txt`).
+- top/robust is now 100 % from −16 dB to clean. Its 2048 B SNR90 moved from −12 to −16 dB. Its clean-point success under every impairment (summary section 5) and at 44.1 kHz went from 97 % to 100 %, as did high/normal's under babble and drift +100 ppm. Every bysound clean-point figure in the summary is now 100 %.
 
 ## Threats to validity
 

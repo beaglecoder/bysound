@@ -583,15 +583,17 @@ if scan:
 cpath = os.path.join(RES, "bysound_codec_scan.txt")
 if os.path.exists(cpath):
     w("\nbysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). "
-      "Every failing payload is one whose last block ends in a 0x00 Reed-Solomon parity byte (see README, known issues):\n")
-    w("| size | payloads failing / tried (same for all 11 channel/profile combinations) | of which last parity byte = 0x00 |")
-    w("|---|---:|---:|")
+      "Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are the ones bug 1 used to lose (see README, bugs found by this benchmark):\n")
+    w("| size | payloads failing / tried (same for all 11 channel/profile combinations) | payloads with last parity byte = 0x00 | of those, failing |")
+    w("|---|---:|---:|---:|")
     seen = set()
     for line in open(cpath):
         m = re.match(r"bysound top/normal\s+(\d+) B: (\d+) of (\d+) payloads fail.*last parity byte 0x00 in (\d+); prediction matches (\d+) of (\d+)", line)
         if m and m.group(1) not in seen:
             seen.add(m.group(1))
-            w("| %s B | %s / %s | %s (prediction matches %s of %s payloads) |" % (m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
+            fails, tried, zero, agree = int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5))
+            both = (fails + zero - (tried - agree)) // 2  # |fail xor zero| = tried - agree
+            w("| %s B | %d / %d | %d | %d |" % (m.group(1), fails, tried, zero, both))
 
 w("\n## Charts\n")
 for p in charts:

@@ -14,6 +14,8 @@ private let combineSeconds = 30.0
 private let overlapFromSeconds = 0.3
 private let overlapMinHops = 2
 private let overlapMinScore = 0.45
+/// A preamble past the frame's minimum length is taken as the next lap only if it scores at least this share of the frame's.
+private let repeatScoreShare = 0.7
 private let selfEchoSeconds = 0.3
 private let overlapMarginSeconds = 0.15
 private let headerFailNearSeconds = 0.15
@@ -31,6 +33,8 @@ final class BlockAssembly {
     var channel: Band?
     /// Body bytes of the lap that closed the last block (the header does not say).
     var knownBytes = 0
+    /// The last block closed without the other blocks, so the CRC-32 could not confirm its length (see `lastBlockCheck`).
+    var lastUnchecked = false
     func begin(total: Int, at: Int, horizon: Int, channel: Band) {
         if total != self.total || lastAt < horizon { reset() }
         self.total = total
@@ -44,6 +48,7 @@ final class BlockAssembly {
         pendingLast = []
         loops = 0
         knownBytes = 0
+        lastUnchecked = false
     }
 }
 
@@ -257,12 +262,18 @@ final class ChannelReader {
         if candStarts.isEmpty { return false }
         let hops = candStarts.count
         let score = candScores.max()!
+        let own = frameScore
         let at = plateau()
+        frameScore = own // plateau() stores the candidate's score; the frame being read keeps its own
         if at + start(Protocol.preamble.count) < minEnd {
             // A data run that looks like a preamble gives a lone peak; two senders give a high plateau.
             if hops >= overlapMinHops && score >= overlapMinScore { pool.clash() }
             return false
         }
+        // The next lap comes from the same sender, so its preamble scores about as well as this frame's. Body data that happens to
+        // match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles: 0.375 in a clean channel, over the
+        // threshold) and must not cut off the read: the last block would be lost.
+        if score < repeatScoreShare * own { return false }
         tryBlocks()
         if state == .body { finishBlocks(nil, bodySoft.count >> 1) }
         enterFrame(at)
@@ -417,7 +428,8 @@ final class ChannelReader {
             lastTried = length
             let bytes = hardBytes(Array(bodySoft[(2 * lastStart)..<(2 * (lastStart + length))]))
             if let d = Codec.decodeBlock(bytes), d.block.index == dataLength - 1, d.block.total == dataLength {
-                return finishBlocks(d, lastStart + length)
+                let check = lastBlockCheck(d.block.chunk)
+                if check != false { return finishBlocks(d, lastStart + length, lastUnchecked: check == nil) }
             }
             length += 1
         }
@@ -439,18 +451,42 @@ final class ChannelReader {
     }
 
     /// The last block does not say its length: every length is tried with the readings of several laps summed.
-    private func closeLast(_ readings: [Soft]) -> (block: Block, corrected: Int)? {
+    private func closeLast(_ readings: [Soft]) -> (block: Block, corrected: Int, unchecked: Bool)? {
         for candidate in [summed(readings), surest(readings)] {
             let bytes = hardBytes(candidate)
             for length in (Protocol.blockHeader + Protocol.blockParity + 1)...Protocol.blockBytes {
                 if let r = Codec.decodeBlock(Array(bytes[0..<min(length, bytes.count)])),
-                   r.block.index == dataLength - 1, r.block.total == dataLength { return r }
+                   r.block.index == dataLength - 1, r.block.total == dataLength {
+                    let check = lastBlockCheck(r.block.chunk)
+                    if check != false { return (r.block, r.corrected, check == nil) }
+                }
             }
         }
         return nil
     }
 
-    private func finishBlocks(_ last: (block: Block, corrected: Int)?, _ usedBytes: Int) {
+    /// Whether a candidate for the last block gives a text whose CRC-32 closes. Reed–Solomon alone cannot tell its length: if the
+    /// last parity byte is 0x00 the codeword without it is also a codeword (c(x) = x·c'(x)), so the block would close one byte
+    /// short. `nil`: another block is not available yet, so it cannot be told here.
+    private func lastBlockCheck(_ chunk: [UInt8]) -> Bool? {
+        let n = dataLength
+        let a = pool.blocks
+        let known = a.total == n && a.channel == ch.band && a.lastAt >= frameStart - Int(combineSeconds * r.sampleRate)
+        var chunks: [[UInt8]] = []
+        for i in 0..<max(n - 1, 0) {
+            var c = known ? a.chunks[i] : nil
+            if c == nil && 2 * (i + 1) * Protocol.blockBytes <= bodySoft.count {
+                let soft = Array(bodySoft[(2 * i * Protocol.blockBytes)..<(2 * (i + 1) * Protocol.blockBytes)])
+                c = closeBlock(i, soft, known ? a.pending[i] ?? [] : [])?.block.chunk
+            }
+            guard let chunk = c else { return nil }
+            chunks.append(chunk)
+        }
+        chunks.append(chunk)
+        return Codec.assemble(chunks) != nil
+    }
+
+    private func finishBlocks(_ last: (block: Block, corrected: Int)?, _ usedBytes: Int, lastUnchecked: Bool = false) {
         let a = pool.blocks
         let n = dataLength
         let end = frameStart + start(firstBody + symbolsFor(usedBytes))
@@ -461,6 +497,7 @@ final class ChannelReader {
             if a.chunks[last.block.index] == nil { gained += 1 }
             a.chunks[last.block.index] = last.block.chunk
             a.knownBytes = usedBytes
+            a.lastUnchecked = lastUnchecked
             corrected += last.corrected
         } else if a.chunks[n - 1] == nil && bodySoft.count > 2 * lastStart {
             var soft = Array(bodySoft[(2 * lastStart)..<min(2 * (lastStart + Protocol.blockBytes), bodySoft.count)])
@@ -468,6 +505,7 @@ final class ChannelReader {
             a.pendingLast = Array((a.pendingLast + [soft]).suffix(combineMax))
             if a.pendingLast.count > 1, let r = closeLast(a.pendingLast) {
                 a.chunks[n - 1] = r.block.chunk
+                a.lastUnchecked = r.unchecked
                 a.pendingLast = []
                 gained += 1
                 corrected += r.corrected
@@ -494,6 +532,14 @@ final class ChannelReader {
         if a.chunks.count == n {
             let text = Codec.assemble((0..<n).map { a.chunks[$0]! })
             let loops = a.loops
+            if text == nil && a.lastUnchecked {
+                // The last block's length was a guess (it closed before the other blocks): only it is forgotten, and the next lap
+                // closes it again, this time checked against the CRC-32.
+                a.chunks[n - 1] = nil
+                a.lastUnchecked = false
+                pool.failures += 1
+                return
+            }
             a.reset()
             if let text = text { return deliver(text, corrected: corrected, combined: loops, end: end) }
             pool.failures += 1

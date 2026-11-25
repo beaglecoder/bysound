@@ -1,14 +1,14 @@
-bysound top/normal           8 B: 5 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 381 428 438 463 488
-bysound high/normal          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound upper/normal         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound mid/normal           8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound audible/normal       8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound xhigh/normal         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound wide/normal          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound top/robust           8 B: 6 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 147 349 427 428 463 488
-bysound high/robust          8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound upper/robust         8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
-bysound mid/robust           8 B: 3 of 500 payloads not delivered without noise, 0 wrong payloads accepted; trials: 428 463 488
+bysound top/normal         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound high/normal        8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound upper/normal       8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound mid/normal         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound audible/normal     8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound xhigh/normal       8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound wide/normal        8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound top/robust         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound high/robust        8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound upper/robust       8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound mid/robust         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
 ggwave audible-normal      8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
 ggwave audible-fast        8 B: 14 of 500 payloads not delivered without noise, 14 wrong payloads accepted; trials: 37 91 119 120 188 211 286 315 329 373 415 451 477 480
 ggwave audible-fastest     8 B: 21 of 500 payloads not delivered without noise, 21 wrong payloads accepted; trials: 39 45 99 111 170 186 203 220 222 287 299 300 316 325 326 329

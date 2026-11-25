@@ -517,6 +517,47 @@ static void bench(void) {
   }
 }
 
+/* Regressions found by the benchmark in bench/ (see bench/README.md), in a clean channel (no noise, digital silence around). */
+static void test_regressions(void) {
+  listen_t L;
+  /* 1. A last block whose last parity byte is 0x00 closed one byte short (RS accepts it; the CRC-32 must pick the length). */
+  static const char *prefixes[2] = { "zero parity", "a payload long enough to need two blocks of forty-eight bytes, zero parity" };
+  static char texts[2][200];
+  for (int k = 0; k < 2; k++) {
+    for (unsigned i = 0;; i++) {
+      snprintf(texts[k], sizeof texts[k], "%s %u", prefixes[k], i);
+      bys_frame_t f;
+      uint8_t nib[BYS_MAX_GROUPS];
+      bys_frame_init_payload(&f, BYS_TOP, BYS_NORMAL, texts[k], strlen(texts[k]));
+      while (bys_frame_next(&f, nib)) {}
+      if (f.buf[f.buf_len - 1] == 0) break;
+    }
+    for (unsigned profile = 0; profile < 2; profile++) {
+      tcase_t c = mk_payload(BYS_TOP, (int)profile, texts[k]);
+      render_lap(&c, 48000, 0.5f);
+      size_t n = build(48000, 24000, 1, 0, 0);
+      run(&L, 48000, profile, 1u << BYS_TOP, MIX, n, 0, 1);
+      printf("  zero last parity byte, %u block(s), %s: %d of 1\n", k + 1, profile ? "robust" : "normal", count_ok(&L, &c));
+      CHECK(L.n == 1 && count_ok(&L, &c) == 1);
+    }
+  }
+  /* 2. Body data that matches the preamble in 6 of 16 nibbles (top/robust, symbols 50..57) scored 0.375 without noise, was taken as
+   * the next repetition and cut off the read before the last block: the payload failed only at high SNR. */
+  {
+    tcase_t c = mk_payload(BYS_TOP, BYS_ROBUST, "q(qs@TgOXJfdn<NXK<f,h?<StQ*yJq)b");
+    static const unsigned rates[2] = { 48000, 44100 };
+    for (int i = 0; i < 2; i++) {
+      for (int laps = 1; laps <= 2; laps++) {
+        render_lap(&c, rates[i], 0.5f);
+        size_t n = build(rates[i], rates[i] / 2, laps, 0, 0);
+        run(&L, rates[i], BYS_ROBUST, 1u << BYS_TOP, MIX, n, 0, 1);
+        printf("  preamble look-alike in the body, top/robust, %u Hz, %d lap(s): %d of %d\n", rates[i], laps, count_ok(&L, &c), laps);
+        CHECK(L.n == laps && count_ok(&L, &c) == laps);
+      }
+    }
+  }
+}
+
 int main(int argc, char **argv) {
   int sweep = 0, do_bench = 0;
   const char *trfile = "/dev/null";
@@ -529,6 +570,7 @@ int main(int argc, char **argv) {
   test_golden();
   test_matrix();
   test_misc();
+  test_regressions();
   test_recordings();
   test_sweep(0);
   if (tr != stdout) fclose(tr);

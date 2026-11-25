@@ -33,6 +33,8 @@ private const val COMBINE_SECONDS = 30
 private const val OVERLAP_FROM_SECONDS = 0.3
 private const val OVERLAP_MIN_HOPS = 2
 private const val OVERLAP_MIN_SCORE = 0.45
+/** A preamble past the frame's minimum length is taken as the next lap only if it scores at least this share of the frame's. */
+private const val REPEAT_SCORE_SHARE = 0.7
 private val BLOCK_ERASURE_TRIES = intArrayOf(0, 2, 4)
 
 internal enum class State { SEARCH, HEADER, BODY }
@@ -211,13 +213,19 @@ internal class ChannelReader(
         if (candStarts.isEmpty()) return false
         val hops = candStarts.size
         val best = candScores.max()
+        val own = frameScore
         val at = plateau()
+        frameScore = own // plateau() stores the candidate's score; the frame being read keeps its own
         if (at + start(PREAMBLE.size) < minEnd) {
             // A data pattern that looks like the preamble gives a lone peak: two senders give a high plateau.
             if (hops >= OVERLAP_MIN_HOPS && best >= OVERLAP_MIN_SCORE) pool.clash()
             return false
         }
         if (!isBlocks) return false
+        // The next lap comes from the same sender, so its preamble scores about as well as this frame's. Body data that happens to
+        // match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles: 0.375 in a clean channel, over the
+        // threshold) and must not cut off the read: the last block would be lost.
+        if (best < REPEAT_SCORE_SHARE * own) return false
         tryBody()
         if (state == State.BODY) finishBlocks(null, bodySoft.size shr 1)
         enterFrame(at)
@@ -379,7 +387,9 @@ internal class ChannelReader(
             lastTried = length
             val bytes = hardBytes(bodySoft.clip(2 * lastStart, 2 * (lastStart + length)))
             val d = Codec.decodeBlock(bytes)
-            if (d != null && d.block.index == dataLength - 1 && d.block.total == dataLength) return finishBlocks(d, lastStart + length)
+            if (d == null || d.block.index != dataLength - 1 || d.block.total != dataLength) continue
+            val check = lastBlockCheck(d.block.chunk)
+            if (check != false) return finishBlocks(d, lastStart + length, lastUnchecked = check == null)
         }
         if (bodyRead == maxSymbols && lastTried >= BLOCK_BYTES) finishBlocks(null, bodyBytesMax)
     }
@@ -399,18 +409,42 @@ internal class ChannelReader(
     }
 
     /** The last block does not say its length: every length is tried with the readings summed over several laps. */
-    private fun closeLast(readings: List<Soft>): DecodedBlock? {
+    private fun closeLast(readings: List<Soft>): Pair<DecodedBlock, Boolean>? {
         for (candidate in listOf(summed(readings), surest(readings))) {
             val bytes = hardBytes(candidate)
             for (length in BLOCK_HEADER + BLOCK_PARITY + 1..BLOCK_BYTES) {
                 val d = Codec.decodeBlock(bytes.copyOfRange(0, length))
-                if (d != null && d.block.index == dataLength - 1 && d.block.total == dataLength) return d
+                if (d == null || d.block.index != dataLength - 1 || d.block.total != dataLength) continue
+                val check = lastBlockCheck(d.block.chunk)
+                if (check != false) return Pair(d, check == null)
             }
         }
         return null
     }
 
-    private fun finishBlocks(last: DecodedBlock?, usedBytes: Int) {
+    /**
+     * Whether a candidate for the last block gives a text whose CRC-32 checks out. Reed–Solomon alone cannot tell its length: if the
+     * last parity byte is 0x00 the codeword without it is also a codeword (c(x) = x·c'(x)), so the block would close one byte short.
+     * null: another block is not available yet, so it cannot be told here.
+     */
+    private fun lastBlockCheck(chunk: IntArray): Boolean? {
+        val n = dataLength
+        val a = pool.blocks
+        val known = a.total == n && a.channel == ch.band && a.lastAt >= frameStart - COMBINE_SECONDS.toLong() * r.rate
+        val chunks = ArrayList<IntArray>()
+        for (i in 0 until n - 1) {
+            var c = if (known) a.chunks[i] else null
+            if (c == null && 2 * (i + 1) * BLOCK_BYTES <= bodySoft.size) {
+                val soft = bodySoft.clip(2 * i * BLOCK_BYTES, 2 * (i + 1) * BLOCK_BYTES)
+                c = closeBlock(i, soft, if (known) a.pending[i] ?: emptyList() else emptyList())?.block?.chunk
+            }
+            chunks.add(c ?: return null)
+        }
+        chunks.add(chunk)
+        return Codec.assemble(chunks) != null
+    }
+
+    private fun finishBlocks(last: DecodedBlock?, usedBytes: Int, lastUnchecked: Boolean = false) {
         val a = pool.blocks
         val rate = r.rate
         val n = dataLength
@@ -423,14 +457,17 @@ internal class ChannelReader(
             if (!a.chunks.containsKey(last.block.index)) gained++
             a.chunks[last.block.index] = last.block.chunk
             a.knownBytes = usedBytes
+            a.lastUnchecked = lastUnchecked
             corrected += last.corrected
         } else if (!a.chunks.containsKey(n - 1) && bodySoft.size > 2 * lastStart) {
             val soft = ArrayList(bodySoft.clip(2 * lastStart, 2 * (lastStart + BLOCK_BYTES)))
             while (soft.size < BLOCK_BYTES * 2) soft.add(UNIFORM)
             a.pendingLast = (a.pendingLast + listOf<Soft>(soft)).takeLast(COMBINE_MAX)
-            val d = if (a.pendingLast.size > 1) closeLast(a.pendingLast) else null
-            if (d != null) {
+            val closed = if (a.pendingLast.size > 1) closeLast(a.pendingLast) else null
+            if (closed != null) {
+                val (d, unchecked) = closed
                 a.chunks[n - 1] = d.block.chunk
+                a.lastUnchecked = unchecked
                 a.pendingLast = emptyList()
                 gained++
                 corrected += d.corrected
@@ -458,6 +495,14 @@ internal class ChannelReader(
         if (a.chunks.size == n) {
             val text = Codec.assemble(List(n) { a.chunks[it]!! })
             val loops = a.loops
+            if (text == null && a.lastUnchecked) {
+                // The last block's length was a guess (it closed before the other blocks): only it is forgotten, and the next lap
+                // closes it again, this time checked against the CRC-32.
+                a.chunks.remove(n - 1)
+                a.lastUnchecked = false
+                pool.failures++
+                return
+            }
             a.reset()
             if (text != null) return deliver(Heard(text, ch.band, ch.profile, corrected, loops), end)
             pool.failures++

@@ -574,9 +574,9 @@ static int codec_ok(int band, int profile, const std::string &msg, int *status) 
   int n = st == BYS_RX_DONE ? bys_unpack(out, bys_rx_result(&rx)->payload_len, text, sizeof text) : -1;
   return n == (int)msg.size() && !memcmp(text, msg.data(), (size_t)n);
 }
-// Hypothesis check for the round-trip failures: the last block's final Reed-Solomon parity byte is 0x00. Then the block minus that
-// byte is also a valid codeword (c(x) = x c'(x) keeps the roots alpha^0..alpha^11), and bys_rx_finish, which tries the last
-// block's lengths from shortest to longest and stops at the first one RS accepts, closes it one byte short and fails the CRC-32.
+// Payloads of bug 1 (fixed): the last block's final Reed-Solomon parity byte is 0x00. Then the block minus that byte is also a valid
+// codeword (c(x) = x c'(x) keeps the roots alpha^0..alpha^11). bys_rx_finish used to stop at the first length RS accepted, closing
+// the block one byte short and failing the CRC-32; it now also requires the payload's CRC-32. The scan counts these payloads.
 static int last_parity_zero(const std::string &msg) {
   static uint8_t packed[300000];
   int n = bys_pack(msg.data(), msg.size(), packed, sizeof packed - 4);

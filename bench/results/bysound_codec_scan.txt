@@ -1,121 +1,55 @@
-bysound top/normal       8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound high/normal      8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound upper/normal     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound mid/normal       8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound audible/normal   8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound xhigh/normal     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound wide/normal      8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound top/robust       8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound high/robust      8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound upper/robust     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-bysound mid/robust       8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
-    round trip failed with -7 at symbol 63 of 62 (63 = in bys_rx_finish)
-bysound top/normal       32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound high/normal      32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound upper/normal     32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound mid/normal       32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 36 of 35 (36 = in bys_rx_finish)
-bysound audible/normal   32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 36 of 35 (36 = in bys_rx_finish)
-bysound xhigh/normal     32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 28 of 27 (28 = in bys_rx_finish)
-bysound wide/normal      32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 63 of 62 (63 = in bys_rx_finish)
-bysound top/robust       32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound high/robust      32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound upper/robust     32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 46 of 45 (46 = in bys_rx_finish)
-bysound mid/robust       32 B: 1 of 300 payloads fail the symbol-level round trip: 268(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 187 of 186 (187 = in bys_rx_finish)
-    round trip failed with -7 at symbol 187 of 186 (187 = in bys_rx_finish)
-bysound top/normal       128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound high/normal      128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound upper/normal     128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound mid/normal       128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 98 of 97 (98 = in bys_rx_finish)
-    round trip failed with -7 at symbol 98 of 97 (98 = in bys_rx_finish)
-bysound audible/normal   128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 98 of 97 (98 = in bys_rx_finish)
-    round trip failed with -7 at symbol 98 of 97 (98 = in bys_rx_finish)
-bysound xhigh/normal     128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 69 of 68 (69 = in bys_rx_finish)
-    round trip failed with -7 at symbol 69 of 68 (69 = in bys_rx_finish)
-bysound wide/normal      128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 187 of 186 (187 = in bys_rx_finish)
-    round trip failed with -7 at symbol 187 of 186 (187 = in bys_rx_finish)
-bysound top/robust       128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound high/robust      128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound upper/robust     128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-    round trip failed with -7 at symbol 128 of 127 (128 = in bys_rx_finish)
-bysound mid/robust       128 B: 2 of 300 payloads fail the symbol-level round trip: 261(status -7) 264(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 683 of 682 (683 = in bys_rx_finish)
-bysound top/normal       512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound high/normal      512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound upper/normal     512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound mid/normal       512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 346 of 345 (346 = in bys_rx_finish)
-bysound audible/normal   512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 346 of 345 (346 = in bys_rx_finish)
-bysound xhigh/normal     512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 235 of 234 (235 = in bys_rx_finish)
-bysound wide/normal      512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 683 of 682 (683 = in bys_rx_finish)
-bysound top/robust       512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound high/robust      512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound upper/robust     512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 459 of 458 (459 = in bys_rx_finish)
-bysound mid/robust       512 B: 1 of 300 payloads fail the symbol-level round trip: 97(status -7) | last parity byte 0x00 in 1; prediction matches 300 of 300
-    round trip failed with -7 at symbol 2667 of 2666 (2667 = in bys_rx_finish)
-    round trip failed with -7 at symbol 2667 of 2666 (2667 = in bys_rx_finish)
-bysound top/normal       2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound high/normal      2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound upper/normal     2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound mid/normal       2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1338 of 1337 (1338 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1338 of 1337 (1338 = in bys_rx_finish)
-bysound audible/normal   2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1338 of 1337 (1338 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1338 of 1337 (1338 = in bys_rx_finish)
-bysound xhigh/normal     2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 896 of 895 (896 = in bys_rx_finish)
-    round trip failed with -7 at symbol 896 of 895 (896 = in bys_rx_finish)
-bysound wide/normal      2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 2667 of 2666 (2667 = in bys_rx_finish)
-    round trip failed with -7 at symbol 2667 of 2666 (2667 = in bys_rx_finish)
-bysound top/robust       2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound high/robust      2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound upper/robust     2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-    round trip failed with -7 at symbol 1782 of 1781 (1782 = in bys_rx_finish)
-bysound mid/robust       2048 B: 2 of 300 payloads fail the symbol-level round trip: 5(status -7) 138(status -7) | last parity byte 0x00 in 2; prediction matches 300 of 300
+bysound top/normal     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound high/normal    8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound upper/normal   8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound mid/normal     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound audible/normal 8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound xhigh/normal   8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound wide/normal    8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound top/robust     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound high/robust    8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound upper/robust   8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound mid/robust     8 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 0; prediction matches 300 of 300
+bysound top/normal     32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound high/normal    32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound upper/normal   32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound mid/normal     32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound audible/normal 32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound xhigh/normal   32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound wide/normal    32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound top/robust     32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound high/robust    32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound upper/robust   32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound mid/robust     32 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound top/normal     128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound high/normal    128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound upper/normal   128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound mid/normal     128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound audible/normal 128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound xhigh/normal   128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound wide/normal    128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound top/robust     128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound high/robust    128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound upper/robust   128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound mid/robust     128 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound top/normal     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound high/normal    512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound upper/normal   512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound mid/normal     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound audible/normal 512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound xhigh/normal   512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound wide/normal    512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound top/robust     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound high/robust    512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound upper/robust   512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound mid/robust     512 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 1; prediction matches 299 of 300
+bysound top/normal     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound high/normal    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound upper/normal   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound mid/normal     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound audible/normal 2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound xhigh/normal   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound wide/normal    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound top/robust     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound high/robust    2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound upper/robust   2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300
+bysound mid/robust     2048 B: 0 of 300 payloads fail the symbol-level round trip | last parity byte 0x00 in 2; prediction matches 298 of 300

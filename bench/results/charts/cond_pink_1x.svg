@@ -57,7 +57,7 @@
 <rect x="555.2" y="64.5" width="7" height="7" rx="1" fill="#d95926"><title>ggwave ultrasound-fast: -4 → 100%</title></rect>
 <rect x="625.8" y="64.5" width="7" height="7" rx="1" fill="#d95926"><title>ggwave ultrasound-fast: 0 → 100%</title></rect>
 <rect x="696.5" y="64.5" width="7" height="7" rx="1" fill="#d95926"><title>ggwave ultrasound-fast: 4 → 100%</title></rect>
-<path d="M64.0 418.0 L134.7 418.0 L205.3 418.0 L276.0 68.0 L346.7 68.0 L417.3 68.0 L488.0 68.0 L558.7 68.0 L629.3 79.7 L700.0 79.7" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M64.0 418.0 L134.7 418.0 L205.3 418.0 L276.0 68.0 L346.7 68.0 L417.3 68.0 L488.0 68.0 L558.7 68.0 L629.3 68.0 L700.0 68.0" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="64.0" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -32 → 0%</title></circle>
 <circle cx="134.7" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -28 → 0%</title></circle>
 <circle cx="205.3" cy="418.0" r="3.5" fill="#199e70"><title>bysound high/normal: -24 → 0%</title></circle>
@@ -66,8 +66,8 @@
 <circle cx="417.3" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -12 → 100%</title></circle>
 <circle cx="488.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -8 → 100%</title></circle>
 <circle cx="558.7" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: -4 → 100%</title></circle>
-<circle cx="629.3" cy="79.7" r="3.5" fill="#199e70"><title>bysound high/normal: 0 → 96.6667%</title></circle>
-<circle cx="700.0" cy="79.7" r="3.5" fill="#199e70"><title>bysound high/normal: 4 → 96.6667%</title></circle>
+<circle cx="629.3" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: 0 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#199e70"><title>bysound high/normal: 4 → 100%</title></circle>
 <path d="M64.0 418.0 L134.7 418.0 L205.3 418.0 L276.0 418.0 L346.7 418.0 L417.3 336.3 L488.0 103.0 L558.7 68.0 L629.3 68.0 L700.0 68.0" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
 <rect x="60.5" y="414.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave audible-fast: -32 → 0%</title></rect>
 <rect x="131.2" y="414.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave audible-fast: -28 → 0%</title></rect>
@@ -90,17 +90,17 @@
 <circle cx="558.7" cy="68.0" r="3.5" fill="#d55181"><title>bysound audible/normal: -4 → 100%</title></circle>
 <circle cx="629.3" cy="68.0" r="3.5" fill="#d55181"><title>bysound audible/normal: 0 → 100%</title></circle>
 <circle cx="700.0" cy="68.0" r="3.5" fill="#d55181"><title>bysound audible/normal: 4 → 100%</title></circle>
-<path d="M64.0 418.0 L134.7 418.0 L205.3 68.0 L276.0 68.0 L346.7 79.7 L417.3 79.7 L488.0 79.7 L558.7 79.7 L629.3 79.7 L700.0 79.7" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M64.0 418.0 L134.7 418.0 L205.3 68.0 L276.0 68.0 L346.7 68.0 L417.3 68.0 L488.0 68.0 L558.7 68.0 L629.3 68.0 L700.0 68.0" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="64.0" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -32 → 0%</title></circle>
 <circle cx="134.7" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -28 → 0%</title></circle>
 <circle cx="205.3" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -24 → 100%</title></circle>
 <circle cx="276.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -20 → 100%</title></circle>
-<circle cx="346.7" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: -16 → 96.6667%</title></circle>
-<circle cx="417.3" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: -12 → 96.6667%</title></circle>
-<circle cx="488.0" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: -8 → 96.6667%</title></circle>
-<circle cx="558.7" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: -4 → 96.6667%</title></circle>
-<circle cx="629.3" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: 0 → 96.6667%</title></circle>
-<circle cx="700.0" cy="79.7" r="3.5" fill="#0ca30c"><title>bysound top/robust: 4 → 96.6667%</title></circle>
+<circle cx="346.7" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -16 → 100%</title></circle>
+<circle cx="417.3" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -12 → 100%</title></circle>
+<circle cx="488.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -8 → 100%</title></circle>
+<circle cx="558.7" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -4 → 100%</title></circle>
+<circle cx="629.3" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 0 → 100%</title></circle>
+<circle cx="700.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 4 → 100%</title></circle>
 <path d="M64.0 418.0 L134.7 418.0 L205.3 418.0 L276.0 394.7 L346.7 103.0 L417.3 68.0 L488.0 68.0 L558.7 68.0 L629.3 68.0 L700.0 68.0" fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
 <rect x="60.5" y="414.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave ultrasound-normal: -32 → 0%</title></rect>
 <rect x="131.2" y="414.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave ultrasound-normal: -28 → 0%</title></rect>

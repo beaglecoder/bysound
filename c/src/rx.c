@@ -127,6 +127,59 @@ static int close_block(bys_rx_t *rx, size_t len) {
   return BYS_OK;
 }
 
+/* CRC-32 of the packed bytes a[0..na) followed by b[0..nb): the last 4 bytes of the whole are the CRC of the rest. */
+static int crc_ok(const uint8_t *a, size_t na, const uint8_t *b, size_t nb) {
+  const size_t n = na + nb;
+  if (n <= 4) return 0;
+  uint32_t c = 0xffffffffu, want = 0;
+  for (size_t i = 0; i < n; i++) {
+    const uint8_t x = i < na ? a[i] : b[i - na];
+    if (i < n - 4) c = bys_crc32_update(c, x); else want = (want << 8) | x;
+  }
+  return (c ^ 0xffffffffu) == want;
+}
+
+/* The last block closed at `len`: 1 if RS accepts it with the expected index and total and the payload's CRC-32 checks out. RS alone
+ * cannot tell the length: if the last parity byte is 0x00, the codeword without it is also a codeword (c(x) = x * c'(x)). */
+static int last_fits(const bys_rx_t *rx, size_t len, uint8_t *tmp, size_t *chunk, int *fixed, int *rs_ok) {
+  uint8_t index, total;
+  memcpy(tmp, rx->buf, len);
+  const int e = bys_block_decode(tmp, len, NULL, 0, &index, &total, chunk);
+  if (e < 0 || index != rx->blk || total != rx->total) return 0;
+  *fixed = e;
+  if (!rx->out || rx->out_n + *chunk > rx->out_cap) { *rs_ok = 2; return 0; }
+  if (*rs_ok < 1) *rs_ok = 1;
+  return crc_ok(rx->out, rx->out_n, tmp + BYS_BLOCK_HEADER, *chunk);
+}
+
+int bys_rx_last_fits(const bys_rx_t *rx, size_t len) {
+  uint8_t tmp[BYS_BLOCK_BYTES];
+  size_t chunk;
+  int fixed, rs_ok = 0;
+  if (rx->state != ST_BODY || rx->kind != BYS_KIND_PAYLOAD || rx->blk + 1 != rx->total || len > rx->buf_n) return 0;
+  return last_fits(rx, len, tmp, &chunk, &fixed, &rs_ok);
+}
+
+/* Closes the last block with the first length, from shortest to longest, that RS accepts and the CRC-32 confirms. (Going downwards
+ * does not work: appending zeros to a codeword with roots alpha^0.. gives another valid codeword, and the padding of the last symbol
+ * is zeros.) */
+static int close_last(bys_rx_t *rx, size_t avail) {
+  uint8_t tmp[BYS_BLOCK_BYTES];
+  int rs_ok = 0;
+  for (size_t len = BYS_BLOCK_HEADER + BYS_BLOCK_PARITY + 1; len <= avail; len++) {
+    size_t chunk;
+    int fixed;
+    if (!last_fits(rx, len, tmp, &chunk, &fixed, &rs_ok)) continue;
+    memcpy(rx->out + rx->out_n, tmp + BYS_BLOCK_HEADER, chunk);
+    rx->out_n += (uint32_t)chunk;
+    note(rx, fixed);
+    rx->blk++;
+    rx->buf_n = 0;
+    return finish_payload(rx);
+  }
+  return fail(rx, rs_ok == 2 ? BYS_E_SPACE : rs_ok ? BYS_E_CRC : BYS_E_RS);
+}
+
 static int body_byte(bys_rx_t *rx, uint8_t byte) {
   rx->buf[rx->buf_n++] = byte;
   if (rx->kind != BYS_KIND_PAYLOAD) {
@@ -134,6 +187,7 @@ static int body_byte(bys_rx_t *rx, uint8_t byte) {
     return rx->buf_n == need ? finish_small(rx) : BYS_RX_MORE;
   }
   if (rx->buf_n < BYS_BLOCK_BYTES) return BYS_RX_MORE;
+  if (rx->blk + 1 == rx->total) return close_last(rx, BYS_BLOCK_BYTES);
   int e = close_block(rx, BYS_BLOCK_BYTES);
   if (e < 0) return fail(rx, e);
   return rx->blk == rx->total ? finish_payload(rx) : BYS_RX_MORE;
@@ -168,18 +222,9 @@ int bys_rx_push(bys_rx_t *rx, const uint8_t *nib) {
 int bys_rx_finish(bys_rx_t *rx) {
   if (rx->state == ST_DONE) return BYS_RX_DONE;
   if (rx->state != ST_BODY || rx->kind != BYS_KIND_PAYLOAD) return BYS_E_INCOMPLETE;
-  /* The last block does not say how long it is: try lengths from shortest to longest and the first that checks out wins. (Going
-   * downwards does not work: appending zeros to a codeword with roots alpha^0.. gives another valid codeword, and the padding of
-   * the last symbol is zeros.) */
-  uint8_t keep[BYS_BLOCK_BYTES];
-  size_t avail = rx->buf_n;
-  memcpy(keep, rx->buf, avail);
+  /* The last block does not say how long it is (see close_last). */
   if (rx->blk + 1 != rx->total) return fail(rx, BYS_E_INCOMPLETE);
-  for (size_t len = BYS_BLOCK_HEADER + BYS_BLOCK_PARITY + 1; len <= avail; len++) {
-    if (close_block(rx, len) == BYS_OK) return finish_payload(rx);
-    memcpy(rx->buf, keep, avail);
-  }
-  return fail(rx, BYS_E_RS);
+  return close_last(rx, rx->buf_n);
 }
 
 const bys_result_t *bys_rx_result(const bys_rx_t *rx) { return &rx->res; }

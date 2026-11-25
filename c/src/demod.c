@@ -26,6 +26,7 @@ enum { S_SEARCH = 0, S_HEADER = 1, S_BODY = 2 };
 #define LBINS 40u
 #define OVERLAP_MIN_HOPS 2
 #define OVERLAP_MIN_SCORE 0.45f
+#define REPEAT_SCORE_SHARE 0.7f /* a preamble past the frame's minimum length is the next repetition only with this share of its score */
 
 /* ---------- utilities ---------- */
 static int64_t fdiv(int64_t a, int64_t b) { int64_t q = a / b; if (a % b < 0) q--; return q; }
@@ -421,11 +422,9 @@ static int probe_last_block(bys_demod_reader_t *r) {
   if (rx->kind != BYS_KIND_PAYLOAD || rx->blk + 1 != rx->total || rx->buf_n <= BYS_BLOCK_HEADER + BYS_BLOCK_PARITY) return 0;
   if (r->probe_blk != rx->blk) { r->probe_blk = rx->blk; r->probe_tried = BYS_BLOCK_HEADER + BYS_BLOCK_PARITY; }
   for (unsigned len = r->probe_tried + 1u; len <= rx->buf_n; len++) {
-    uint8_t tmp[BYS_BLOCK_BYTES], index, total;
-    size_t chunk;
     r->probe_tried = (uint16_t)len;
-    memcpy(tmp, rx->buf, len);
-    if (bys_block_decode(tmp, len, NULL, 0, &index, &total, &chunk) >= 0 && index == rx->blk && total == rx->total) return 1;
+    /* RS alone may accept a length one byte short (last parity byte 0x00): the CRC-32 of the whole payload decides. */
+    if (bys_rx_last_fits(rx, len)) return 1;
   }
   return 0;
 }
@@ -492,13 +491,19 @@ static int search_in_body(bys_demod_t *d, bys_demod_reader_t *r, int64_t index) 
   const unsigned hops = r->ncand;
   float best = 0;
   for (unsigned i = 0; i < r->ncand; i++) if (r->cand_score[i] > best) best = r->cand_score[i];
+  const float own = r->frame_score;
   const int64_t at = plateau(d, r);
+  r->frame_score = own; /* plateau() stores the candidate's score; the frame being read keeps its own */
   if (at + sym_start(d, r, BYS_PREAMBLE_SYMBOLS) < min_end) {
     /* Data that resembles the preamble gives an isolated peak: two senders give a high plateau. */
     if (hops >= OVERLAP_MIN_HOPS && best >= OVERLAP_MIN_SCORE) clash(d);
     return 0;
   }
   if (r->magic != BYS_MAGIC_PAYLOAD) return 0;
+  /* The next repetition comes from the same sender, so its preamble scores about as well as this frame's. Body data that happens to
+   * match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles: 0.375 in a clean channel, over the threshold)
+   * and must not cut off the read: the last block would be lost. */
+  if (best < REPEAT_SCORE_SHARE * own) return 0;
   /* The next repetition arrived and the last block did not close: try once more and move on to the new frame. */
   read_available(d, r);
   if (r->state == S_BODY) fail_frame(d, r, 1);

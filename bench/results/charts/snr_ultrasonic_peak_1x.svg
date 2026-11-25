@@ -145,7 +145,7 @@
 <rect x="611.9" y="64.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave ultrasound-normal: 10.15 → 100%</title></rect>
 <rect x="640.9" y="64.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave ultrasound-normal: 12.15 → 100%</title></rect>
 <rect x="669.8" y="64.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave ultrasound-normal: 14.15 → 100%</title></rect>
-<path d="M68.1 418.0 L97.0 418.0 L125.9 418.0 L154.8 418.0 L183.7 418.0 L212.7 418.0 L241.6 418.0 L270.5 418.0 L299.4 362.0 L328.3 68.0 L357.2 68.0 L386.1 68.0 L415.0 68.0 L443.9 68.0 L472.8 82.0 L501.7 82.0 L530.7 82.0 L559.6 82.0 L588.5 82.0 L617.4 82.0" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M68.1 418.0 L97.0 418.0 L125.9 418.0 L154.8 418.0 L183.7 418.0 L212.7 418.0 L241.6 418.0 L270.5 418.0 L299.4 362.0 L328.3 68.0 L357.2 68.0 L386.1 68.0 L415.0 68.0 L443.9 68.0 L472.8 68.0 L501.7 68.0 L530.7 68.0 L559.6 68.0 L588.5 68.0 L617.4 68.0" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="68.1" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -27.716 → 0%</title></circle>
 <circle cx="97.0" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -25.716 → 0%</title></circle>
 <circle cx="125.9" cy="418.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -23.716 → 0%</title></circle>
@@ -160,12 +160,12 @@
 <circle cx="386.1" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -5.716 → 100%</title></circle>
 <circle cx="415.0" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -3.716 → 100%</title></circle>
 <circle cx="443.9" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: -1.716 → 100%</title></circle>
-<circle cx="472.8" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 0.284 → 96%</title></circle>
-<circle cx="501.7" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 2.284 → 96%</title></circle>
-<circle cx="530.7" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 4.284 → 96%</title></circle>
-<circle cx="559.6" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 6.284 → 96%</title></circle>
-<circle cx="588.5" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 8.284 → 96%</title></circle>
-<circle cx="617.4" cy="82.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 10.284 → 96%</title></circle>
+<circle cx="472.8" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 0.284 → 100%</title></circle>
+<circle cx="501.7" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 2.284 → 100%</title></circle>
+<circle cx="530.7" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 4.284 → 100%</title></circle>
+<circle cx="559.6" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 6.284 → 100%</title></circle>
+<circle cx="588.5" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 8.284 → 100%</title></circle>
+<circle cx="617.4" cy="68.0" r="3.5" fill="#0ca30c"><title>bysound top/robust: 10.284 → 100%</title></circle>
 <path d="M112.4 418.0 L141.3 418.0 L170.2 418.0 L199.2 418.0 L228.1 418.0 L257.0 418.0 L285.9 418.0 L314.8 418.0 L343.7 418.0 L372.6 418.0 L401.5 418.0 L430.4 418.0 L459.3 418.0 L488.2 152.0 L517.2 68.0 L546.1 68.0 L575.0 68.0 L603.9 68.0 L632.8 68.0 L661.7 68.0 L690.6 68.0" fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="112.4" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -24.65 → 0%</title></circle>
 <circle cx="141.3" cy="418.0" r="3.5" fill="#9085e9"><title>bysound wide/normal: -22.65 → 0%</title></circle>

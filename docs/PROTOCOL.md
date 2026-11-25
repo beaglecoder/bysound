@@ -354,7 +354,9 @@ Each block is first decoded from hard decisions. If that fails, the receiver ret
 
 ### 14.7 Finding the last block
 
-The header does not give the length of the last block. As symbols arrive, the receiver tries every length for the last block (15 → 62 bytes) and stops at the first one that decodes with `index = B−1` and `total = B`. That point is the end of the frame. If none decodes, it reads up to the maximum body length (`B·62` bytes) and closes the lap.
+The header does not give the length of the last block. As symbols arrive, the receiver tries every length for the last block (15 → 62 bytes) and stops at the first one that decodes with `index = B−1` and `total = B` **and** gives a payload whose CRC-32 checks out. That point is the end of the frame. If none decodes, it reads up to the maximum body length (`B·62` bytes) and closes the lap.
+
+Reed–Solomon alone cannot decide the length. If the last parity byte is `0x00` (about 1 payload in 256), the block one byte shorter is also a valid codeword (c(x) = x·c′(x)), and it would close there. Lengths are tried upwards, not downwards, because appending zeros to a codeword (the padding of the last symbol) also gives a valid codeword. When another block is not available yet, the CRC cannot be checked: the receiver keeps the first length RS accepts, and if the assembled payload then fails the CRC it forgets only the last block and closes it again on a later lap.
 
 ### 14.8 Combining laps
 
@@ -364,7 +366,7 @@ A block that fails in one lap is kept as soft symbols. In the next laps, the rec
 2. the **sum** of the probability vectors of all stored laps, which averages the noise out;
 3. the **surest** reading per nibble (the lap with the largest margin), which recovers a block whose start survived in one lap and whose end survived in another.
 
-Each candidate is tried with 0, 2 and 4 erasures. The receiver combines up to 6 laps from the last 30 s, and only laps with the same block count. The last block, whose length is unknown, is combined the same way, trying every length. Once all `B` blocks are closed, the chunks are concatenated, the CRC-32 is checked, and the text is unpacked. A preamble found inside a body after the frame's earliest possible end marks the start of the next lap.
+Each candidate is tried with 0, 2 and 4 erasures. The receiver combines up to 6 laps from the last 30 s, and only laps with the same block count. The last block, whose length is unknown, is combined the same way, trying every length. Once all `B` blocks are closed, the chunks are concatenated, the CRC-32 is checked, and the text is unpacked. A preamble found inside a body after the frame's earliest possible end marks the start of the next lap, if it scores at least 0.7 of the frame's own preamble score: the next lap comes from the same sender and scores about the same, while body data that happens to match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles is 0.375 in a clean channel, over the threshold).
 
 ### 14.9 Reference receiver parameters
 
@@ -374,6 +376,7 @@ Each candidate is tried with 0, 2 and 4 erasures. The receiver combines up to 6 
 | Preamble threshold | 0.32 | `protocol-v4.json: preambleThreshold` |
 | Window | `1/Δf` (×2 robust), Tukey 0.1 | `symbolWindow.ts` |
 | Plateau | candidates ≥ 0.97 × best | `receiver.ts` |
+| Next lap inside a body | preamble score ≥ 0.7 × the frame's | `receiver.ts` |
 | Noise floor | median start; τ 0.08 s for the first 0.3 s, then 0.5 s; outliers clipped at 4× | `receiver.ts` |
 | Whitening minimum | 5 % of the band's mean floor | `receiver.ts` |
 | Echo clamp | 0 … 0.8 | `receiver.ts` |

@@ -2,7 +2,7 @@
 
 **Agustin Gandara** · beaglecoder · November 2026
 
-> **Draft v0.9.** The numbers below come from the benchmark in [`bench/`](bench) as of this draft. The benchmark found two bugs in the bysound C receiver (Section 7). They will be fixed in the next revision, and every table regenerated. The fixes can only raise bysound's success rates.
+> **v1.0.** All numbers come from the benchmark in [`bench/`](bench) and are regenerated from its raw results. The first run of the benchmark found two receiver bugs in bysound; they are fixed and documented in Section 7.
 
 <p align="center"><img src="docs/assets/hero.svg" alt="bysound overview" width="640"></p>
 
@@ -24,7 +24,7 @@ We release byte-compatible implementations in TypeScript, Swift, Kotlin and allo
 
 At equal average signal power over the full band, bysound's normal channels reach 90 % success at −14 to −8 dB SNR, against −8 dB for ggwave's ultrasound and audible protocols, and its robust profile at −16 dB. With echo the gap widens to 8–12 dB. Measured in-band, the difference shrinks to 0–3 dB: most of the gain comes from concentrating power into narrower bands, not from a better detector.
 
-bysound also sends messages up to 12,236 bytes instead of 140, and it delivered **no wrong payload** in 88,220 trials. ggwave accepted 349 wrong payloads in 70,290 trials. ggwave remains far cheaper to run: its receiver needs 15–40× less CPU.
+bysound also sends messages up to 12,236 bytes instead of 140, and it delivered **no wrong payload** in 88,220 trials. ggwave accepted 349 wrong payloads in 70,290 trials. ggwave remains far cheaper to run: its receiver needs 14–42× less CPU.
 
 ## 1. Introduction
 
@@ -200,7 +200,7 @@ Most of ggwave's wrong payloads came from its fixed-length mono-tone mode (315).
 | bysound (listening on all 7 channels) | 7–13 ms | 434–508× |
 | ggwave (listening on all protocols) | 0.3–0.7 ms | 7,690–17,452× |
 
-ggwave's receiver is 15–40× cheaper. bysound still runs comfortably in real time on a phone or browser, and the single-channel C build runs at ~740× real time on the host and fits an ESP32-S3.
+ggwave's receiver is 14–42× cheaper. bysound still runs comfortably in real time on a phone or browser, and the single-channel C build runs at ~740× real time on the host and fits an ESP32-S3.
 
 ### 6.7 Where ggwave is better
 
@@ -209,14 +209,14 @@ ggwave's receiver is 15–40× cheaper. bysound still runs comfortably in real t
 - **Mono-tone mode** in fixed-length operation is the most noise-tolerant configuration measured (−20 dB), at 5.6 s for 32 B. It requires both ends to know the length in advance, and it accepted 315 wrong payloads.
 - **Maturity and reach:** many language bindings, years of use, and a large community.
 
-## 7. Bugs found by the benchmark
+## 7. Bugs found by the benchmark (fixed)
 
-The benchmark found two defects in the bysound **C** receiver, and both are reported as measured.
+Running bysound against an independent baseline paid off: the first run exposed two receiver bugs. Neither could deliver a wrong message (the CRC-32 rejected every bad read), but both lost messages in a clean channel. Both are fixed in all four implementations, with regression tests in each.
 
-1. **The last block closes one byte short.** The last block does not state its length, so the receiver tries lengths from short to long. If the last parity byte is `0x00` (about 1 payload in 256), the block one byte shorter is also a valid RS codeword. The receiver closes it there, and the CRC-32 rejects the message. That is a lost message, never a wrong one.
-2. **High-SNR failures on some payloads.** A few payloads on `top` fail only when the noise is very low. The root cause is under investigation.
+1. **The last block closed one byte short.** The last block does not state its length, so receivers tried lengths from short to long and stopped at the first one Reed–Solomon accepted. When the true last parity byte is `0x00` (about 1 payload in 256), the codeword without that byte is also a valid codeword (`c(x) = x·c′(x)`). The block then closed early and the CRC-32 rejected the message. **Fix:** among the lengths RS accepts, take the first one whose assembled payload passes the CRC-32. When the CRC cannot be checked yet (another block is still missing), keep the candidate as unchecked and drop it if the final CRC fails.
+2. **Some payloads failed only in a clean channel.** Receivers also look for a preamble inside a frame body, because a new repetition can start before the longest possible end of the current frame. In one payload, 6 of the 16 preamble nibbles of `top/robust` happened to appear in the body. With no noise those tones carry all their energy, so the match scored about 6/16 = 0.375, just over the 0.32 threshold, and the read was cut short. With noise the false match fell below the threshold, which is why it failed only at high SNR. **Fix:** a preamble inside a body cuts the read only if it scores at least 0.7× the current frame's own preamble score. A real repetition from the same sender scores about the same; a look-alike scores only its share of matching nibbles.
 
-Without any channel, together they lose 8 of 500 32-byte payloads on `top`, 15 of 500 on `top/robust`, and 1–5 on the other channels. This is the 96–97 % "clean" figure in some tables. Fixes and regenerated tables will follow in the next revision.
+**Effect.** With the same seeds, 160 trials went from failure to success and none the other way. Every bysound configuration now succeeds 100 % in a clean channel (0 of 500 lost at 8 and 32 B, 0 of 300 at 128 B; before, up to 15 of 500 on `top/robust`). The SNR90 values in Section 6 did not move, because the failures were above those points. `top/robust` at 2048 B improved from −12 to −16 dB. False decodes are unchanged: 0 for bysound.
 
 ## 8. Limitations
 

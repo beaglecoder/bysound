@@ -28,6 +28,26 @@ A speaker and a microphone are on almost every device, so sound is a pairing-fre
 - **Long messages:** up to **12 KB** in one transmission (ggwave: 140 B).
 - **Everywhere:** byte-identical frames in four languages, checked against shared test vectors; the C version needs no `malloc` and fits an ESP32-S3 in ~60 KB of RAM.
 
+## bysound vs ggwave, in plain words
+
+[ggwave](https://github.com/ggerganov/ggwave) is the best-known open-source library for sending data with sound, and bysound starts from the same idea. Here is what changes for you, in one line each. The details and the numbers are in the [paper](PAPER.md).
+
+| | What you get with bysound | Compared with ggwave |
+|---|---|---|
+| ✅ **It never lies** | You get the exact message or nothing. A checksum over the whole text rejects anything doubtful. | ggwave delivered **349 wrong messages** in our tests, some with no noise at all. bysound delivered **0** in 88,220. |
+| 🏠 **Works in echoey rooms** | It measures the room's echo and subtracts it before reading each tone. | Handles **8–12 dB more noise** when there is echo, the normal case in a real room. |
+| 🔇 **Can be truly inaudible** | A channel at 18–19.5 kHz that almost nobody hears, and it is the most noise-tolerant one. | ggwave's "ultrasound" starts at 15 kHz, which many young people hear. |
+| 📏 **Long messages** | Up to **12 KB** in one go, cut into self-correcting blocks. | ggwave stops at **140 bytes**. |
+| ⚡ **Faster on the same frequencies** | On the same 15–19.5 kHz span, the `wide` channel sends 128 bytes in 2.5 s. | **1.8× faster** than ggwave's fastest mode (4.6 s). |
+| 🔊 **More signal from the same speaker** | Fewer tones at once, so a speaker can play them louder before it distorts. | More useful power in the air at the same volume. |
+| 🔁 **Repetitions add up** | If a noise burst ruins part of one repetition, the next one fills the gap (TypeScript, Swift and Kotlin receivers). | ggwave reads each repetition on its own. |
+| 👥 **Two senders at once** | If another device transmits at the same time, the receiver reports a *clash* instead of mixing them. | Not detected. |
+| 🎵 **Rides on music** | The message can play above a song and still decode ([try it](#music--hidden-message)). | Not measured for ggwave. |
+
+**Where ggwave is still better:** its receiver needs **14–42× less CPU**, very short messages (8 bytes) are just as fast, and it is more mature, with many language bindings.
+
+**Honest caveats:** all numbers come from a simulated channel. Real phone speakers and microphones lose strength above 17 kHz, so over-the-air results will be lower, especially on the highest channel. Measured inside the same frequency band, both libraries tolerate about the same noise: most of bysound's noise advantage comes from using narrower bands, not from a magic detector.
+
 ## Try it in one minute
 
 The quickest test needs two devices with speakers and microphones (two laptops, or a laptop and a phone).
@@ -102,9 +122,9 @@ A gentle walk-through is in **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)**; ev
 
 `top`, `high`, `upper` and `mid` also have a **robust** profile: symbols twice as long, about 2 dB more noise tolerance (half the speed).
 
-## Compared with ggwave
+## The numbers
 
-[ggwave](https://github.com/ggerganov/ggwave) is the best-known open-source data-over-sound library, and bysound builds on the same idea: MFSK on an orthogonal 46.875 Hz grid. We benchmarked both, unmodified, on the same simulated channel with the same seeds (158,510 trials, see [`bench/`](bench)).
+Both libraries, unmodified, on the same simulated channel with the same seeds (158,510 trials, reproducible in [`bench/`](bench)). They share the same idea: MFSK on an orthogonal 46.875 Hz grid.
 
 <img src="bench/results/charts/snr_ultrasonic_1x.svg" alt="Success rate vs SNR, near-ultrasonic modes" width="100%">
 
@@ -116,7 +136,7 @@ A gentle walk-through is in **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)**; ev
 | Largest message | 12,236 B | 12,236 B | 12,236 B | 140 B |
 | Wrong texts delivered | 0 | 0 | 0 | 349 across all ggwave modes |
 
-ggwave is still the better pick when you need the smallest and fastest receiver (15–40× less CPU) or many language bindings. The [paper](PAPER.md) explains each improvement and where the advantage comes from (narrower bands concentrate power, so in-band the two are within 0–3 dB). It also covers the limits: this is a simulation, and real speakers and microphones lose a lot above 17 kHz.
+ggwave is still the better pick when you need the smallest and fastest receiver (14–42× less CPU) or many language bindings. The [paper](PAPER.md) explains each improvement and where the advantage comes from (narrower bands concentrate power, so in-band the two are within 0–3 dB). It also covers the limits: this is a simulation, and real speakers and microphones lose a lot above 17 kHz.
 
 ## Use it in your code
 

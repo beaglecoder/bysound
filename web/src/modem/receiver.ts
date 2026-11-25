@@ -45,6 +45,8 @@ const REBUILD_TRIES_MAX = 300;
 const OVERLAP_FROM_SECONDS = 0.3;
 const OVERLAP_MIN_HOPS = 2;
 const OVERLAP_MIN_SCORE = 0.45;
+/** A preamble past the frame's minimum length is taken as the next repetition only if it scores at least this share of the frame's. */
+const REPEAT_SCORE_SHARE = 0.7;
 const SELF_ECHO_SECONDS = 0.3;
 const OVERLAP_MARGIN_SECONDS = 0.15;
 const HEADER_FAIL_NEAR_SECONDS = 0.15;
@@ -152,6 +154,8 @@ class BlockAssembly {
   channel: BandId | null = null;
   /** Body bytes of the repetition that closed the last block: the header does not say. */
   knownBytes = 0;
+  /** The last block was closed without the other blocks, so the CRC-32 could not confirm its length (see lastBlockCheck). */
+  lastUnchecked = false;
   begin(total: number, at: number, horizon: number, channel: BandId) {
     if (total !== this.total || this.lastAt < horizon) this.reset();
     this.total = total;
@@ -165,6 +169,7 @@ class BlockAssembly {
     this.pendingLast = [];
     this.loops = 0;
     this.knownBytes = 0;
+    this.lastUnchecked = false;
   }
 }
 
@@ -368,13 +373,20 @@ class ChannelReader {
     if (!this.candStarts.length) return false;
     const hops = this.candStarts.length;
     const score = Math.max(...this.candScores);
+    const own = this.frameScore;
     const at = this.plateau();
+    // plateau() stores the candidate's score; the frame being read keeps its own.
+    this.frameScore = own;
     if (at + this.start(PREAMBLE.length) < minEnd) {
       // Data that resembles the preamble gives an isolated peak: two senders give a high plateau. A false alarm cuts off the read.
       if (hops >= OVERLAP_MIN_HOPS && score >= OVERLAP_MIN_SCORE) this.pool.clash();
       return false;
     }
     if (!this.isBlocks) return false;
+    // The next repetition comes from the same sender, so its preamble scores about as well as this frame's. Body data that happens
+    // to match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles: 0.375 in a clean channel, over the
+    // threshold) and must not cut off the read: the last block would be lost.
+    if (score < REPEAT_SCORE_SHARE * own) return false;
     this.tryBody();
     if (this.state === State.Body) this.finishBlocks(null, this.bodySoft.length >> 1);
     this.enterFrame(at);
@@ -672,7 +684,9 @@ class ChannelReader {
       this.lastTried = length;
       const bytes = hardBytes(this.bodySoft.slice(2 * lastStart, 2 * (lastStart + length)));
       const r = decodeBlock(bytes);
-      if (r && r.block.index === this.dataLength - 1 && r.block.total === this.dataLength) return this.finishBlocks(r, lastStart + length);
+      if (!r || r.block.index !== this.dataLength - 1 || r.block.total !== this.dataLength) continue;
+      const check = this.lastBlockCheck(r.block.chunk);
+      if (check !== false) return this.finishBlocks(r, lastStart + length, check === null);
     }
     if (this.bodyRead === maxSymbols && this.lastTried >= BLOCK_BYTES) this.finishBlocks(null, this.bodyBytesMax);
   }
@@ -697,13 +711,37 @@ class ChannelReader {
       const bytes = hardBytes(candidate);
       for (let length = BLOCK_HEADER + BLOCK_PARITY + 1; length <= BLOCK_BYTES; length++) {
         const r = decodeBlock(bytes.slice(0, length));
-        if (r && r.block.index === this.dataLength - 1 && r.block.total === this.dataLength) return r;
+        if (!r || r.block.index !== this.dataLength - 1 || r.block.total !== this.dataLength) continue;
+        const check = this.lastBlockCheck(r.block.chunk);
+        if (check !== false) return { ...r, unchecked: check === null };
       }
     }
     return null;
   }
 
-  private finishBlocks(last: { block: Block; corrected: number } | null, usedBytes: number) {
+  /**
+   * Whether a candidate for the last block gives a payload whose CRC-32 checks out. Reed–Solomon alone cannot tell its length: if the
+   * last parity byte is 0x00 the codeword without it is also a codeword (c(x) = x·c'(x)), so the block would close one byte short.
+   * null: some other block is not available yet, so it cannot be told here.
+   */
+  private lastBlockCheck(chunk: number[]): boolean | null {
+    const n = this.dataLength;
+    const a = this.pool.blocks;
+    const known = a.total === n && a.channel === this.band.id && a.lastAt >= this.frameStart - COMBINE_SECONDS * this.r.rate;
+    const chunks: number[][] = [];
+    for (let i = 0; i < n - 1; i++) {
+      let c = known ? a.chunks.get(i) : undefined;
+      if (!c && 2 * (i + 1) * BLOCK_BYTES <= this.bodySoft.length) {
+        c = this.closeBlock(i, this.bodySoft.slice(2 * i * BLOCK_BYTES, 2 * (i + 1) * BLOCK_BYTES), known ? a.pending.get(i) ?? [] : [])?.block.chunk;
+      }
+      if (!c) return null;
+      chunks.push(c);
+    }
+    chunks.push(chunk);
+    return assemble(chunks) !== null;
+  }
+
+  private finishBlocks(last: { block: Block; corrected: number } | null, usedBytes: number, lastUnchecked = false) {
     const a = this.pool.blocks;
     const rate = this.r.rate;
     const n = this.dataLength;
@@ -715,6 +753,7 @@ class ChannelReader {
       if (!a.chunks.has(last.block.index)) gained++;
       a.chunks.set(last.block.index, last.block.chunk);
       a.knownBytes = usedBytes;
+      a.lastUnchecked = lastUnchecked;
       corrected += last.corrected;
     } else if (!a.chunks.has(n - 1) && this.bodySoft.length > 2 * lastStart) {
       const soft = this.bodySoft.slice(2 * lastStart, 2 * (lastStart + BLOCK_BYTES));
@@ -723,6 +762,7 @@ class ChannelReader {
       const r = a.pendingLast.length > 1 ? this.closeLast(a.pendingLast) : null;
       if (r) {
         a.chunks.set(n - 1, r.block.chunk);
+        a.lastUnchecked = r.unchecked;
         a.pendingLast = [];
         gained++;
         corrected += r.corrected;
@@ -750,6 +790,14 @@ class ChannelReader {
     if (a.chunks.size === n) {
       const text = assemble(Array.from({ length: n }, (_, i) => a.chunks.get(i)!));
       const loops = a.loops;
+      if (text === null && a.lastUnchecked) {
+        // The last block's length was a guess (it closed before the other blocks): only it is forgotten, and the next repetition
+        // closes it again, this time checked against the CRC-32.
+        a.chunks.delete(n - 1);
+        a.lastUnchecked = false;
+        this.pool.failures++;
+        return;
+      }
       a.reset();
       if (text !== null) return this.deliver({ kind: 'payload', payload: text, band: this.band.id, correctedBytes: corrected, combined: loops }, end);
       this.pool.failures++;

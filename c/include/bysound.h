@@ -166,6 +166,9 @@ void bys_rx_init(bys_rx_t *rx, bys_band_t band, bys_profile_t profile, uint8_t *
 int bys_rx_push(bys_rx_t *rx, const uint8_t *nib);
 /* End of the symbols (the gap between frames). A payload frame does not know the length of its last block and closes it here. */
 int bys_rx_finish(bys_rx_t *rx);
+/* 1 if the last block, closed at `len` of the bytes received so far, passes RS (with the expected index and total) and gives a
+ * payload whose CRC-32 checks out: bys_rx_finish would then close the frame. For a demodulator that tries each length as it arrives. */
+int bys_rx_last_fits(const bys_rx_t *rx, size_t len);
 const bys_result_t *bys_rx_result(const bys_rx_t *rx);
 /* Type and length of the header once read (0 if not yet). */
 int bys_rx_header_ready(const bys_rx_t *rx);

@@ -21,7 +21,7 @@ In-band SNR = full-band SNR + offset, where the offset uses the band holding 99 
 | bysound xhigh/normal | 0 | 0 | 0 | 0 | 62 | 100 | 100 | 100 | 100 | -10 | -1 | -0 | 0 |
 | bysound wide/normal | 0 | 0 | 0 | 0 | 0 | 100 | 100 | 100 | 100 | -8 | -1 | +3 | 0 |
 | bysound audible/normal | 0 | 0 | 0 | 0 | 38 | 100 | 100 | 100 | 100 | -10 | -1 | -1 | 0 |
-| bysound top/robust | 0 | 0 | 0 | 100 | 100 | 100 | 96 | 96 | 96 | -16 | -4 | -10 | 0 |
+| bysound top/robust | 0 | 0 | 0 | 100 | 100 | 100 | 100 | 100 | 100 | -16 | -4 | -10 | 0 |
 | bysound high/robust | 0 | 0 | 0 | 40 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
 | bysound upper/robust | 0 | 0 | 0 | 50 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
 | bysound mid/robust | 0 | 0 | 0 | 34 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
@@ -46,7 +46,7 @@ In-band SNR = full-band SNR + offset, where the offset uses the band holding 99 
 | bysound xhigh/normal | 0 | 0 | 0 | 0 | 84 | 100 | 100 | 100 | 100 | -10 | -1 | -0 | 0 |
 | bysound wide/normal | 0 | 0 | 0 | 0 | 0 | 100 | 100 | 100 | 100 | -8 | -1 | +3 | 0 |
 | bysound audible/normal | 0 | 0 | 0 | 0 | 70 | 100 | 100 | 100 | 100 | -10 | -1 | -1 | 0 |
-| bysound top/robust | 0 | 0 | 0 | 100 | 100 | 100 | 96 | 96 | 96 | -16 | -4 | -10 | 0 |
+| bysound top/robust | 0 | 0 | 0 | 100 | 100 | 100 | 100 | 100 | 100 | -16 | -4 | -10 | 0 |
 | bysound high/robust | 0 | 0 | 0 | 58 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
 | bysound upper/robust | 0 | 0 | 0 | 64 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
 | bysound mid/robust | 0 | 0 | 0 | 58 | 100 | 100 | 100 | 100 | 100 | -14 | -4 | -6 | 0 |
@@ -119,26 +119,26 @@ Latency = time from the first sample of the transmission to the moment the decod
 
 | configuration | median latency clean (s) | airtime (s) | median real-time factor | median CPU per trial (ms) |
 |---|---:|---:|---:|---:|
-| bysound top/normal | 1.99 | 2.33 | 460× | 9.4 |
-| bysound high/normal | 1.45 | 1.79 | 457× | 8.2 |
-| bysound upper/normal | 1.45 | 1.79 | 444× | 8.4 |
-| bysound mid/normal | 1.45 | 1.79 | 438× | 8.5 |
-| bysound xhigh/normal | 1.13 | 1.47 | 434× | 7.9 |
-| bysound wide/normal | 0.87 | 1.21 | 436× | 7.2 |
-| bysound audible/normal | 1.40 | 1.75 | 436× | 8.5 |
-| bysound top/robust | 3.97 | 4.32 | 491× | 12.7 |
-| bysound high/robust | 2.88 | 3.23 | 508× | 10.2 |
-| bysound upper/robust | 2.88 | 3.23 | 506× | 10.1 |
-| bysound mid/robust | 2.88 | 3.23 | 504× | 10.2 |
-| ggwave ultrasound-normal | 3.50 | 3.75 | 9759× | 0.6 |
-| ggwave ultrasound-fast | 2.48 | 2.73 | 7952× | 0.5 |
-| ggwave ultrasound-fastest | 1.46 | 1.71 | 7690× | 0.4 |
-| ggwave audible-normal | 3.50 | 3.75 | 9479× | 0.6 |
-| ggwave audible-fast | 2.48 | 2.73 | 15514× | 0.3 |
-| ggwave audible-fastest | 1.46 | 1.71 | 7913× | 0.4 |
-| ggwave dt-normal | 9.46 | 9.71 | 17452× | 0.7 |
-| ggwave dt-fast | 6.46 | 6.70 | 17196× | 0.5 |
-| ggwave dt-fastest | 3.45 | 3.69 | 16261× | 0.3 |
+| bysound top/normal | 1.99 | 2.33 | 436× | 9.7 |
+| bysound high/normal | 1.45 | 1.79 | 467× | 8.1 |
+| bysound upper/normal | 1.45 | 1.79 | 467× | 8.1 |
+| bysound mid/normal | 1.45 | 1.79 | 467× | 8.0 |
+| bysound xhigh/normal | 1.13 | 1.47 | 468× | 7.3 |
+| bysound wide/normal | 0.87 | 1.21 | 460× | 6.7 |
+| bysound audible/normal | 1.40 | 1.75 | 468× | 8.0 |
+| bysound top/robust | 3.97 | 4.32 | 506× | 12.1 |
+| bysound high/robust | 2.88 | 3.23 | 534× | 9.5 |
+| bysound upper/robust | 2.88 | 3.23 | 532× | 9.6 |
+| bysound mid/robust | 2.88 | 3.23 | 524× | 9.8 |
+| ggwave ultrasound-normal | 3.50 | 3.75 | 10024× | 0.6 |
+| ggwave ultrasound-fast | 2.48 | 2.73 | 9129× | 0.5 |
+| ggwave ultrasound-fastest | 1.46 | 1.71 | 7625× | 0.4 |
+| ggwave audible-normal | 3.50 | 3.75 | 10016× | 0.6 |
+| ggwave audible-fast | 2.48 | 2.73 | 12719× | 0.4 |
+| ggwave audible-fastest | 1.46 | 1.71 | 7585× | 0.4 |
+| ggwave dt-normal | 9.46 | 9.71 | 18319× | 0.6 |
+| ggwave dt-fast | 6.46 | 6.70 | 17843× | 0.5 |
+| ggwave dt-fastest | 3.45 | 3.69 | 16868× | 0.3 |
 
 ## 4. Payload size vs robustness — SNR90 (full-band dB, grid step 4; 512/2048 B grid −24…−8 step 4 and 0)
 
@@ -151,7 +151,7 @@ Latency = time from the first sample of the transmission to the moment the decod
 | bysound xhigh/normal | -12 | -8 | -8 | -8 | -8 | -8 | -8 |
 | bysound wide/normal | -8 | -8 | -8 | -8 | -8 | -8 | -8 |
 | bysound audible/normal | -12 | -8 | -8 | -8 | -8 | -8 | -8 |
-| bysound top/robust | -16 | -16 | -16 | -16 | -16 | -12 | -12 |
+| bysound top/robust | -16 | -16 | -16 | -16 | -16 | -12 | -16 |
 | bysound high/robust | -12 | -12 | -12 | -12 | -12 | -12 | -12 |
 | bysound upper/robust | -12 | -12 | -12 | -12 | -12 | -12 | -12 |
 | bysound mid/robust | -16 | -12 | -12 | -12 | -12 | -12 | -12 |
@@ -172,17 +172,17 @@ Success at the noiseless point (%):
 
 | configuration | 8 B | 64 B | 128 B | 48 B UTF-8 | 512 B | 2048 B |
 |---|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound high/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound upper/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound mid/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound xhigh/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound wide/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound audible/normal | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound top/robust | 100 | 100 | 100 | 100 | 95 | 90 |
-| bysound high/robust | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound upper/robust | 100 | 100 | 100 | 100 | 100 | 90 |
-| bysound mid/robust | 100 | 100 | 100 | 100 | 100 | 90 |
+| bysound top/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound high/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound upper/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound mid/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound xhigh/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound wide/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound audible/normal | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound high/robust | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound upper/robust | 100 | 100 | 100 | 100 | 100 | 100 |
+| bysound mid/robust | 100 | 100 | 100 | 100 | 100 | 100 |
 | ggwave ultrasound-normal | 100 | 97 | 100 | 100 | — | — |
 | ggwave ultrasound-fast | 97 | 100 | 100 | 100 | — | — |
 | ggwave ultrasound-fastest | 100 | 100 | 100 | 100 | — | — |
@@ -253,13 +253,13 @@ Noiseless success (%) under each impairment, 1 transmission:
 | configuration | echo | pink | babble | drift+100 | drift-100 | combo |
 |---|---:|---:|---:|---:|---:|---:|
 | bysound top/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound high/normal | 100 | 100 | 97 | 97 | 100 | 100 |
+| bysound high/normal | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound upper/normal | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound mid/normal | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound xhigh/normal | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound wide/normal | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound audible/normal | 100 | 100 | 100 | 100 | 100 | 100 |
-| bysound top/robust | 97 | 97 | 97 | 97 | 97 | 97 |
+| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound high/robust | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound upper/robust | 100 | 100 | 100 | 100 | 100 | 100 |
 | bysound mid/robust | 100 | 100 | 100 | 100 | 100 | 100 |
@@ -284,7 +284,7 @@ Noiseless success (%) under each impairment, 1 transmission:
 | bysound xhigh/normal | -8 | -8 | 100 |
 | bysound wide/normal | -8 | -8 | 100 |
 | bysound audible/normal | -8 | -8 | 100 |
-| bysound top/robust | -16 | -16 | 97 |
+| bysound top/robust | -16 | -16 | 100 |
 | bysound high/robust | -12 | -12 | 100 |
 | bysound upper/robust | -12 | -12 | 100 |
 | bysound mid/robust | -12 | -12 | 100 |
@@ -356,17 +356,17 @@ Each library's encoder output at full scale, 12345 zero samples before and 1 s a
 
 | configuration | 8 B not delivered | 8 B wrong | 32 B not delivered | 32 B wrong | 128 B not delivered | 128 B wrong |
 |---|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 5 / 500 | 0 | 8 / 500 | 0 | 4 / 300 | 0 |
-| bysound high/normal | 3 / 500 | 0 | 5 / 500 | 0 | 3 / 300 | 0 |
-| bysound upper/normal | 3 / 500 | 0 | 2 / 500 | 0 | 2 / 300 | 0 |
-| bysound mid/normal | 3 / 500 | 0 | 3 / 500 | 0 | 2 / 300 | 0 |
-| bysound xhigh/normal | 3 / 500 | 0 | 1 / 500 | 0 | 2 / 300 | 0 |
-| bysound wide/normal | 3 / 500 | 0 | 1 / 500 | 0 | 2 / 300 | 0 |
-| bysound audible/normal | 3 / 500 | 0 | 1 / 500 | 0 | 2 / 300 | 0 |
-| bysound top/robust | 6 / 500 | 0 | 15 / 500 | 0 | 7 / 300 | 0 |
-| bysound high/robust | 3 / 500 | 0 | 2 / 500 | 0 | 4 / 300 | 0 |
-| bysound upper/robust | 3 / 500 | 0 | 1 / 500 | 0 | 4 / 300 | 0 |
-| bysound mid/robust | 3 / 500 | 0 | 5 / 500 | 0 | 3 / 300 | 0 |
+| bysound top/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound high/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound upper/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound mid/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound xhigh/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound wide/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound audible/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound top/robust | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound high/robust | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound upper/robust | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound mid/robust | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
 | ggwave ultrasound-normal | 0 / 500 | 0 | 3 / 500 | 0 | 0 / 300 | 0 |
 | ggwave ultrasound-fast | 11 / 500 | 11 | 1 / 500 | 0 | 0 / 300 | 0 |
 | ggwave ultrasound-fastest | 21 / 500 | 21 | 0 / 500 | 0 | 0 / 300 | 0 |
@@ -377,15 +377,15 @@ Each library's encoder output at full scale, 12345 zero samples before and 1 s a
 | ggwave dt-fast | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
 | ggwave dt-fastest | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
 
-bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). Every failing payload is one whose last block ends in a 0x00 Reed-Solomon parity byte (see README, known issues):
+bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are the ones bug 1 used to lose (see README, bugs found by this benchmark):
 
-| size | payloads failing / tried (same for all 11 channel/profile combinations) | of which last parity byte = 0x00 |
-|---|---:|---:|
-| 8 B | 0 / 300 | 0 (prediction matches 300 of 300 payloads) |
-| 32 B | 1 / 300 | 1 (prediction matches 300 of 300 payloads) |
-| 128 B | 2 / 300 | 2 (prediction matches 300 of 300 payloads) |
-| 512 B | 1 / 300 | 1 (prediction matches 300 of 300 payloads) |
-| 2048 B | 2 / 300 | 2 (prediction matches 300 of 300 payloads) |
+| size | payloads failing / tried (same for all 11 channel/profile combinations) | payloads with last parity byte = 0x00 | of those, failing |
+|---|---:|---:|---:|
+| 8 B | 0 / 300 | 0 | 0 |
+| 32 B | 0 / 300 | 1 | 0 |
+| 128 B | 0 / 300 | 2 | 0 |
+| 512 B | 0 / 300 | 1 | 0 |
+| 2048 B | 0 / 300 | 2 | 0 |
 
 ## Charts
 

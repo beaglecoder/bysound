@@ -117,6 +117,9 @@ internal class BlockAssembly {
     /** Bytes of the body of the lap that closed the last block: the header does not say. */
     var knownBytes = 0
 
+    /** The last block closed without the other blocks, so the CRC-32 could not confirm its length (see ChannelReader.lastBlockCheck). */
+    var lastUnchecked = false
+
     fun begin(total: Int, at: Long, horizon: Long, channel: Band) {
         if (total != this.total || lastAt < horizon) reset()
         this.total = total
@@ -131,6 +134,7 @@ internal class BlockAssembly {
         pendingLast = emptyList()
         loops = 0
         knownBytes = 0
+        lastUnchecked = false
     }
 }
 

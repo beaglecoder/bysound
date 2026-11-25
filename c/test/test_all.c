@@ -419,12 +419,49 @@ static void sizes(void) {
   CHECK(sizeof(bys_tx_t) < 4096);
 }
 
+/* Text "<prefix> <i>" with the smallest i whose last block ends in a parity byte 0x00 (about 1 in 256). */
+static void zero_parity_text(const char *prefix, char *text, size_t cap) {
+  for (unsigned i = 0;; i++) {
+    snprintf(text, cap, "%s %u", prefix, i);
+    bys_frame_t f;
+    uint8_t nib[BYS_MAX_GROUPS];
+    if (bys_frame_init_payload(&f, BYS_TOP, BYS_NORMAL, text, strlen(text)) != BYS_OK) return;
+    while (bys_frame_next(&f, nib)) {}
+    if (f.buf[f.buf_len - 1] == 0) return;
+  }
+}
+
+/* Regression (found by bench/): RS also accepts the last block one byte short when its last parity byte is 0x00 (c(x) = x * c'(x));
+ * the CRC-32 of the payload has to pick the length. One- and two-block payloads, normal and robust, at symbol level. */
+static void test_zero_parity(void) {
+  static const char *prefixes[2] = { "zero parity", "a payload long enough to need two blocks of forty-eight bytes, zero parity" };
+  for (int k = 0; k < 2; k++) {
+    char text[200];
+    zero_parity_text(prefixes[k], text, sizeof text);
+    for (int robust = 0; robust < 2; robust++) {
+      bys_frame_t f;
+      CHECK(bys_frame_init_payload(&f, BYS_TOP, (bys_profile_t)robust, text, strlen(text)) == BYS_OK);
+      CHECK(f.total == k + 1);
+      size_t n = 0;
+      while (bys_frame_next(&f, SYMS + n * f.groups)) n++;
+      CHECK(f.buf[f.buf_len - 1] == 0);
+      bys_rx_t rx;
+      bys_rx_init(&rx, BYS_TOP, (bys_profile_t)robust, OUT, sizeof OUT);
+      CHECK(feed(&rx, SYMS, n, f.groups) == BYS_RX_DONE);
+      char back[200];
+      int u = bys_unpack(OUT, bys_rx_result(&rx)->payload_len, back, sizeof back);
+      CHECK(u == (int)strlen(text) && memcmp(back, text, (size_t)u) == 0);
+    }
+  }
+}
+
 int main(void) {
   printf("bysound: host tests\n");
   test_constants();
   test_crc_rs_pack();
   test_frames();
   test_decode();
+  test_zero_parity();
   test_tx();
   sizes();
   printf("%d checks, %d failures\n", checks, failures);
