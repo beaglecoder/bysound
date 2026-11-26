@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound with a backend</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>bysound with a backend</h1>
+  <p class="lead">A payment request where only a 12-byte fingerprint travels by sound. The amount, the merchant and <b>who published it</b> come from the backend (<code>server.mjs</code>, running locally).</p>
+  <ol>
+    <li><a href="./sender.html" target="_blank">Sender</a>: the shop publishes a request on the backend, then plays only its fingerprint.</li>
+    <li><a href="./receiver.html" target="_blank">Receiver</a>: the customer resolves the fingerprint on the backend, sees the verified publisher and the amount, and confirms.</li>
+    <li><a href="./rogue.html" target="_blank">Rogue</a>: an attacker nearby plays a different fingerprint at the same time.</li>
+  </ol>
+  <p class="note">Open each page in its own <b>window</b> (not a background tab: browsers slow down timers in hidden tabs), or on different devices against the same backend. Speaker volume high. See README.md for what to watch.</p>
+</main>
+</body>
+</html>

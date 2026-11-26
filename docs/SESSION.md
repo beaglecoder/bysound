@@ -314,7 +314,7 @@ A second call returns the same. An expired watch does not fail: the absence of e
 
 ### 6.7 Reference mode
 
-A reference frame carries only the 12-byte fingerprint. The app passes a **resolver**: a function from fingerprint (24 hex) to text or nothing, typically a `Map` of texts both devices already have (a menu, a list of products, a set of commands). It MAY be asynchronous.
+A reference frame carries only the 12-byte fingerprint. The app passes a **resolver**: a function from fingerprint (24 hex) to text or nothing, typically a `Map` of texts both devices already have (a menu, a list of products, a set of commands). It MAY be asynchronous. It MAY also query the app's own server; the session layer still opens no connection itself. That pattern (publish before sending, a read-only resolver, side effects only after `confirmed()`) is described in [SECURITY.md, Using a backend](SECURITY.md#using-a-backend).
 
 | Resolver outcome | Result |
 |---|---|
@@ -568,4 +568,4 @@ The simulated air of the reference (`testAir.ts`) sums every device's sound into
 
 ## 14. Not included
 
-This layer does not include: any backend (publish / fetch / mark received), an energy-based second-emitter detector or short listens, a per-microphone noise floor, a "can it be heard" level guard, an audible cue, emission self-tests or calibration of the output level.
+This layer does not include: any backend (publish / fetch / mark received; how an app builds one on the resolver is in [SECURITY.md](SECURITY.md#using-a-backend)), an energy-based second-emitter detector or short listens, a per-microphone noise floor, a "can it be heard" level guard, an audible cue, emission self-tests or calibration of the output level.

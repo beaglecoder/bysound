@@ -4,15 +4,10 @@
   "type": "module",
   "description": "Runnable examples for bysound. They import ../web/src directly and use web/'s toolchain: run `npm ci` in ../web once.",
   "scripts": {
-    "dev:web-chat": "../web/node_modules/.bin/vite web-chat -c vite.config.ts",
-    "dev:web-file": "../web/node_modules/.bin/vite web-file -c vite.config.ts",
     "dev:web-wifi-setup": "../web/node_modules/.bin/vite web-wifi-setup -c vite.config.ts",
     "dev:web-channel-ladder": "../web/node_modules/.bin/vite web-channel-ladder -c vite.config.ts",
-    "build:web": "for d in web-chat web-file web-wifi-setup web-channel-ladder; do ../web/node_modules/.bin/vite build $d -c vite.config.ts || exit 1; done",
-    "build:node": "../web/node_modules/.bin/vite build -c vite.node.config.ts --logLevel warn",
-    "node:encode": "npm run -s build:node && node dist-node/cli.mjs encode",
-    "node:decode": "npm run -s build:node && node dist-node/cli.mjs decode",
-    "music-variants": "npm run -s build:node && node dist-node/music-variants.mjs",
+    "dev:store-presence": "../web/node_modules/.bin/vite store-presence -c store-presence/vite.config.ts",
+    "build:web": "for d in web-wifi-setup web-channel-ladder; do ../web/node_modules/.bin/vite build $d -c vite.config.ts || exit 1; done && ../web/node_modules/.bin/vite build store-presence -c store-presence/vite.config.ts",
     "typecheck": "../web/node_modules/.bin/tsc --noEmit -p tsconfig.json"
   }
 }

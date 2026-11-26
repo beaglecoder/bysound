@@ -1,0 +1,4 @@
+# Added on top of ../../../esp32/sdkconfig.defaults (see CMakeLists.txt).
+# A beacon only transmits: no second demodulator, and nothing is received.
+# CONFIG_BYSOUND_DEMO_ROBUST_RX is not set
+CONFIG_MBEDTLS_HARDWARE_SHA=y

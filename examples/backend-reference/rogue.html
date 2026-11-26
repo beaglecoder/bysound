@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound + backend: rogue</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Rogue sender (the attack)</h1>
+  <p class="lead">Someone nearby plays a <b>different</b> fingerprint to redirect the payment. It ignores every rule: no pre-listen, no detection, does not stop on alerts. It may claim the same merchant name, but the backend knows which account published it.</p>
+  <label for="account">Signed in as (demo account)</label><input id="account" value="mallory">
+  <label for="merchant">Merchant name it claims</label><input id="merchant" value="Shop 7">
+  <label for="amount">Amount (EUR)</label><input id="amount" value="99.00">
+  <label><input id="publishFirst" type="checkbox" checked style="width:auto"> Publish on the backend first (otherwise the fingerprint resolves to nothing)</label>
+  <div class="row"><button id="go">Emit now</button><button id="stop" class="secondary" disabled>Stop</button><span id="status" class="muted">idle</span></div>
+  <ul id="log" class="log"></ul>
+  <p class="note">Try it three ways: (1) alone; (2) about 5 s after pressing <i>Request payment</i> on the sender, so both play together; (3) after the receiver shows the request, before Confirm.</p>
+</main>
+<script type="module" src="./rogue.ts"></script>
+</body>
+</html>

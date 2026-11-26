@@ -70,6 +70,7 @@ Noise measured over the whole audio band (0–24 kHz), 32-byte message, simulate
 - 👥 **Notices a second sender:** if two devices transmit at once, the receiver reports a *clash* and delivers nothing. Call `confirmed()` before acting and it also catches a sender that shows up later.
 - ⚠ **Warns the others:** whoever notices another sender plays an alert, relayed at most twice. The suggested quarantine is only a callback: bysound never blocks anything.
 - 🎚️ **Security levels:** `basic`, `standard` or `maximum` (the default).
+- 🔐 **With a backend:** only a 12-byte fingerprint travels by sound; the real data, the sender's identity and blocking of suspicious messages live on your server ([how](docs/SECURITY.md#using-a-backend), [example](examples/backend-reference/)).
 - 🔓 **Not secret:** anyone nearby can hear the sound, just like anyone can photograph a QR code. Don't send passwords in the clear; sign or encrypt in your app if it matters.
 
 Session layer (acks, alerts, levels, adaptation): specified in **[docs/SESSION.md](docs/SESSION.md)** and implemented in TypeScript (the reference), Swift, Kotlin and C, which share its test vectors. What is and isn't protected: **[docs/SECURITY.md](docs/SECURITY.md)**.
@@ -129,7 +130,7 @@ All of them talk to each other. Each folder's README has its API, tests and deta
 
 ## Examples
 
-Small complete apps in [`examples/`](examples), all local (no keys, no backend): a [chat](examples/web-chat), a [small file](examples/web-file), [Wi-Fi setup](examples/web-wifi-setup) with its [ESP32 side](examples/esp32-wifi-setup) and the [channel ladder](examples/web-channel-ladder) in the browser; a [Node CLI](examples/node-cli) and [music variants](examples/music-variants); [WAV tools in C](examples/c-wav-tools); [share a link](examples/ios-share-link) on iOS and [share a contact](examples/android-share-contact) on Android.
+Small complete apps in [`examples/`](examples), all local (no keys, no backend): [Wi-Fi setup](examples/web-wifi-setup) with its [ESP32 side](examples/esp32-wifi-setup), [store presence](examples/store-presence) (rotating check-in tokens) and the [channel ladder](examples/web-channel-ladder) in the browser; [WAV tools in C](examples/c-wav-tools); [share a link](examples/ios-share-link) on iOS and [share a contact](examples/android-share-contact) on Android.
 
 ## In your code
 

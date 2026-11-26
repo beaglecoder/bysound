@@ -47,8 +47,10 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y clang
       - run: npm ci
         working-directory: web
-      - run: npm run typecheck && npm run build:web && npm run build:node
+      - run: npm run typecheck && npm run build:web
         working-directory: examples
+      - run: npm test && npm run typecheck && npm run build
+        working-directory: examples/backend-reference
       - run: make -C examples/c-wav-tools demo CC=clang
 
   swift:

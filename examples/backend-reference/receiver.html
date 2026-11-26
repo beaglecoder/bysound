@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound + backend: receiver</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Receiver (the customer)</h1>
+  <p class="lead">Hears a fingerprint, resolves it on the backend, shows who published it and the amount, and pays only after you press <b>Confirm</b> and the confirm gate is clean.</p>
+  <label for="account">Signed in as (demo account)</label><input id="account" value="alice">
+  <div class="row"><button id="listen">Listen</button><button id="cancel" class="secondary" disabled>Cancel</button><span id="status" class="muted">idle</span></div>
+  <div class="meter"><div id="level"></div></div>
+  <div id="card" class="warn" hidden>
+    <div id="amount" style="font-size:1.6rem;font-weight:600"></div>
+    <div>to account <b id="publisher"></b> <span class="ok">(verified by the backend)</span></div>
+    <div class="muted">The request itself says: merchant “<span id="merchant"></span>”. Pay only if the account above is who you are paying.</div>
+    <div class="row"><button id="confirm">Confirm payment</button><button id="reject" class="secondary">Reject</button></div>
+  </div>
+  <ul id="log" class="log"></ul>
+</main>
+<script type="module" src="./receiver.ts"></script>
+</body>
+</html>

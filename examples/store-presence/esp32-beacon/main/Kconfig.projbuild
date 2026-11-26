@@ -1,0 +1,44 @@
+# Speaker pins, output level... are those of the esp32 demo (the microphone pins are not used by this project).
+rsource "../../../../esp32/main/Kconfig.projbuild"
+
+menu "Store presence beacon"
+    config PRESENCE_STORE_ID
+        string "Store id (1-16 characters: letters, digits, - or _)"
+        default "cafe42"
+    config PRESENCE_STORE_KEY
+        string "Store key (HMAC-SHA256 secret)"
+        default "demo-store-key-do-not-use-in-production"
+        help
+            DEMO VALUE. Whoever has this key can forge tokens for the store. A real deployment generates a random key per store, keeps it in
+            the store's backend and flashes it into this device (NVS or a protected flash partition), not in the source tree.
+    config PRESENCE_INTERVAL_S
+        int "Seconds between two broadcasts (start to start)"
+        default 6
+        range 3 30
+    choice PRESENCE_TIME
+        prompt "Where the beacon gets the time from"
+        default PRESENCE_TIME_FIXED
+        config PRESENCE_TIME_FIXED
+            bool "Fixed epoch + uptime (offline demo)"
+            help
+                No network: the clock starts at PRESENCE_EPOCH when the board boots and counts uptime. Set the epoch to the time of flashing
+                (date +%s) and expect the clock to be off by the time since flashing: the customer accepts only windows within 30-90 s,
+                so for an offline demo power the board right after building, or use SNTP.
+        config PRESENCE_TIME_SNTP
+            bool "SNTP over Wi-Fi (real time)"
+    endchoice
+    config PRESENCE_EPOCH
+        int "Epoch (unix seconds) the clock starts at when the board boots"
+        default 1790000000
+        depends on PRESENCE_TIME_FIXED
+    config PRESENCE_WIFI_SSID
+        string "Wi-Fi SSID (SNTP)"
+        depends on PRESENCE_TIME_SNTP
+    config PRESENCE_WIFI_PASSWORD
+        string "Wi-Fi password (SNTP)"
+        depends on PRESENCE_TIME_SNTP
+    config PRESENCE_SNTP_SERVER
+        string "SNTP server"
+        default "pool.ntp.org"
+        depends on PRESENCE_TIME_SNTP
+endmenu

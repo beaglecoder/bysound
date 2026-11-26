@@ -1,0 +1,13 @@
+{
+  "name": "bysound-example-backend-reference",
+  "private": true,
+  "type": "module",
+  "description": "bysound reference mode with a backend: only the fingerprint travels by sound. Uses ../../web's toolchain: run `npm ci` in ../../web once.",
+  "scripts": {
+    "server": "node server.mjs",
+    "dev": "../../web/node_modules/.bin/vite -c vite.config.mjs",
+    "build": "../../web/node_modules/.bin/vite build -c vite.config.mjs",
+    "test": "node test-server.mjs",
+    "typecheck": "../../web/node_modules/.bin/tsc --noEmit -p tsconfig.json"
+  }
+}

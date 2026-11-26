@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound store check-in</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Check in</h1>
+  <p class="lead">Listens for a store beacon and shows where you are. <a href="./beacon.html">Beacon page</a> · <a href="./">back</a></p>
+  <div class="warn"><b>Demo verification.</b> Here the phone itself checks the token with a <b>shared demo secret</b> (below), only so the example runs offline. In a real deployment the phone does <b>not</b> hold the store key: it sends the token to the store's backend, which verifies it and keeps the memory of used tokens.</div>
+
+  <div id="card" class="warn" style="border-left-color:var(--muted)"><span id="where">Not listening.</span></div>
+  <div class="row"><button id="listen">Listen</button><button id="stop" class="secondary" disabled>Stop</button><button id="checkin" disabled>Check in</button></div>
+
+  <label for="key">Store key (demo secret, same as the beacon's)</label><input id="key" value="demo-store-key-do-not-use-in-production" autocomplete="off">
+  <label for="names">Known stores (id = name, one per line; a token for any other id is rejected)</label><textarea id="names" rows="3">cafe42 = Café Demo
+books7 = Bookshop Demo</textarea>
+
+  <h2>Heard</h2>
+  <ul id="got" class="log"></ul>
+  <div class="row"><button id="selftest" class="secondary">Try the rejections (no audio)</button></div>
+  <p class="note">The self-test feeds the verifier a valid token, a stale one, a forged one, one for an unknown store, and a reused one.</p>
+</main>
+<script type="module" src="./customer.ts"></script>
+</body>
+</html>

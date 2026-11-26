@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound + backend: sender</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Sender (the shop)</h1>
+  <p class="lead">Publishes the payment request on the backend, then plays <b>only its fingerprint</b> (reference mode). Nothing is played if the backend did not store it.</p>
+  <label for="account">Signed in as (demo account)</label><input id="account" value="shop-7">
+  <label for="merchant">Merchant name shown in the request</label><input id="merchant" value="Shop 7">
+  <label for="amount">Amount (EUR)</label><input id="amount" value="12.50" inputmode="decimal">
+  <div class="row"><button id="go">Request payment</button><button id="stop" class="secondary" disabled>Stop</button><span id="status" class="muted">idle</span></div>
+  <ul id="log" class="log"></ul>
+</main>
+<script type="module" src="./sender.ts"></script>
+</body>
+</html>

@@ -14,9 +14,7 @@
   ],
   "exclude": [
     "node_modules",
-    "dist-node",
     "**/dist",
-    "vite.config.ts",
-    "vite.node.config.ts"
+    "**/vite.config.ts"
   ]
 }

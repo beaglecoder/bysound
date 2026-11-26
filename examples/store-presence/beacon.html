@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound store beacon</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Store beacon</h1>
+  <p class="lead">Plays a short presence token on the <code>top</code> band every few seconds, so phones in the shop can prove they were here. It is a broadcast: no acknowledgements, nobody replies. <a href="./customer.html">Customer page</a> · <a href="./">back</a></p>
+  <div class="warn"><b>Demo key.</b> The store key below is a shared demo secret, shown on purpose so the customer page can verify offline. In a real shop the key lives only on your backend (and in the beacon's flash); the phone never sees it, it just forwards the token it heard to your server.</div>
+
+  <label for="store">Store id (letters, digits, - _; up to 16)</label><input id="store" value="cafe42" maxlength="16">
+  <label for="key">Store key (demo secret)</label><input id="key" value="demo-store-key-do-not-use-in-production" autocomplete="off">
+  <label for="every">Repeat every (seconds)</label><input id="every" type="number" min="3" max="30" value="6">
+  <div class="row"><button id="start">Start beacon</button><button id="stop" class="secondary" disabled>Stop</button></div>
+  <p id="state" class="note"></p>
+  <p>Token now: <code id="token">–</code></p>
+  <ul id="log" class="log"></ul>
+</main>
+<script type="module" src="./beacon.ts"></script>
+</body>
+</html>
