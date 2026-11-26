@@ -15,6 +15,8 @@ public final class Listener {
     /// RMS of the audio, about every 60 ms.
     public var onLevel: ((Float) -> Void)?
     public var onClash: (() -> Void)?
+    /// A valid header was read on this band (a frame is starting there).
+    public var onHeader: ((Band) -> Void)?
 
     public init(sampleRate: Double, robust: Bool = true) {
         normal = Receiver(sampleRate: sampleRate, profile: .normal)
@@ -23,6 +25,7 @@ public final class Listener {
         for r in [normal, self.robust].compactMap({ $0 }) {
             r.onFrame = { [unowned self] h in self.onFrame?(h) }
             r.onClash = { [unowned self] in self.onClash?() }
+            r.onHeader = { [unowned self] b in self.onHeader?(b) }
         }
     }
 

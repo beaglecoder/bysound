@@ -2,15 +2,20 @@
 #if os(iOS)
 import AVFoundation
 
-/// Taps the microphone (measurement mode, no voice processing) and runs a `Listener` on a background queue.
+/// Taps the microphone (measurement mode, no voice processing) and runs a `Listener` (or `Ears`, see `onAir`) on a background queue.
 /// Callbacks arrive on the main queue.
 public final class SoundListener {
     private let engine = AVAudioEngine()
     private let queue = DispatchQueue(label: "BySound.listener", qos: .userInitiated)
-    private var listener: Listener?
+    private var ears: Ears?
 
-    /// A text was decoded.
+    /// A text (or a reference fingerprint, see `Heard.kind`) was decoded.
     public var onFrame: ((Heard) -> Void)?
+    /// Everything the session layer hears (frames, headers, clashes, acks, risk frames, noise). Set it before `start()`: acks, risk frames
+    /// and noise reports are only read when it is set.
+    public var onAir: ((AirEvent) -> Void)?
+    /// Sample rate of the microphone while listening.
+    public private(set) var sampleRate = 0.0
     /// Microphone RMS level, about every 60 ms (0 ... 1 for full scale).
     public var onLevel: ((Float) -> Void)?
 
@@ -46,22 +51,28 @@ public final class SoundListener {
             ])
         }
         let rate = format.sampleRate
-        let listener = Listener(sampleRate: rate)
-        listener.onFrame = { [weak self] h in DispatchQueue.main.async { self?.onFrame?(h) } }
-        listener.onLevel = { [weak self] l in DispatchQueue.main.async { self?.onLevel?(l) } }
-        self.listener = listener
+        sampleRate = rate
+        let ears = Ears(sampleRate: rate, robust: true, control: onAir != nil) { [weak self] e in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if case .frame(let h) = e { self.onFrame?(h) }
+                self.onAir?(e)
+            }
+        }
+        ears.onLevel = { [weak self] l in DispatchQueue.main.async { self?.onLevel?(l) } }
+        self.ears = ears
 
         input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
             guard let self = self, let data = buffer.floatChannelData else { return }
             let samples = Array(UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength)))
-            self.queue.async { listener.feed(samples) }
+            self.queue.async { ears.feed(samples) }
         }
         engine.prepare()
         do {
             try engine.start()
         } catch {
             input.removeTap(onBus: 0)
-            self.listener = nil
+            self.ears = nil
             throw error
         }
         isListening = true
@@ -79,7 +90,7 @@ public final class SoundListener {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         queue.sync {}
-        listener = nil
+        ears = nil
         isListening = false
     }
 }

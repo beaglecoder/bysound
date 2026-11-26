@@ -1,10 +1,15 @@
 // Streaming receiver for v4 payload frames: all seven bands at once. Faithful port of `receiver.ts`
-// (payload frames only: reference, ack and risk frames are recognised and skipped).
+// (payload and reference frames; ack and risk frames are recognised and skipped: `ControlListener` reads them).
 import Foundation
 
-/// A decoded payload frame.
+/// A decoded payload or reference frame.
 public struct Heard {
+    public enum Kind: Sendable { case payload, reference }
+    /// `.payload`: `text` is the text. `.reference`: only the 12-byte `fingerprint` travelled and `text` is empty.
+    public let kind: Kind
     public let text: String
+    /// 24 hex characters of a reference frame; empty for a payload.
+    public let fingerprint: String
     public let band: Band
     public let profile: Profile
     /// Bytes that Reed-Solomon had to repair.

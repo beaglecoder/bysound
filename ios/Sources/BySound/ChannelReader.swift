@@ -59,6 +59,7 @@ final class Pool {
     var starts: [(band: Band, at: Int, span: Int)] = []
     let blocks = BlockAssembly()
     var headerFails: [(at: Int, noted: Int)] = []
+    var readings: [ReferenceReading] = []
     var failures = 0
     init(rate: Double, events: ReceiverEvents) {
         self.rate = rate
@@ -94,8 +95,22 @@ enum ReaderState { case search, header, body }
 private struct HeaderCandidate {
     let magic: UInt8
     let length: Int
+    let set: Int
     let nibbles: [Int]
 }
+
+/// One reading of a reference body, kept so several repetitions can be combined.
+struct ReferenceReading {
+    let magic: UInt8
+    let length: Int
+    let set: Int
+    let at: Int
+    let channel: Band
+    let soft: Soft
+}
+
+private let referenceErasureTries = [0, 4, 8, 12]
+private let rebuildTriesMax = 300
 
 final class ChannelReader {
     var state = ReaderState.search
@@ -124,6 +139,8 @@ final class ChannelReader {
     /// The header matched in full. With corrected errors the announced length may be false (see `tryBlocks`).
     private var headerSure = true
     private var dataLength = 0
+    /// Parity set (0 = A, 1 = B) of a reference frame.
+    private var set = 0
     private var bodySoft: Soft = []
     private var bodyRead = 0
     private var lastTried = 0
@@ -150,7 +167,7 @@ final class ChannelReader {
         endOffset = ch.windowStartSeconds + r.windowSeconds
         preambleSpan = Double(Protocol.preamble.count - 1) * ch.symbolSeconds + endOffset
         func head(_ magic: UInt8, _ n: Int, _ set: Int = 0) -> HeaderCandidate {
-            HeaderCandidate(magic: magic, length: n, nibbles: Protocol.header(magic: magic, length: n, band: ch.band, set: set, profile: ch.profile).flatMap { [Int($0 >> 4), Int($0 & 15)] })
+            HeaderCandidate(magic: magic, length: n, set: set, nibbles: Protocol.header(magic: magic, length: n, band: ch.band, set: set, profile: ch.profile).flatMap { [Int($0 >> 4), Int($0 & 15)] })
         }
         var c = [head(Protocol.magicReference, Protocol.referenceData, 0), head(Protocol.magicReference, Protocol.referenceData, 1),
                  head(Protocol.magicRisk, Protocol.riskLength), head(Protocol.magicAck, Protocol.ackLength)]
@@ -158,8 +175,9 @@ final class ChannelReader {
         candidates = c
     }
 
-    private var bodyBytes: Int { (dataLength - 1) * Protocol.blockBytes + Protocol.blockHeader + 1 + Protocol.blockParity }
-    private var bodyBytesMax: Int { dataLength * Protocol.blockBytes }
+    private var isBlocks: Bool { magic == Protocol.magicPayload }
+    private var bodyBytes: Int { isBlocks ? (dataLength - 1) * Protocol.blockBytes + Protocol.blockHeader + 1 + Protocol.blockParity : Reference.data + Reference.parity }
+    private var bodyBytesMax: Int { isBlocks ? dataLength * Protocol.blockBytes : bodyBytes }
     private func symbolsFor(_ bytes: Int) -> Int { (bytes * 2 + ch.groups - 1) / ch.groups }
     private func start(_ k: Int) -> Int { ch.symbolStart(k, rate: r.sampleRate) }
     private func symbolEnd(_ k: Int) -> Int { frameStart + start(k) + sampleCount(endOffset, r.sampleRate) }
@@ -173,7 +191,7 @@ final class ChannelReader {
         case .search: search(index)
         case .header: tryHeader()
         case .body:
-            if !searchInBody(index) { tryBlocks() }
+            if !searchInBody(index) { tryBody() }
         }
         progress = currentProgress()
     }
@@ -270,6 +288,7 @@ final class ChannelReader {
             if hops >= overlapMinHops && score >= overlapMinScore { pool.clash() }
             return false
         }
+        if !isBlocks { return false }
         // The next lap comes from the same sender, so its preamble scores about as well as this frame's. Body data that happens to
         // match the preamble in a few nibbles scores only that share of it (6 of 16 nibbles: 0.375 in a clean channel, over the
         // threshold) and must not cut off the read: the last block would be lost.
@@ -356,17 +375,13 @@ final class ChannelReader {
         if agree < headerMinAgreement { return unreadableHeader() }
         magic = choice.magic
         dataLength = choice.length
+        set = choice.set
         headerSure = agree == n
         bodyReset()
-        if magic != Protocol.magicPayload {
-            // Not a text: skip over the body (a reference frame still counts for clash detection).
-            let bodyLen = magic == Protocol.magicReference ? Protocol.referenceBody : magic == Protocol.magicAck ? Protocol.ackBody : Protocol.riskBody
-            if magic == Protocol.magicReference && agree >= headerSureAgreement {
-                events.onHeader?(ch.band)
-                pool.noteStart(band: ch.band, at: frameStart, span: start(firstBody + symbolsFor(bodyLen)))
-            }
+        if magic == Protocol.magicAck || magic == Protocol.magicRisk {
+            // Acks and risk frames are not read here (`ControlListener` does): skip over the body.
             resetSearch()
-            searchFrom = frameStart + start(firstBody + symbolsFor(bodyLen))
+            searchFrom = frameStart + start(firstBody + symbolsFor(magic == Protocol.magicAck ? Protocol.ackBody : Protocol.riskBody))
             return
         }
         if agree >= headerSureAgreement {
@@ -374,7 +389,7 @@ final class ChannelReader {
             pool.noteStart(band: ch.band, at: frameStart, span: start(firstBody + symbolsFor(bodyBytes)))
         }
         state = .body
-        tryBlocks()
+        tryBody()
     }
 
     /// The header closes its CRC-8 with another channel's id: another sender, not read as ours.
@@ -389,9 +404,14 @@ final class ChannelReader {
     private func unreadableHeader() {
         let horizon = frameStart - Int(combineSeconds * r.sampleRate)
         let blocks = pool.blocks
-        if blocks.total > 0 && blocks.channel == ch.band && blocks.lastAt >= horizon {
+        if let last = pool.readings.last, last.channel == ch.band, last.at >= horizon {
+            magic = last.magic
+            dataLength = last.length
+            set = last.set ^ 1
+        } else if blocks.total > 0 && blocks.channel == ch.band && blocks.lastAt >= horizon {
             magic = Protocol.magicPayload
             dataLength = blocks.total
+            set = 0
         } else {
             pool.headerFails.append((frameStart, r.total))
             resetSearch()
@@ -400,7 +420,11 @@ final class ChannelReader {
         headerSure = true
         bodyReset()
         state = .body
-        tryBlocks()
+        tryBody()
+    }
+
+    private func tryBody() {
+        if isBlocks { tryBlocks() } else { tryReference() }
     }
 
     private func tryBlocks() {
@@ -541,21 +565,138 @@ final class ChannelReader {
                 return
             }
             a.reset()
-            if let text = text { return deliver(text, corrected: corrected, combined: loops, end: end) }
+            if let text = text { return deliver(text: text, fingerprint: "", kind: .payload, corrected: corrected, combined: loops, end: end) }
             pool.failures += 1
             return
         }
         if gained == 0 { pool.failures += 1 }
     }
 
+    // MARK: Reference frames
+
+    private func tryReference() {
+        let first = firstBody
+        let count = symbolsFor(bodyBytes)
+        while bodyRead < count && r.total >= symbolEnd(first + bodyRead) {
+            bodySoft += softSymbol(first + bodyRead)
+            bodyRead += 1
+        }
+        if r.total < symbolEnd(first + count - 1) { return }
+        let nibbles = bodyBytes * 2
+        let reading = Array(bodySoft.prefix(nibbles))
+        let end = frameStart + start(first + count)
+        resetSearch()
+        if let single = decodeReference([(set, reading)]) { return finishReference(single, 1, end) }
+        let horizon = frameStart - Int(combineSeconds * r.sampleRate)
+        pool.readings = pool.readings.filter { $0.at >= horizon }
+        let same = pool.readings.filter { $0.magic == magic && $0.length == dataLength }
+        pool.readings.append(ReferenceReading(magic: magic, length: dataLength, set: set, at: frameStart, channel: ch.band, soft: reading))
+        if pool.readings.count > combineMax * 3 { pool.readings.removeFirst() }
+        let earlier = same.suffix(combineMax - 1).map { (set: $0.set, soft: $0.soft) }
+        let unseen = unseenReadings(first: first, count: count, nibbles: nibbles, limit: combineMax - 1 - earlier.count)
+        if let rebuilt = rebuildReference((set, reading), earlier + unseen) { return finishReference(rebuilt.decoded, rebuilt.readings, end) }
+        pool.failures += 1
+    }
+
+    private func finishReference(_ d: (fingerprint: [UInt8], corrected: Int, erasures: Int), _ combined: Int, _ end: Int) {
+        searchFrom = end
+        pool.readings = []
+        deliver(text: "", fingerprint: d.fingerprint.map { String(format: "%02x", $0) }.joined(), kind: .reference, corrected: d.corrected, combined: combined, end: end)
+    }
+
+    /// Repetitions in the stored audio whose start was not detected.
+    private func unseenReadings(first: Int, count: Int, nibbles: Int, limit: Int) -> [(set: Int, soft: Soft)] {
+        let current = frameStart
+        let period = start(first + count) + sampleCount(Protocol.gapSeconds, r.sampleRate)
+        var out: [(set: Int, soft: Soft)] = []
+        var at = current - period
+        while out.count < limit && at >= 0 && at > r.total - r.ringSize {
+            if !pool.readings.contains(where: { $0.channel == ch.band && Double(abs($0.at - at)) < Double(period) / 2 }) {
+                frameStart = at
+                previous = nil
+                var soft: Soft = []
+                for i in 0..<count { soft += softSymbol(first + i) }
+                out.append((set ^ (((current - at) / period) & 1), Array(soft.prefix(nibbles))))
+            }
+            at -= period
+        }
+        frameStart = current
+        return out
+    }
+
+    private func motherLayout(_ set: Int, _ soft: Soft) -> Soft {
+        var out = Soft(repeating: uniformNibble, count: Reference.motherBytes * 2)
+        let dataNibbles = Reference.data * 2
+        for i in 0..<min(soft.count, dataNibbles + Reference.parity * 2) {
+            out[i < dataNibbles ? i : i + (set & 1) * Reference.parity * 2] = soft[i]
+        }
+        return out
+    }
+
+    private func decodeReference(_ readings: [(set: Int, soft: Soft)]) -> (fingerprint: [UInt8], corrected: Int, erasures: Int)? {
+        let layouts = readings.map { motherLayout($0.set, $0.soft) }
+        let have = [readings.contains { $0.set & 1 == 0 }, readings.contains { $0.set & 1 == 1 }]
+        return decodeMotherSoft(layouts.count == 1 ? layouts[0] : summed(layouts), have, disagreement(layouts))
+    }
+
+    private func disagreement(_ layouts: [Soft]) -> [Int] {
+        if layouts.count < 2 { return [] }
+        let bytes = layouts.map { hardBytes(Array($0[0..<(2 * Reference.data)])) }
+        return (0..<Reference.data).filter { i in Set(bytes.map { $0[i] }).count > 1 }
+    }
+
+    private func decodeMotherSoft(_ soft: Soft, _ have: [Bool], _ disagree: [Int]) -> (fingerprint: [UInt8], corrected: Int, erasures: Int)? {
+        let bytes = hardBytes(soft)
+        let m = soft.map(margin)
+        func sure(_ i: Int) -> Double { min(m[2 * i], m[2 * i + 1]) }
+        let data = Array(bytes[0..<Reference.data])
+        let parity: [[UInt8]?] = (0..<2).map { set in have[set] ? Reference.parityRange(set).map { bytes[$0] } : nil }
+        let dataPositions = Array(0..<Reference.data)
+        var variants: [(parity: [[UInt8]?], base: [Int], known: [Int])] = []
+        for set in 0..<2 where have[set] {
+            var only: [[UInt8]?] = [nil, nil]
+            only[set] = parity[set]
+            variants.append((only, [], dataPositions + Reference.parityRange(set)))
+        }
+        if have[0] && have[1] { variants.append((parity, disagree, Array(0..<Reference.motherBytes))) }
+        for v in variants {
+            let leastSure = v.known.filter { !v.base.contains($0) }.sorted { sure($0) != sure($1) ? sure($0) < sure($1) : $0 < $1 }
+            for f in referenceErasureTries {
+                let erasures = v.base + leastSure.prefix(f)
+                if let d = Reference.decodeMother(data, parity: v.parity, erasures: erasures) {
+                    return (d.fingerprint, d.corrected, erasures.count)
+                }
+            }
+        }
+        return nil
+    }
+
+    private func rebuildReference(_ current: (set: Int, soft: Soft), _ earlier: [(set: Int, soft: Soft)]) -> (decoded: (fingerprint: [UInt8], corrected: Int, erasures: Int), readings: Int)? {
+        if earlier.isEmpty { return nil }
+        let masks = (1..<(1 << earlier.count)).sorted { $0.nonzeroBitCount != $1.nonzeroBitCount ? $0.nonzeroBitCount > $1.nonzeroBitCount : $0 < $1 }
+        var tries = 0
+        for mask in masks {
+            let readings = [current] + earlier.enumerated().filter { (mask >> $0.offset) & 1 == 1 }.map { $0.element }
+            let layouts = readings.map { motherLayout($0.set, $0.soft) }
+            let have = [readings.contains { $0.set & 1 == 0 }, readings.contains { $0.set & 1 == 1 }]
+            let disagree = disagreement(layouts)
+            for candidate in [summed(layouts), surest(layouts)] {
+                if tries + referenceErasureTries.count > rebuildTriesMax { return nil }
+                tries += referenceErasureTries.count
+                if let decoded = decodeMotherSoft(candidate, have, disagree) { return (decoded, readings.count) }
+            }
+        }
+        return nil
+    }
+
     /// Not delivered if a frame from another channel started while this one was playing.
-    private func deliver(_ text: String, corrected: Int, combined: Int, end: Int) {
+    private func deliver(text: String, fingerprint: String, kind: Heard.Kind, corrected: Int, combined: Int, end: Int) {
         let preambleLen = start(Protocol.preamble.count)
         let begin = frameStart
         if pool.starts.contains(where: { $0.band != ch.band && $0.at > begin && $0.at + preambleLen < end }) {
             pool.clash()
         } else {
-            events.onFrame?(Heard(text: text, band: ch.band, profile: ch.profile, correctedBytes: corrected, combined: combined, score: frameScore))
+            events.onFrame?(Heard(kind: kind, text: text, fingerprint: fingerprint, band: ch.band, profile: ch.profile, correctedBytes: corrected, combined: combined, score: frameScore))
         }
     }
 
@@ -565,7 +706,7 @@ final class ChannelReader {
         let headerEnd = symbolEnd(firstBody - 1)
         let total = r.total
         if state == .header { return headerShare * clamp(Double(total - frameStart) / Double(headerEnd - frameStart)) }
-        let known = magic == Protocol.magicPayload ? pool.blocks.knownBytes : 0
+        let known = isBlocks ? pool.blocks.knownBytes : 0
         let end = symbolEnd(firstBody + symbolsFor(known != 0 ? known : bodyBytes) - 1)
         return headerShare + (1 - headerShare) * clamp(Double(total - headerEnd) / Double(end - headerEnd))
     }
