@@ -390,7 +390,8 @@ static void decide_header(bys_demod_t *d, bys_demod_reader_t *r) {
     return;
   }
   r->magic = magic; r->length = length; r->set = set;
-  if (agree >= 7) {
+  /* Acks and risk frames are not "another transmission" (docs/SESSION.md 4): they raise no header event and are not counted for clashes. */
+  if (agree >= 7 && (magic == BYS_MAGIC_PAYLOAD || magic == BYS_MAGIC_REFERENCE)) {
     d->stats.headers++;
     bys_demod_event_t ev; memset(&ev, 0, sizeof ev);
     ev.type = BYS_EV_HEADER; ev.band = r->band; ev.profile = d->profile;

@@ -4,8 +4,14 @@ CFLAGS  ?= -std=c99 -Wall -Wextra -Werror -pedantic -Iinclude -Isrc
 SRC     := $(wildcard src/*.c)
 BUILD   := build
 
-test: $(BUILD)/test_all demod
+test: $(BUILD)/test_all demod $(BUILD)/test_session
 	$(BUILD)/test_all
+	$(BUILD)/test_session
+
+# Session layer: state machines on synthetic events and on simulated air (real bys_tx -> bys_demod), ASan + UBSan, FFT engine.
+SESSION_DEFS := -DBYS_DEMOD_FFT=1 -DBYS_DEMOD_ROBUST=1
+$(BUILD)/test_session: $(SRC) test/test_session.c $(wildcard include/*.h src/*.h test/*.h) | $(BUILD)
+	$(CC) $(CFLAGS) -O2 -g -fsanitize=address,undefined $(SESSION_DEFS) -o $@ $(SRC) test/test_session.c -lm
 
 # Demodulator: one binary per engine (float32 FFT and integer Goertzel), same tests; the two transcripts must match.
 DEMOD_DEFS := -DBYS_DEMOD_LOW_BANK=1 -DBYS_DEMOD_ROBUST=1 -DGOLDEN_DIR='"test/golden"' -DVECTORS_DIR='"../test-vectors"' -DRECORDINGS_DIR='"test/recordings"'

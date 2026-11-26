@@ -73,6 +73,9 @@ int bys_tx_init_reference(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band
 int bys_tx_init_ack(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, int receipt, const uint8_t hash4[4]) {
   WRAP(bys_frame_init_ack(&tx->frame, band, receipt, hash4));
 }
+int bys_tx_init_ack_heard(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, int receipt, unsigned heard, const uint8_t hash4[4]) {
+  WRAP(bys_frame_init_ack_heard(&tx->frame, band, receipt, heard, hash4));
+}
 int bys_tx_init_risk(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, unsigned reason, unsigned source, unsigned hops, const uint8_t own[3], const uint8_t intruder[3]) {
   WRAP(bys_frame_init_risk(&tx->frame, band, reason, source, hops, own, intruder));
 }

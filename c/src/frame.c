@@ -97,14 +97,18 @@ static void with_crc_and_parity(bys_frame_t *f, unsigned data_len, unsigned nsym
   f->buf_len = (uint8_t)(data_len + 2 + nsym);
 }
 
-int bys_frame_init_ack(bys_frame_t *f, bys_band_t band, int receipt, const uint8_t hash4[4]) {
-  if (!f || !hash4) return BYS_E_ARG;
+int bys_frame_init_ack_heard(bys_frame_t *f, bys_band_t band, int receipt, unsigned heard, const uint8_t hash4[4]) {
+  if (!f || !hash4 || heard > 15 || (heard && (heard & 7) == 0)) return BYS_E_ARG; /* 0x8 (robust, channel -1) is invalid */
   int r = setup(f, band, BYS_NORMAL, BYS_KIND_ACK, BYS_ACK_LENGTH, 0, BYS_ACK_BODY);
   if (r < 0) return r;
-  f->buf[0] = receipt ? 3 : 2;
+  f->buf[0] = (uint8_t)((heard << 4) | (receipt ? 3 : 2));
   memcpy(f->buf + 1, hash4, 4);
   with_crc_and_parity(f, 5, BYS_ACK_PARITY);
   return BYS_OK;
+}
+
+int bys_frame_init_ack(bys_frame_t *f, bys_band_t band, int receipt, const uint8_t hash4[4]) {
+  return bys_frame_init_ack_heard(f, band, receipt, 0, hash4);
 }
 
 int bys_frame_init_risk(bys_frame_t *f, bys_band_t band, unsigned reason, unsigned source, unsigned hops, const uint8_t own[3], const uint8_t intruder[3]) {
@@ -116,6 +120,26 @@ int bys_frame_init_risk(bys_frame_t *f, bys_band_t band, unsigned reason, unsign
   memcpy(f->buf + 2, own, 3);
   memcpy(f->buf + 5, intruder, 3);
   with_crc_and_parity(f, 8, BYS_RISK_PARITY);
+  return BYS_OK;
+}
+
+int bys_frame_duration_us(bys_kind_t kind, bys_band_t band, bys_profile_t profile, uint32_t packed_len, uint32_t *us) {
+  bys_band_info_t bi;
+  int r = bys_band_info(band, profile, &bi);
+  if (r < 0) return r;
+  if (!us) return BYS_E_ARG;
+  uint32_t body, sym;
+  switch (kind) {
+    case BYS_KIND_PAYLOAD: sym = payload_symbols(bi.groups, packed_len); break;
+    case BYS_KIND_REFERENCE: body = BYS_REF_DATA + BYS_REF_PARITY; goto small;
+    case BYS_KIND_ACK: body = BYS_ACK_BODY; goto small;
+    case BYS_KIND_RISK: body = BYS_RISK_BODY; goto small;
+    default: return BYS_E_ARG;
+  }
+  *us = sym * bi.symbol_us;
+  return BYS_OK;
+small:
+  *us = (BYS_PREAMBLE_SYMBOLS + (2 * BYS_HEADER_BYTES + bi.groups - 1) / bi.groups + (2 * body + bi.groups - 1) / bi.groups) * bi.symbol_us;
   return BYS_OK;
 }
 

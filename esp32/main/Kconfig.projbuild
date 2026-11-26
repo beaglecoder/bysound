@@ -1,53 +1,44 @@
 menu "bysound demo"
 
-    choice BYSOUND_DEMO_BAND
-        prompt "Band"
-        default BYSOUND_DEMO_BAND_TOP
+    choice BYSOUND_DEMO_SECURITY
+        prompt "Security level (docs/SESSION.md section 7)"
+        default BYSOUND_DEMO_SECURITY_MAXIMUM
         help
-            Band used to send and listen. "top" (18-19.5 kHz) is nearly inaudible. Run `bysound bands` on the host for the table.
-        config BYSOUND_DEMO_BAND_TOP
-            bool "top (18.0-19.5 kHz, 250 bit/s)"
-        config BYSOUND_DEMO_BAND_HIGH
-            bool "high (17.2-19.5 kHz, 375 bit/s)"
-        config BYSOUND_DEMO_BAND_UPPER
-            bool "upper (16.5-18.7 kHz, 375 bit/s)"
-        config BYSOUND_DEMO_BAND_MID
-            bool "mid (15.0-17.2 kHz, 375 bit/s)"
-        config BYSOUND_DEMO_BAND_AUDIBLE
-            bool "audible (1.9-4.8 kHz, 400 bit/s, needs ~10 KB more RAM)"
-            select BYSOUND_DEMOD_LOW_BANK
-        config BYSOUND_DEMO_BAND_XHIGH
-            bool "xhigh (16.5-19.5 kHz, 500 bit/s)"
-        config BYSOUND_DEMO_BAND_WIDE
-            bool "wide (15.0-19.5 kHz, 750 bit/s)"
+            maximum (default): pre-listen 3-4.2 s, detects other emitters, risk frames, confirm watch. standard: 2-2.6 s. basic: integrity only (1 s pre-listen
+            for the ambient check, nothing else heard is acted on).
+        config BYSOUND_DEMO_SECURITY_BASIC
+            bool "basic"
+        config BYSOUND_DEMO_SECURITY_STANDARD
+            bool "standard"
+        config BYSOUND_DEMO_SECURITY_MAXIMUM
+            bool "maximum"
     endchoice
 
-    config BYSOUND_DEMO_BAND
-        int
-        default 0 if BYSOUND_DEMO_BAND_TOP
-        default 1 if BYSOUND_DEMO_BAND_HIGH
-        default 2 if BYSOUND_DEMO_BAND_UPPER
-        default 3 if BYSOUND_DEMO_BAND_MID
-        default 4 if BYSOUND_DEMO_BAND_AUDIBLE
-        default 5 if BYSOUND_DEMO_BAND_XHIGH
-        default 6 if BYSOUND_DEMO_BAND_WIDE
-
-    config BYSOUND_DEMO_PROFILE_ROBUST
-        bool "Robust profile (twice the symbol time; only top, high, upper and mid)"
+    config BYSOUND_DEMO_FIXED_BAND
+        bool "Send on one band only (no channel ladder, no calibration)"
         default n
-        depends on BYSOUND_DEMO_BAND_TOP || BYSOUND_DEMO_BAND_HIGH || BYSOUND_DEMO_BAND_UPPER || BYSOUND_DEMO_BAND_MID
+        help
+            By default the sender picks a channel by the noise it measures and steps down the ladder top, high, upper, mid until it is acknowledged
+            (docs/SESSION.md section 9). Listening always covers the four ladder bands.
+
+    config BYSOUND_DEMO_BAND
+        int "Fixed band (0 top, 1 high, 2 upper, 3 mid)"
+        default 0
+        range 0 3
+        depends on BYSOUND_DEMO_FIXED_BAND
+
+    config BYSOUND_DEMO_ROBUST_RX
+        bool "Also listen to the robust profile (second demodulator)"
+        default y
         select BYSOUND_DEMOD_ROBUST
         help
-            Slower but more tolerant of noise. Costs ~20 KB more demodulator state.
+            The sender goes robust after 6 repetitions without an ack (or in noise), so a receiver that only hears the normal profile misses it.
+            Costs about 130 KB of RAM for the two demodulators in total (the robust-capable state is about 66 KB each; one demodulator of the normal
+            profile only is about 45 KB).
 
     config BYSOUND_DEMO_TEXT
         string "Text sent when the button is pressed"
         default "hello from esp32"
-
-    config BYSOUND_DEMO_REPEAT
-        int "Times the text is sent per button press"
-        default 3
-        range 1 10
 
     config BYSOUND_DEMO_TX_LEVEL
         int "Output level (percent of full scale)"

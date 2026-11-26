@@ -86,8 +86,10 @@ static int finish_small(bys_rx_t *rx) { /* fingerprint, ack and risk */
     note(rx, e);
     if (bys_crc16(b, dl) != (uint16_t)((b[dl] << 8) | b[dl + 1])) return fail(rx, BYS_E_CRC);
     if (rx->kind == BYS_KIND_ACK) {
-      if (b[0] != 2 && b[0] != 3) return fail(rx, BYS_E_FORMAT);
-      r->receipt = b[0] == 3;
+      const unsigned kind = b[0] & 15u, heard = b[0] >> 4;
+      if ((kind != 2 && kind != 3) || (heard && (heard & 7) == 0)) return fail(rx, BYS_E_FORMAT);
+      r->receipt = kind == 3;
+      r->heard = (uint8_t)heard;
       memcpy(r->hash4, b + 1, 4);
     } else {
       r->reason = b[0]; r->hops = b[1] >> 4; r->source = b[1] & 15;

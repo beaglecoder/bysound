@@ -2,11 +2,13 @@
  * bysound: command-line tool for bysound v4 (data over sound). File based and portable (C99, no platform audio API).
  *
  *   bysound encode "text" -o out.wav [--band B] [--profile normal|robust] [--rate HZ] [--repeat N]
+ *   bysound ack "text" -o ack.wav [--receipt] [--heard BAND[/robust]] [--band B] [--rate HZ]
  *   bysound decode in.wav
  *   bysound bands
  */
 #define _POSIX_C_SOURCE 200112L
 #include "bysound.h"
+#include "bysound_session.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,6 +26,8 @@ static int usage(void) {
   fputs("usage:\n"
         "  bysound encode \"text\" -o out.wav [--band top|high|upper|mid|audible|xhigh|wide]\n"
         "                                [--profile normal|robust] [--rate 16000|44100|48000] [--repeat N]\n"
+        "  bysound ack \"text\" -o ack.wav [--receipt] [--heard BAND[/robust]] [--band mid|high|...] [--rate 16000|44100|48000]\n"
+        "                                (an ack, or a receipt, for the text; --heard: where it was read, SESSION.md 3.1)\n"
         "  bysound decode in.wav\n"
         "  bysound bands\n",
         stderr);
@@ -141,6 +145,51 @@ static int cmd_encode(int argc, char **argv) {
   return r ? 1 : 0;
 }
 
+/* ---------- ack ---------- */
+static int cmd_ack(int argc, char **argv) {
+  const char *text = NULL, *out = NULL;
+  int band = -1, receipt = 0, heard_band = -1, heard_robust = 0;
+  uint32_t rate = 48000;
+  for (int i = 0; i < argc; i++) {
+    const char *a = argv[i];
+    const int has = i + 1 < argc;
+    if (!strcmp(a, "-o") && has) out = argv[++i];
+    else if (!strcmp(a, "--receipt")) receipt = 1;
+    else if (!strcmp(a, "--band") && has) { band = band_from_name(argv[++i]); if (band < 0) { fprintf(stderr, "unknown band '%s'\n", argv[i]); return 2; } }
+    else if (!strcmp(a, "--heard") && has) {
+      char name[16];
+      const char *v = argv[++i], *slash = strchr(v, '/');
+      size_t n = slash ? (size_t)(slash - v) : strlen(v);
+      if (n >= sizeof name) n = sizeof name - 1;
+      memcpy(name, v, n); name[n] = 0;
+      heard_band = band_from_name(name);
+      if (heard_band < 0 || (slash && strcmp(slash + 1, "robust") && strcmp(slash + 1, "normal"))) { fprintf(stderr, "bad --heard '%s'\n", v); return 2; }
+      heard_robust = slash && !strcmp(slash + 1, "robust");
+    } else if (!strcmp(a, "--rate") && has) rate = (uint32_t)strtoul(argv[++i], NULL, 10);
+    else if (a[0] != '-' && !text) text = a;
+    else return usage();
+  }
+  if (!text || !out) return usage();
+  if (band < 0) band = receipt ? BYS_HIGH : BYS_MID; /* acks travel on mid, receipts on high */
+  bys_ids_t ids;
+  bys_text_ids(text, strlen(text), &ids);
+  bys_tx_cfg_t cfg;
+  bys_tx_cfg_default(&cfg);
+  cfg.sample_rate = rate;
+  bys_tx_t tx;
+  const unsigned nib = heard_band < 0 ? 0u : bys_heard_nibble((bys_band_t)heard_band, (bys_profile_t)heard_robust);
+  int r = bys_tx_init_ack_heard(&tx, &cfg, (bys_band_t)band, receipt, nib, ids.ack);
+  if (r != BYS_OK) { fprintf(stderr, "cannot encode: error %d\n", r); return 1; }
+  const size_t lead = rate / 5, total = lead + bys_tx_total_samples(&tx);
+  int16_t *pcm = calloc(total, sizeof(int16_t));
+  if (!pcm) return 1;
+  for (size_t at = lead; !bys_tx_done(&tx) && at < total;) at += bys_tx_fill(&tx, pcm + at, total - at < 4096 ? total - at : 4096);
+  r = write_wav(out, pcm, total, rate);
+  if (r == 0) printf("%s: %s id=%02x%02x%02x%02x on %s, %u Hz, %.2f s\n", out, receipt ? "receipt" : "ack", ids.ack[0], ids.ack[1], ids.ack[2], ids.ack[3], BAND_NAMES[band], rate, (double)total / rate);
+  free(pcm);
+  return r ? 1 : 0;
+}
+
 /* ---------- decode ---------- */
 #define CHUNK 1024
 #define ALL_BANDS ((1u << BYS_BAND_COUNT) - 1u)
@@ -161,6 +210,17 @@ static void on_event(void *user, const bys_demod_event_t *ev) {
   if (ev->result->kind == BYS_KIND_PAYLOAD && ev->payload) {
     int n = bys_unpack(ev->payload, ev->payload_len, text_buf, sizeof text_buf);
     if (n >= 0) printf(" text=%s\n", text_buf); else printf(" text=<unpack error %d>\n", n);
+  } else if (ev->result->kind == BYS_KIND_ACK) {
+    const bys_result_t *r = ev->result;
+    bys_band_t hb = BYS_TOP;
+    bys_profile_t hp = BYS_NORMAL;
+    printf(" %s id=%02x%02x%02x%02x", r->receipt ? "receipt" : "ack", r->hash4[0], r->hash4[1], r->hash4[2], r->hash4[3]);
+    if (bys_heard_parse(r->heard, &hb, &hp) == 1) printf(" heard=%s/%s", BAND_NAMES[hb], PROFILE_NAMES[hp]);
+    putchar('\n');
+  } else if (ev->result->kind == BYS_KIND_RISK) {
+    const bys_result_t *r = ev->result;
+    printf(" risk reason=%u source=%s hops=%u own=%02x%02x%02x intruder=%02x%02x%02x\n", r->reason, r->source ? "receiver" : "sender", r->hops,
+           r->own[0], r->own[1], r->own[2], r->intruder[0], r->intruder[1], r->intruder[2]);
   } else {
     printf(" kind=%c (not a text payload)\n", ev->result->kind);
   }
@@ -228,6 +288,7 @@ static int cmd_bands(void) {
 int main(int argc, char **argv) {
   if (argc < 2) return usage();
   if (!strcmp(argv[1], "encode")) return cmd_encode(argc - 2, argv + 2);
+  if (!strcmp(argv[1], "ack")) return cmd_ack(argc - 2, argv + 2);
   if (!strcmp(argv[1], "decode")) return cmd_decode(argc - 2, argv + 2);
   if (!strcmp(argv[1], "bands")) return cmd_bands();
   return usage();

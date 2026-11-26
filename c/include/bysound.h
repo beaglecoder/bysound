@@ -132,6 +132,10 @@ int bys_max_payload_bytes(bys_band_t band, bys_profile_t profile);
 int bys_frame_init_reference(bys_frame_t *f, bys_band_t band, bys_profile_t profile, unsigned set, const uint8_t fp[BYS_REF_BYTES]);
 /* Ack (receipt: 0 ack, 1 receipt) with the first 4 bytes of the payload's SHA-256. Always the normal profile. */
 int bys_frame_init_ack(bys_frame_t *f, bys_band_t band, int receipt, const uint8_t hash4[4]);
+/* Ack or receipt with the "heard" nibble of the session layer (docs/SESSION.md 3.1): 0 = not stated, else robust << 3 | (band id + 1). */
+int bys_frame_init_ack_heard(bys_frame_t *f, bys_band_t band, int receipt, unsigned heard, const uint8_t hash4[4]);
+/* Duration of a frame without its gap, in microseconds. `packed_len`: packed payload bytes (payload frames only). */
+int bys_frame_duration_us(bys_kind_t kind, bys_band_t band, bys_profile_t profile, uint32_t packed_len, uint32_t *us);
 /* Risk: reason, source (0 sender, 1 receiver), hops, short 3-byte fingerprints. Always the normal profile. */
 int bys_frame_init_risk(bys_frame_t *f, bys_band_t band, unsigned reason, unsigned source, unsigned hops, const uint8_t own[3], const uint8_t intruder[3]);
 size_t bys_frame_symbols(const bys_frame_t *f);  /* total symbols, preamble included */
@@ -145,6 +149,7 @@ int bys_frame_next(bys_frame_t *f, uint8_t *nib);
  */
 typedef struct {
   uint8_t kind, band, set, reason, source, hops, receipt, corrected;
+  uint8_t heard; /* ack/receipt: heard nibble (0 = not stated; else robust << 3 | (band id + 1)) */
   uint8_t fingerprint[BYS_REF_BYTES];
   uint8_t hash4[4], own[3], intruder[3];
   uint16_t payload_len; /* valid packed bytes in the output buffer */
@@ -207,6 +212,7 @@ typedef struct {
 int bys_tx_init_payload(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, bys_profile_t profile, const char *utf8, size_t n);
 int bys_tx_init_reference(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, bys_profile_t profile, unsigned set, const uint8_t fp[BYS_REF_BYTES]);
 int bys_tx_init_ack(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, int receipt, const uint8_t hash4[4]);
+int bys_tx_init_ack_heard(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, int receipt, unsigned heard, const uint8_t hash4[4]);
 int bys_tx_init_risk(bys_tx_t *tx, const bys_tx_cfg_t *cfg, bys_band_t band, unsigned reason, unsigned source, unsigned hops, const uint8_t own[3], const uint8_t intruder[3]);
 /* Writes up to n samples; returns how many (fewer than n only at the end, gap included). */
 size_t bys_tx_fill(bys_tx_t *tx, int16_t *out, size_t n);

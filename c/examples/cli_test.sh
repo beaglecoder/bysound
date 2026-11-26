@@ -23,6 +23,11 @@ done
 "$BYSOUND" encode "twice" -o "$DIR/rep.wav" --repeat 2 >/dev/null
 [ "$("$BYSOUND" decode "$DIR/rep.wav" | grep -c 'text=twice')" = 2 ] && echo "ok   repeat 2" || { echo "FAIL repeat 2"; fail=1; }
 check "recording payload-top-v4.wav" "$REC" "text=000201010212264700"
+# acks and receipts: the id is the first 4 bytes of SHA-256 of the text ("abc" -> ba7816bf), the heard nibble says where it was read
+"$BYSOUND" ack "abc" -o "$DIR/ack.wav" >/dev/null; check "ack" "$DIR/ack.wav" "band=mid profile=normal corrected=0 ack id=ba7816bf"
+"$BYSOUND" ack "abc" -o "$DIR/ack-h.wav" --heard upper/robust >/dev/null; check "ack heard" "$DIR/ack-h.wav" "ack id=ba7816bf heard=upper/robust"
+"$BYSOUND" ack "abc" -o "$DIR/receipt.wav" --receipt --heard top >/dev/null; check "receipt" "$DIR/receipt.wav" "band=high profile=normal corrected=0 receipt id=ba7816bf heard=top/normal"
+"$BYSOUND" ack "abc" -o "$DIR/ack44.wav" --rate 44100 --band top >/dev/null; check "ack 44100 Hz on top" "$DIR/ack44.wav" "band=top profile=normal corrected=0 ack id=ba7816bf"
 "$BYSOUND" bands >/dev/null && echo "ok   bands"
 "$BYSOUND" bands | grep -q "max text" && echo "ok   bands max" || { echo "FAIL bands max"; fail=1; }
 long=$(awk 'BEGIN{for(i=0;i<5000;i++)printf "a"}')
