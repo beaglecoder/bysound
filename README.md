@@ -31,7 +31,7 @@ No accounts, no API keys, no server: everything runs locally.
 - 💳 **Pay at the counter:** the register plays a reference; the phone confirms it with your server. [example](examples/backend-reference)
 - 🔗 **Share a link or a contact:** hold two phones close, no pairing. [iOS](examples/ios-share-link) · [Android](examples/android-share-contact)
 - 🔑 **Pairing and login codes:** a TV or kiosk plays a one-time code instead of making you type it.
-- 🎵 **A link inside music or an ad:** people hear the song, phones read the message above 18 kHz. [try it](#music--hidden-message)
+- 🎵 **A link inside music or an ad:** people hear the song, phones read the message above 18 kHz. [try it](docs/HOW-IT-WORKS.md#7-music--hidden-message)
 
 ## Five pillars
 
@@ -94,7 +94,7 @@ Compared with [ggwave](https://github.com/ggerganov/ggwave), the best-known open
 | 📦 Messages go beyond 140 bytes | 🧩 You want Python or WebAssembly bindings |
 | 🤝 You want acks and alerts built in | 🎛️ You want 1–2-tone modes |
 
-Full comparison: **[HOW-IT-WORKS](docs/HOW-IT-WORKS.md#6-bysound-vs-ggwave)** · **[paper](PAPER.md#8-trade-offs)** · **[benchmark](bench/README.md)**.
+Full comparison: **[HOW-IT-WORKS](docs/HOW-IT-WORKS.md#8-bysound-vs-ggwave)** · **[paper](PAPER.md#8-trade-offs)** · **[benchmark](bench/README.md)**.
 
 ## Try it in one minute
 
@@ -103,7 +103,7 @@ git clone https://github.com/beaglecoder/bysound && cd bysound/web
 npm install && npm run dev        # open http://localhost:5173 on two devices
 ```
 
-Press **Listen** on one and **Send** on the other. Nothing arrives? Turn the volume up or pick the `mid` channel: some speakers don't reach 17 kHz.
+Press **Listen** on one and **Send** on the other. Nothing arrives? Turn the volume up or pick the `mid` channel: some speakers don't reach 17 kHz ([more tips](docs/HOW-IT-WORKS.md#5-tips-for-reliable-reads)).
 
 No second device? Turn text into a sound file and back:
 
@@ -112,39 +112,6 @@ make -C c cli
 c/build/bysound encode "hello sound" -o hello.wav
 c/build/bysound decode hello.wav
 ```
-
-## Music + hidden message
-
-<img src="docs/assets/music.svg" alt="Music in the low band, the message above 18 kHz" width="100%">
-
-- 🎵 You hear a song; the other device reads the text riding **above 18 kHz**. Try the **♪ Music + hidden message** button in the playground, or decode [`music-demo.wav`](docs/assets/music-demo.wav).
-
-## How it works
-
-<img src="docs/assets/frame.svg" alt="Frame anatomy" width="100%">
-
-- 🎹 Text becomes **tones on a fixed grid**, in **blocks with error correction** and a checksum over the whole message.
-- 📻 The receiver **listens to all channels at once**, learns the room's noise and echo, and checks everything before answering.
-
-Step by step, with more pictures: **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)**. Every byte: **[docs/PROTOCOL.md](docs/PROTOCOL.md)**.
-
-## What's in the box
-
-| | Folder | Demo |
-|---|---|---|
-| 🌐 Browser | [`web/`](web) · TypeScript | `npm run dev` |
-| 🍎 iOS | [`ios/`](ios) · Swift | open `Demo/BySoundDemo.xcodeproj` |
-| 🤖 Android | [`android/`](android) · Kotlin | `./gradlew :demo:installDebug` |
-| 🔧 Any computer | [`c/`](c) · C99, no `malloc` | `c/build/bysound` (WAV in/out) |
-| 📟 ESP32-S3 | [`esp32/`](esp32) · ESP-IDF | `idf.py build flash monitor` |
-| 🧪 Examples | [`examples/`](examples) · all platforms | see [`examples/README.md`](examples/README.md) |
-| 📊 Benchmark | [`bench/`](bench) · vs ggwave | `./fetch-ggwave.sh && make && make run` |
-
-Each folder's README has its API, tests and details.
-
-## Examples
-
-The use cases above as small complete apps, all local and with no keys, plus the [channel ladder](examples/web-channel-ladder) and [WAV tools in C](examples/c-wav-tools): see [`examples/`](examples).
 
 ## In your code
 
@@ -161,6 +128,29 @@ await rx.confirmed();                                       // right before acti
 ```
 
 Swift, Kotlin and C look the same: see [`ios/`](ios), [`android/`](android) and [`c/`](c).
+
+## How it works
+
+<img src="docs/assets/frame.svg" alt="Frame anatomy" width="100%">
+
+- 🎹 Text becomes **tones on a fixed grid**, in **blocks with error correction** and a checksum over the whole message.
+- 📻 The receiver **listens to all channels at once**, learns the room's noise and echo, and checks everything before answering.
+
+Channels, timings, tips and the full walk-through: **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)**. Every byte: **[docs/PROTOCOL.md](docs/PROTOCOL.md)**.
+
+## What's in the box
+
+| | Folder | Demo |
+|---|---|---|
+| 🌐 Browser | [`web/`](web) · TypeScript | `npm run dev` |
+| 🍎 iOS | [`ios/`](ios) · Swift | open `Demo/BySoundDemo.xcodeproj` |
+| 🤖 Android | [`android/`](android) · Kotlin | `./gradlew :demo:installDebug` |
+| 🔧 Any computer | [`c/`](c) · C99, no `malloc` | `c/build/bysound` (WAV in/out) |
+| 📟 ESP32-S3 | [`esp32/`](esp32) · ESP-IDF | `idf.py build flash monitor` |
+| 🧪 Examples | [`examples/`](examples) · all platforms | see [`examples/README.md`](examples/README.md) |
+| 📊 Benchmark | [`bench/`](bench) · vs ggwave | `./fetch-ggwave.sh && make && make run` |
+
+Each folder's README has its API, tests and details. The [examples](examples) are small complete apps for the use cases above, all local and with no keys.
 
 ## Citing
 

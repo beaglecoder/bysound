@@ -154,8 +154,8 @@ def pipeline():
             if i:
                 out += f'<line x1="{x-gap+2}" y1="{y+31}" x2="{x-2}" y2="{y+31}" stroke="{TXT}" stroke-width="1.6" marker-end="url(#ar)"/>\n'
         return out, xs
-    enc = [('Text', 'UTF-8 string'), ('Pack', 'digit pairs → 1 byte'), ('Blocks', '48 B + CRC-32'), ('Reed–Solomon', '+12 parity / block'), ('Nibbles', '4 bits per tone'), ('Tones', 'on a 46.875 Hz grid')]
-    dec = [('Microphone', 'PCM 44.1 / 48 kHz'), ('Windows', '21.3 ms, hop 4 ms'), ('Preamble', 'match ≥ 0.32'), ('Header', 'best of 259 valid'), ('Soft symbols', 'whitened, de-echoed'), ('RS + erasures', 'least-sure bytes'), ('Combine laps', 'up to 6 repeats'), ('Text', 'CRC-32 verified')]
+    enc = [('Text', 'your message'), ('Pack', '2 digits per byte'), ('Blocks', '48 B + checksum'), ('Add repair', '+12 bytes / block'), ('Split', '4 bits per tone'), ('Tones', '46.875 Hz grid')]
+    dec = [('Microphone', '44.1 / 48 kHz'), ('Listen', 'every 4 ms'), ('Find start', 'preamble'), ('Header', 'size, channel'), ('Clean up', 'noise, echo'), ('Repair', 'damaged bytes'), ('Merge', 'repetitions'), ('Text', 'checked')]
     ecol = [BLUE, BLUE, TEAL, TEAL, PURPLE, PURPLE]
     dcol = [ORANGE, ORANGE, PURPLE, PURPLE, TEAL, TEAL, BLUE, GREEN]
     a, ex = row(enc, 52, 22, 136, 20, ecol, 'Encoder (transmitter)')

@@ -1,70 +1,100 @@
 # How bysound works
 
-bysound sends a short text from one device to another **through sound**. The sender plays a quick sequence of tones through its speaker, and the receiver listens with its microphone and turns the tones back into text. There is no pairing, no network and no camera. It works with any phone, laptop or microcontroller that has a speaker or a microphone.
+bysound sends a short text from one device to another **through sound**. The sender plays a quick sequence of tones through its speaker; the receiver listens with its microphone and turns the tones back into the same text. No pairing, no network, no camera: any phone, laptop or microcontroller with a speaker or a microphone will do.
 
 ![A phone sending data as sound to another phone and to an ESP32](assets/hero.svg)
 
-## 1. Picking a slice of the spectrum
+**In short:**
 
-Most of the bands sit between **15 and 19.5 kHz**. That range is above what most adults hear well (and `top`, at 18–19.5 kHz, is inaudible to most adults), yet it is still low enough for ordinary phone speakers and microphones to handle, although many of them lose sensitivity above about 17 kHz. One band (`audible`, about 1.9–4.9 kHz) is meant to be heard, and it works with almost any speaker.
+- The text becomes **tones** above 15 kHz, where most adults hear little or nothing.
+- It travels in **blocks with repair bytes**, so some damage gets fixed on the way.
+- The receiver **listens to every channel at once**, cleans up noise and echo, and delivers the text **only if its checksum matches**.
+- Optionally, the two devices **talk back** (acks, alerts) and the sender **adapts** to the room and the speaker.
 
-![The seven bands on the frequency axis](assets/bands.svg)
+## 1. Channels
 
-Inside a band, the frequencies form a grid of slots, each **46.875 Hz** apart. The slots are grouped in sets of 16. Playing one of the 16 slots of a group says a number from 0 to 15, which is 4 bits. A band uses 2 to 6 groups at once, so every **symbol** (a 32 ms chord) carries 8 to 24 bits.
+Most channels sit between **15 and 19.5 kHz**: above what most adults hear well, but still within what ordinary phone speakers and microphones handle. Many of them lose volume above about 17 kHz, which is why there are several channels to choose from.
 
-## 2. What one transmission sounds like
+![The seven channels on the frequency axis](assets/bands.svg)
 
-Each transmission is a **frame**, played several times in a row with a short silence between repetitions:
+| Channel | Range | Can you hear it? | 32 B take | Use it when |
+|---|---|---|---|---|
+| `top` | 18–19.5 kHz | Most adults: no | 2.3 s | It must be silent and the speaker reaches 19 kHz |
+| `high` | 17.25–19.5 kHz | Most adults: hardly | 1.8 s | Almost silent, a bit faster than `top` |
+| `upper` | 16.5–18.75 kHz | Young people may | 1.8 s | The speaker fades near 19 kHz |
+| `mid` | 15–17.25 kHz | Many young people | 1.8 s | The speaker fades above 17 kHz (many phones) |
+| `xhigh` | 16.5–19.5 kHz | Young people may | 1.5 s | Faster, good speaker |
+| `wide` | 15–19.5 kHz | Many young people | 1.2 s | Speed matters more than silence |
+| `audible` | 1.9–4.9 kHz | Yes, a short chirp | 1.8 s | Any speaker, or you want people to hear it |
+
+You do not have to pick one: with the session layer the sender tries `top → high → upper → mid` until the receiver answers ([section 6](#6-talking-back-acknowledgements-alerts-and-adaptation)), and the receiver always listens to all of them.
+
+**How tones carry data.** Inside a channel the frequencies form a grid of slots **46.875 Hz** apart, grouped in sets of 16. Playing one slot out of 16 says a number from 0 to 15 (4 bits). A channel plays 2 to 6 groups at once, so every **symbol**, a 32 ms chord, carries 8 to 24 bits.
+
+## 2. What one transmission looks like
+
+Each transmission is a **frame**, played several times in a row with a short silence in between:
 
 ![Frame anatomy](assets/frame.svg)
 
-- **Preamble:** a fixed pattern of 8 chords that says "a frame starts here". Each band has its own pattern, so a receiver can tell the bands apart.
-- **Header:** 4 bytes: the kind of frame, how many blocks follow, which band it is on, and a small checksum.
-- **Blocks:** the text itself, cut into pieces of 48 bytes. Each piece gets 12 extra **Reed–Solomon** bytes, the same kind of error correction that lets a scratched CD or a dirty QR code still work. A block survives up to 6 wrong bytes, or 12 bytes that the receiver already knows are doubtful.
+- **Preamble:** 8 fixed chords that say "a frame starts here". Each channel has its own pattern, so the receiver knows which one it is hearing.
+- **Header:** 4 bytes: kind of frame, how many blocks follow, which channel, and a small checksum.
+- **Blocks:** the text in pieces of up to 48 bytes. Each piece carries 12 extra **Reed–Solomon** bytes, the same kind of repair that lets a scratched CD or a dirty QR code still work. A block survives up to 6 wrong bytes, or up to 12 if the receiver knows which ones are doubtful.
 - **Gap:** 350 ms of silence before the next repetition.
 
-Here is a real frame as a spectrogram (time to the right, pitch upward). You can see the diagonal preamble pattern, the header, and then the data tones hopping around inside their groups:
+A real frame as a spectrogram (time to the right, pitch upward): the diagonal preamble, the header, then the data tones hopping inside their groups.
 
 ![Spectrogram of a real frame](assets/spectrogram.svg)
-
-## Music + hidden message
-
-Music lives mostly below 5 kHz; the `top` band lives above 18 kHz. They hardly overlap, so you can play a song and the message in the same speaker at the same time: you hear the song, and a receiver that listens still decodes the text.
-
-![Music in the low band, data tones above 18 kHz](assets/music.svg)
-
-Download and decode it: `c/build/bysound decode docs/assets/music-demo.wav` ([music-demo.wav](assets/music-demo.wav): an 8.7 s original melody with "hello from the music" repeated underneath). In the web playground, the "Music + hidden message" button plays the same thing for another device to hear. It is rebuilt with `npm run make:music-demo` in `web/`.
 
 ## 3. From text to tones and back
 
 ![Encoder and decoder pipeline](assets/pipeline.svg)
 
-**Sending** is simple and deterministic:
+**Sending** is straightforward:
 
-1. **Pack** the text: each pair of digits becomes one byte, so `"12500"` takes 3 bytes instead of 5. Plain ASCII stays as is, and anything else (accents, emoji) is carried as UTF-8.
-2. Add a **CRC-32**: a 4-byte fingerprint of the whole text.
-3. Cut the result into **blocks** and add **Reed–Solomon** parity to each one.
-4. Split every byte into two **nibbles** (4 bits each), one nibble per group.
-5. Play one **tone** per group for each symbol, with soft 3 ms fades so the speaker does not click.
+1. **Pack** the text: two digits fit in one byte, so `"12500"` takes 3 bytes instead of 5. Letters stay as they are; accents and emoji go as UTF-8.
+2. Add a **checksum** (CRC-32) of the whole text.
+3. Cut it into **blocks** and add the **repair bytes** to each one.
+4. Turn every 4 bits into one **tone** and play them, with soft 3 ms fades so the speaker does not click.
 
 **Receiving** is where the work is:
 
-1. **Listen continuously.** Every 4 ms, measure the energy of every slot on the grid.
-2. **Learn the noise.** Each slot gets its own background level. A constant hum or whine is then divided out before the receiver looks for tones.
-3. **Find the preamble.** Score how well the last 8 chords match each band's pattern. The frame starts where the score is highest. Noise alone scores about 0.06; a frame must reach 0.32. A preamble that seems to appear in the middle of a frame counts as the next repetition only if it scores at least 0.7 of the frame's own preamble, so data that happens to look a little like a preamble does not cut the read short.
-4. **Read the header.** Instead of decoding the header bit by bit, pick the closest of the 259 valid headers. This works even when a couple of nibbles are wrong.
-5. **Read the symbols.** Remove the echo of the previous chord, which the preamble already measured. The TypeScript, Swift and Kotlin receivers also keep how likely each of the 16 tones is, not just the loudest one.
-6. **Correct errors.** Run Reed–Solomon. If it fails, mark the least certain bytes as "unknown" and try again: known gaps are twice as cheap to fix as hidden errors.
-7. **Combine repetitions.** If a block was damaged by a door slam in one repetition and by a cough in the next, combine the repetitions. Up to 6 repetitions are combined.
-8. **Check and deliver.** The last block does not say how long it is, so the receiver closes it at the first length that both Reed–Solomon and the CRC-32 accept. The CRC-32 must match, or nothing is delivered. You get the exact text or nothing.
+1. **Listen** all the time, measuring every slot of every channel every 4 ms.
+2. **Learn the background:** each slot gets its own noise level, so a steady hum or whine is ignored.
+3. **Find the start:** look for any channel's preamble pattern. Noise alone never looks like one.
+4. **Read the header:** choose the closest valid header, which works even if part of it was damaged.
+5. **Clean up each chord:** subtract the echo of the previous chord (the preamble already showed how much echo the room has) and keep how likely each tone is, not just the loudest.
+6. **Repair:** Reed–Solomon fixes wrong bytes. If that fails, the receiver marks the least certain bytes as unknown and tries again; known gaps are twice as cheap to fix.
+7. **Merge repetitions:** if a door slam hit one repetition and a cough the next, the good parts of each are combined.
+8. **Check:** the CRC-32 must match, or nothing is delivered. You get the exact text or nothing.
 
-Steps 6 (the retry with unknown bytes) and 7 are in the TypeScript, Swift and Kotlin receivers. The C receiver, written for the bounded memory of microcontrollers, reads each repetition on its own with plain error correction.
+Steps 6 (the retry with unknown bytes) and 7 are in the TypeScript, Swift and Kotlin receivers. The C receiver, written for the small memory of microcontrollers, reads each repetition on its own. The exact thresholds and formulas are in [PROTOCOL.md](PROTOCOL.md).
 
-## 4. How fast is it?
+## 4. How long does it take?
 
-Raw speeds go from 250 bit/s (`top`, 2 tones) to 750 bit/s (`wide`, 6 tones). One frame of a 166-character test string lasts **3.7 s** on the 3-tone bands and **2.8 s** on `xhigh`. In very noisy places, the **robust** profile makes every chord twice as long. That doubles the airtime and makes the tones easier to pick out of the noise.
+Time for one transmission, silence included:
 
-## 5. Talking back: acknowledgements, alerts and adaptation
+| Message | `top` | `high` / `upper` / `mid` | `xhigh` | `wide` | `top` robust |
+|---|---|---|---|---|---|
+| 8 bytes (a short code) | 1.6 s | 1.3 s | 1.1 s | 1.0 s | 2.8 s |
+| 32 bytes (a link id) | 2.3 s | 1.8 s | 1.5 s | 1.2 s | 4.3 s |
+| 140 bytes (a long link) | 6.7 s | 4.7 s | 3.7 s | 2.7 s | 13.0 s |
+| Most in 30 s | 700 B | 1,052 B | 1,408 B | 2,114 B | 335 B |
+
+- **Robust profile:** every chord lasts twice as long, so it takes twice the time but cuts through more noise. The sender switches to it on its own if nobody answers.
+- **30 s is the cap** for one transmission: longer is not practical by sound.
+- From the first tone to the decoded text, a real read took about **1.1 s** for a short message.
+
+## 5. Tips for reliable reads
+
+- 🔊 **Volume up, through the speaker.** Not the earpiece, not Bluetooth headphones: they cut the high frequencies.
+- 📏 **Close is better:** arm's length or across a counter. Point the speaker roughly at the other device.
+- 🤫 **Keep the listening device away from the noise:** a fan right next to the microphone hurts more than a loud room.
+- 🎚️ **Nothing arrives?** Try `mid` or `audible`: some speakers barely reach 17 kHz. The channel ladder does this for you.
+- 🌐 **In the browser:** the microphone needs HTTPS or `localhost`, and sound must start from a tap or click. On iPhone, the silent switch can mute the page.
+- 📱 **Covers and cases** can block the microphone or speaker holes.
+
+## 6. Talking back: acknowledgements, alerts and adaptation
 
 On top of the modem, a **session layer** turns "play a text" into a short conversation. It is specified in [SESSION.md](SESSION.md) and implemented in TypeScript (the reference, [`web/src/session`](../web/src/session)), Swift, Kotlin and C, which share the same test vectors.
 
@@ -93,7 +123,15 @@ sequenceDiagram
 
 None of this hides the text: anyone nearby can hear it, and anyone can play a valid frame. Apps that need privacy or proof of who sent something add it inside the text (encryption, a signature, an expiry). The session layer is tested on simulated sound, not in the benchmark below.
 
-## 6. bysound vs ggwave
+## 7. Music + hidden message
+
+Music lives mostly below 5 kHz; `top` lives above 18 kHz. They hardly overlap, so a speaker can play a song and a message at the same time: people hear the song, and a listening device still reads the text.
+
+![Music in the low band, data tones above 18 kHz](assets/music.svg)
+
+Try it: `c/build/bysound decode docs/assets/music-demo.wav` ([music-demo.wav](assets/music-demo.wav): an 8.7 s original melody with "hello from the music" underneath), or the **♪ Music + hidden message** button in the web playground. It is rebuilt with `npm run make:music-demo` in `web/`.
+
+## 8. bysound vs ggwave
 
 Both libraries use the same idea: MFSK on an orthogonal 46.875 Hz grid with Reed–Solomon. The numbers below come from a simulated channel ([`bench/`](../bench), 157,670 trials, reproducible). The bysound side of the benchmark is the **C receiver**: plain decisions per symbol, echo subtraction, a per-tone noise floor, the best-matching header and error-only Reed–Solomon. It does not mark unknown bytes or combine repetitions, so those features are not in these numbers. The bysound receiver was told the profile (normal or robust); ggwave listened to all its protocols.
 
