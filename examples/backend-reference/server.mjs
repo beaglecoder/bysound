@@ -5,10 +5,10 @@
 //
 // Endpoints (all need the demo identity header `x-demo-user: <account>`; a real backend derives it from a session token):
 //   POST /publish       {fingerprint, payload}   store the payload under its fingerprint (idempotent, TTL, single use)
-//   GET  /resolve/:fp                            read-only: the payload and the verified publisher (does not consume it)
+//   GET  /resolve/:fp                            the payload and the verified publisher (does not consume it; notes when it was first read)
 //   POST /received      {fingerprint, band}      consume it, once, after the receiver's confirm gate; tells the publisher
 //   POST /report-risk   {fingerprints, shortIds, reason}   block fingerprints involved in a clash or an alert
-//   GET  /status/:fp                             the publisher's view: live / consumed / expired / blocked (the "backend ack")
+//   GET  /status/:fp                             the publisher's view: live / consumed / expired / blocked, and whether it was read
 //   GET  /audit                                  the audit log (demo only: a real one is not public)
 import { createHash } from 'node:crypto';
 import { createServer as httpServer } from 'node:http';
@@ -30,7 +30,7 @@ export function createBackend(options = {}) {
   const perMinute = options.rateLimit?.perMinute ?? 60;
   const log = options.log ?? (() => undefined);
 
-  /** fingerprint → { payload, publisher, createdAt, expiresAt, state: 'live' | 'consumed', receivedBy, blockedReason } */
+  /** fingerprint → { payload, publisher, createdAt, expiresAt, state: 'live' | 'consumed', receivedBy, resolvedAt, blockedReason } */
   const entries = new Map();
   /** Fingerprints refused from now on, also ones never published (a rogue's). */
   const blocked = new Map();
@@ -86,7 +86,7 @@ export function createBackend(options = {}) {
         if (stateOf(fp) !== 'live') return [410, { error: stateOf(fp) }];
         return [200, { ok: true, fingerprint: fp, expiresAt: existing.expiresAt, repeated: true }];
       }
-      const e = { payload, publisher: account, createdAt: now(), expiresAt: now() + ttlMs, state: 'live', receivedBy: null };
+      const e = { payload, publisher: account, createdAt: now(), expiresAt: now() + ttlMs, state: 'live', receivedBy: null, resolvedAt: null };
       entries.set(fp, e);
       record('publish', account, fp);
       return [200, { ok: true, fingerprint: fp, expiresAt: e.expiresAt }];
@@ -102,7 +102,9 @@ export function createBackend(options = {}) {
       if (state === 'blocked') return [423, { error: 'blocked', reason: blocked.get(fp) }];
       if (state !== 'live') return [410, { error: state }];
       const e = entries.get(fp);
-      // Read-only: resolving does not consume. The receiver may still reject this reception (a clash in its final listen).
+      // Resolving does not consume: the receiver may still reject this reception (a clash in its final listen).
+      // It only notes when it was first read, so the sender can stop playing (the receiver does not ack by sound).
+      e.resolvedAt ??= now();
       return [200, { payload: e.payload, publisher: e.publisher, publishedAt: e.createdAt, expiresAt: e.expiresAt }];
     }
 
@@ -140,7 +142,7 @@ export function createBackend(options = {}) {
     if (method === 'GET' && m) {
       const e = entries.get(m[1]);
       if (!e || e.publisher !== account) return [404, { error: 'not-found' }];
-      return [200, { state: stateOf(m[1]), receivedBy: e.receivedBy, blockedReason: blocked.get(m[1]) ?? null, expiresAt: e.expiresAt }];
+      return [200, { state: stateOf(m[1]), receivedBy: e.receivedBy, resolvedAt: e.resolvedAt, blockedReason: blocked.get(m[1]) ?? null, expiresAt: e.expiresAt }];
     }
 
     if (method === 'GET' && path === '/audit') return [200, { audit }];

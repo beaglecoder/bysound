@@ -52,7 +52,7 @@ Good for: pairing codes, links, payment references, Wi-Fi setup for IoT boards, 
 | ✅ A wrong message is worse than none: 0 wrong in 87,380 trials (ggwave: 34 in 67,320, mostly 8-byte) | ⏱️ Messages are a few bytes: at 8 B ggwave (1.00 s) beats every bysound channel except `wide` (0.96 s) |
 | 📦 Messages go beyond 140 bytes: up to 30 s per transmission (700–2,114 B) | 🏛️ You want years of public use and a larger community |
 | 🔇 It should be hard to hear: `top` (18–19.5 kHz) and `high` (17.25–19.5 kHz); ggwave has no built-in mode above 18 kHz | 🧩 You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino/RP2040/ESP32 examples |
-| 🤝 You want acks, second-sender alerts and channel adaptation built in | 🎛️ You want 1–2-tone modes (DT/MT at 1.1–2.6 kHz): MT, if the receiver knows the length and time is no issue, tolerates the most noise measured |
+| 🤝 You want second-sender alerts and channel adaptation built in | 🎛️ You want 1–2-tone modes (DT/MT at 1.1–2.6 kHz): MT, if the receiver knows the length and time is no issue, tolerates the most noise measured |
 | 🧰 You want native TypeScript, Swift, Kotlin and allocation-free C | 📡 You need a long real-world track record: bysound's over-the-air data is one phone pair in one room |
 
 In-band, the two detectors are within 0–3 dB of each other: most of bysound's margin comes from narrower channels. Details and caveats: **[paper](PAPER.md#8-trade-offs)**, **[benchmark](bench/README.md)**.
@@ -91,11 +91,10 @@ The figures above compare the message and the noise **where they reach the micro
 ## Integrity and safety
 
 - ✅ **Exact message or nothing:** three checks before anything is accepted (header checksum, error correction in every block, a CRC-32 over the whole text). No wrong message in 87,380 simulated trials.
-- ✓ **Says "got it":** the receiver acknowledges by sound, so the sender stops; the sender answers with a receipt.
 - 👥 **Notices a second sender:** if two devices transmit at once, the receiver reports a *clash* and delivers nothing. Call `confirmed()` before acting and it also catches a sender that shows up later.
 - ⚠ **Warns the others:** whoever notices another sender plays an alert, relayed at most twice. The suggested quarantine is only a callback: bysound never blocks anything.
 - 🎚️ **Security levels:** `basic`, `standard` or `maximum` (the default).
-- 🔐 **With a backend:** only a 12-byte fingerprint travels by sound; the real data, the sender's identity and blocking of suspicious messages live on your server ([how](docs/SECURITY.md#using-a-backend), [example](examples/backend-reference/)).
+- 🔐 **With a backend:** only a 12-byte fingerprint travels by sound; the real data, the sender's identity, the confirmation that it arrived and blocking of suspicious messages live on your server ([how](docs/SECURITY.md#using-a-backend), [example](examples/backend-reference/)).
 - 📡 **Measured over the air:** no wrong message in 172 attempts with noise or in silence. With another sender playing, the real sender noticed and held back in 52 of 52 attempts. A second request registered on the same server is the hard case: with the latest build measured, all 8 attempts were delivered with a conflict warning after a median 1.8 s ([details](field/README.md)).
 - 🔓 **Not secret:** anyone nearby can hear the sound, just like anyone can photograph a QR code. Don't send passwords in the clear; sign or encrypt in your app if it matters.
 

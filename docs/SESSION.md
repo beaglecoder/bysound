@@ -314,7 +314,7 @@ A second call returns the same. An expired watch does not fail: the absence of e
 
 ### 6.7 Reference mode
 
-A reference frame carries only the 12-byte fingerprint. The app passes a **resolver**: a function from fingerprint (24 hex) to text or nothing, typically a `Map` of texts both devices already have (a menu, a list of products, a set of commands). It MAY be asynchronous. It MAY also query the app's own server; the session layer still opens no connection itself. That pattern (publish before sending, a read-only resolver, side effects only after `confirmed()`) is described in [SECURITY.md, Using a backend](SECURITY.md#using-a-backend).
+A reference frame carries only the 12-byte fingerprint. The app passes a **resolver**: a function from fingerprint (24 hex) to text or nothing, typically a `Map` of texts both devices already have (a menu, a list of products, a set of commands). It MAY be asynchronous. It MAY also query the app's own server; the session layer still opens no connection itself. That pattern (publish before sending, a resolver that does not consume, no ack by sound, side effects only after `confirmed()`) is described in [SECURITY.md, Using a backend](SECURITY.md#using-a-backend).
 
 | Resolver outcome | Result |
 |---|---|

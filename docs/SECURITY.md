@@ -75,11 +75,11 @@ Everything above is what bysound does on its own. Most apps that move something 
    - The sender plays **only if `publish` returned `true`**. A fingerprint the backend does not know is useless to the receiver, and playing one invites confusion.
 2. **Sound.** `sendSession(payload, { mode: 'reference' })`: only the 12-byte fingerprint is played, in reference frames ([PROTOCOL.md §16](PROTOCOL.md#16-other-frame-types)), with the default security level.
 3. **Resolve.** The receiver opens `receiveSession({ resolve })`. bysound calls `resolve(fingerprint)` on the first reference frame; the app's resolver calls `fetchPayload(fingerprint)` on the backend, over TLS, authenticated as the receiver. The backend answers with the payload **and the publisher's verified identity** (and the expiry). bysound checks that SHA-256 of the returned payload starts with the fingerprint (`MISMATCH` otherwise).
-   - `fetchPayload` is **read-only**. bysound calls the resolver in parallel with the final listen, so it can run for a reception that is rejected a moment later (a second fingerprint, a clash). It must not consume, notify or charge anything.
+   - `fetchPayload` **does not consume**. bysound calls the resolver in parallel with the final listen, so it can run for a reception that is rejected a moment later (a second fingerprint, a clash). It must not consume or charge anything; it only notes that the fingerprint was read, which tells the sender to stop playing (step 6).
    - The resolver returns only the text to bysound; keep the rest of the answer (publisher, expiry) in the app, keyed by fingerprint. The resolver has a timeout of `RESOLVE_TIMEOUT_SECONDS` = 15 s; give the HTTP call a shorter one.
 4. **Show and confirm.** The receiver app shows the person what matters, taken from the backend's answer: **who** published it (the verified account, not a name written inside the payload) and **what** (the amount). The person confirms on screen.
 5. **Gate, then side effects.** Right before acting, `await confirmed()`. Only if it succeeds, call `markReceived(payload, { band })` (the band is only for your statistics): the backend **atomically** moves the entry from live to consumed (single use) and performs the side effects (charge, unlock, tell the sender). If `confirmed()` fails, act on nothing and report the risk (below).
-6. **Acks.** The ack by sound tells the sender "a bysound receiver nearby read this fingerprint"; it stops the sound and is good for the experience. The **authoritative** confirmation is the backend's: a callback, push or status poll that says "account X accepted it". Use the sound ack for UX, the backend for decisions.
+6. **Confirmation comes from the backend, not by sound.** Open the receiver with `ack: false`. The sender learns from the backend (a push, a callback or a status poll) first that its fingerprint was read, and stops playing with `stop()`, then that "account X accepted it". The ack by sound only says "some bysound receiver nearby read this", it can be recorded or faked, and with a backend it adds nothing.
 
 ```mermaid
 sequenceDiagram
@@ -92,9 +92,9 @@ sequenceDiagram
   SA-)RA: sound: reference frame (12-byte fingerprint only)
   Note over RA: first frame → resolve(fingerprint), final listen in parallel
   RA->>B: fetchPayload(fingerprint) (TLS, receiver's session)
-  B-->>RA: payload + verified publisher + expiry (read-only)
+  B-->>RA: payload + verified publisher + expiry (not consumed)
   Note over RA: SHA-256(payload) starts with fingerprint? delivered via reference
-  RA-)SA: sound: ack (UX only)
+  B-->>SA: status: read → stop playing
   Note over RA: screen: "12.50 EUR to shop-7" → person confirms
   Note over RA: await confirmed() → clean
   RA->>B: markReceived (consume once)
@@ -107,10 +107,10 @@ sequenceDiagram
 | Operation | Example endpoint | Contract |
 |---|---|---|
 | `publish({fingerprint, payload})` | `POST /publish` | Authenticated. Recomputes the fingerprint. Idempotent. Own timeout. Sender emits only on `true`. Refused for a blocked fingerprint. |
-| `fetchPayload(fingerprint)` | `GET /resolve/:fp` | Authenticated, rate limited. Read-only. Returns payload, publisher, expiry; refuses expired, consumed and blocked entries. |
+| `fetchPayload(fingerprint)` | `GET /resolve/:fp` | Authenticated, rate limited. Does not consume; notes the first read. Returns payload, publisher, expiry; refuses expired, consumed and blocked entries. |
 | `markReceived(payload, {band})` | `POST /received` | Authenticated. Only after `confirmed()`. Atomic check-and-set live → consumed: a second call fails. Notifies the publisher. |
 | `reportRisk(...)` | `POST /report-risk` | Authenticated, rate limited. Blocks the fingerprints involved in a clash or an alert (full fingerprints, or the 3-byte short ids a risk frame carries). |
-| status / callback | `GET /status/:fp` | Only the publisher. The backend side of the ack: live, consumed (by whom), expired, blocked. |
+| status / callback | `GET /status/:fp` | Only the publisher. Replaces the ack by sound: read (stop playing), then live, consumed (by whom), expired, blocked. |
 
 **Accept only what the backend resolved.** A receiver in this design must refuse a delivery with `via: 'payload'` (a plain payload frame never went through the backend; anyone can play one) and any reference it did not resolve through the backend.
 
@@ -153,7 +153,7 @@ sequenceDiagram
   S->>B: publish fp_S (as shop-7)
   X->>B: publish fp_X (as mallory, payload claims "Shop 7")
   S-)R: sound: fp_S
-  R->>B: fetchPayload(fp_S) (read-only)
+  R->>B: fetchPayload(fp_S) (not consumed)
   X-)R: sound: fp_X, during the final listen
   Note over R: two references → MULTIPLE_TRANSMISSIONS<br/>nothing delivered, nothing consumed
   R-)S: sound: risk {other, own fp_S, intruder fp_X}
@@ -181,7 +181,7 @@ sequenceDiagram
 - [ ] The backend recomputes the fingerprint from the payload and takes the publisher from the authenticated session.
 - [ ] `publish` is idempotent, has its own timeout, and the sender plays only after it returned `true`.
 - [ ] Entries have a short TTL and are single use (atomic live → consumed).
-- [ ] `fetchPayload` is authenticated, rate limited, logged and read-only.
+- [ ] `fetchPayload` is authenticated, rate limited and logged, and does not consume.
 - [ ] The receiver accepts only `via: 'reference'` deliveries that its resolver fetched from the backend.
 - [ ] The receiver shows the verified publisher and the amount; the person confirms on screen.
 - [ ] `await confirmed()` right before `markReceived`; nothing consumed or charged before it.

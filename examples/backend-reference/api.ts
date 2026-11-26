@@ -31,7 +31,7 @@ export async function publish(account: string, fingerprint: string, payload: str
   }
 }
 
-/** Read-only lookup: may run for a reception that is rejected later (a clash in the final listen). Never has side effects. */
+/** Lookup that never consumes: may run for a reception that is rejected later (a clash in the final listen). The backend only notes the first read. */
 export const fetchPayload = (account: string, fingerprint: string) => call<Resolved>(account, 'GET', `/resolve/${fingerprint}`);
 
 /** The side effect: consumes the request (single use) and tells the publisher. Only after `confirmed()`. */
@@ -43,7 +43,7 @@ export const reportRisk = (account: string, reason: string, fingerprints: string
 
 /** The publisher's view of its request: the "backend ack", in addition to the ack by sound. */
 export const status = (account: string, fingerprint: string) =>
-  call<{ state: 'live' | 'consumed' | 'expired' | 'blocked'; receivedBy: string | null; blockedReason: string | null }>(account, 'GET', `/status/${fingerprint}`);
+  call<{ state: 'live' | 'consumed' | 'expired' | 'blocked'; receivedBy: string | null; resolvedAt: number | null; blockedReason: string | null }>(account, 'GET', `/status/${fingerprint}`);
 
 /** A payment request. The random nonce makes every request (and its fingerprint) unique and unguessable. */
 export function paymentRequest(merchant: string, amount: string, currency = 'EUR'): string {

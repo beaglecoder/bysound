@@ -1,4 +1,4 @@
-// The customer: hears a fingerprint, resolves it on the backend (read-only), shows the verified publisher and the amount,
+// The customer: hears a fingerprint, resolves it on the backend (without consuming it), shows the verified publisher and the amount,
 // and pays (POST /received) only after the person confirms and the confirm gate is clean.
 import { fingerprint, receiveSession, SessionError, type ReceiveSession } from '../../web/src/index';
 import { ApiError, fetchPayload, markReceived, parsePaymentRequest, reportRisk, type Resolved } from './api';
@@ -19,7 +19,9 @@ listenBtn.onclick = async () => {
   card.hidden = true;
   try {
     const session = rx = await receiveSession({
-      // Read-only lookup. bysound calls it on the first frame, in parallel with the final listen, so it may run for a reception
+      // No ack by sound: the sender learns from the backend that its request was read and stops playing.
+      ack: false,
+      // Lookup that never consumes. bysound calls it on the first frame, in parallel with the final listen, so it may run for a reception
       // that is rejected a moment later (a second fingerprint, a clash): it must not consume anything.
       resolve: async (fp) => {
         heard.push(fp);

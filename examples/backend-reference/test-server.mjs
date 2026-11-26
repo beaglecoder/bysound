@@ -41,14 +41,14 @@ try {
   assert.equal((await publish('mallory', p1)).status, 409, 'another account cannot take over a fingerprint');
   step('publish is idempotent for its publisher');
 
-  // Resolve: read-only, returns the verified publisher.
+  // Resolve: does not consume, returns the verified publisher.
   const r1 = await call('alice', 'GET', `/resolve/${fp1}`);
   assert.equal(r1.status, 200);
   assert.equal(r1.body.payload, p1);
   assert.equal(r1.body.publisher, 'shop-7');
   assert.equal((await call('alice', 'GET', `/resolve/${fp1}`)).status, 200, 'resolving twice does not consume');
   assert.equal((await call('alice', 'GET', `/resolve/${'a'.repeat(24)}`)).status, 404);
-  step('resolve returns payload and verified publisher, read-only');
+  step('resolve returns payload and verified publisher, does not consume');
 
   // Received: single use, and the publisher sees it.
   assert.equal((await call('shop-7', 'POST', '/received', { fingerprint: fp1 })).status, 403, 'the publisher cannot mark its own request');

@@ -16,7 +16,7 @@ Open http://localhost:5173 and, from there, the **Sender**, **Receiver** and **R
 
 ## What to watch
 
-1. **Normal payment.** Receiver: *Listen*. Sender: *Request payment*. The sender publishes first and plays only if the backend stored it. The receiver resolves the fingerprint and shows *12.50 EUR to account shop-7 (verified by the backend)*. Press *Confirm*: the app calls `confirmed()` and only then `POST /received`. The sender's log shows the ack by sound (someone read it) and then the backend's answer (*paid by alice*). The backend terminal prints the audit log.
+1. **Normal payment.** Receiver: *Listen*. Sender: *Request payment*. The sender publishes first and plays only if the backend stored it. The receiver resolves the fingerprint and shows *12.50 EUR to account shop-7 (verified by the backend)*. Press *Confirm*: the app calls `confirmed()` and only then `POST /received`. There is no ack by sound: the sender polls the backend, stops playing as soon as the request was read, and then shows *paid by alice*. The backend terminal prints the audit log.
 2. **Replay.** Record case 1 with a phone's voice recorder, press *Listen* again and play the recording back: the fingerprint decodes fine, the backend answers that it was already used (or expired after 60 s), and bysound fails with `NOT_FOUND`.
 3. **Rogue at the same time.** Receiver: *Listen*. Sender: *Request payment*. About 5 s later (the sender listens 3–4 s before playing), Rogue: *Emit now*. The receiver gets `MULTIPLE_TRANSMISSIONS` and delivers nothing; the sender hears its risk frame and stops (`RISK_SIGNAL`). Both report to the backend, which **blocks** the fingerprints involved; the sender's log says *blocked, issue a new one*. If the two frames overlapped exactly, the receiver could not read either fingerprint; the sender's report blocks its own.
 4. **Rogue after delivery.** Let the receiver show the request, then press *Emit now* on the rogue and only then *Confirm*: `confirmed()` fails, nothing is paid, both fingerprints are blocked.
@@ -30,7 +30,7 @@ If the rogue starts during the sender's pre-listen, the sender refuses to play (
 |---|---|
 | `server.mjs` | The backend: `POST /publish`, `GET /resolve/:fp`, `POST /received`, `POST /report-risk`, `GET /status/:fp`, `GET /audit` |
 | `test-server.mjs` | Offline test of the backend (`npm test`) |
-| `api.ts` | The pages' calls: `publish` (own timeout, idempotent), `fetchPayload` (read-only), `markReceived`, `reportRisk`, `status` |
+| `api.ts` | The pages' calls: `publish` (own timeout, idempotent), `fetchPayload` (does not consume), `markReceived`, `reportRisk`, `status` |
 | `sender.ts`, `receiver.ts`, `rogue.ts` | The three pages: `sendSession(payload, { mode: 'reference' })`, `receiveSession({ resolve })` with the confirm gate, and an attacker with every protection off |
 | `vite.config.mjs`, `tsconfig.json`, `package.json` | Standalone setup that borrows `../../web`'s Vite and TypeScript |
 
