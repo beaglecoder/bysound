@@ -159,8 +159,10 @@ enum Codec {
 
 /// Errors from building a frame.
 public enum ModemError: Error {
-    /// More than 255 blocks (about 12 KB).
+    /// More than 255 blocks (more than any transmission may last anyway: see `exceedsMaxDuration`).
     case textTooLong
     /// One transmission would last more than `Protocol.maxFrameSeconds` (30 s). `maxPackedBytes` is the limit for the band and profile.
     case exceedsMaxDuration(packedBytes: Int, maxPackedBytes: Int)
+    /// The highest tone of the band is not below Nyquist (`sampleRate` / 2).
+    case bandAboveNyquist(highestToneHz: Double, sampleRate: Double)
 }

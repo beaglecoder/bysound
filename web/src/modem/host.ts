@@ -15,8 +15,8 @@ export interface Analyzer { feed(x: Float32Array): void; close(): void }
 const LEVEL_SECONDS = 0.06;
 
 /**
- * Listens to both profiles, like the native ports: a normal receiver (all 7 bands) and a robust one (top, high, upper and mid, with double
- * window and step), on the same audio. A native sender switches to robust only with heavy noise or if nobody reads it (see ROBUST_THRESHOLDS). The
+ * Listens to both profiles: a normal receiver (all 7 bands) and a robust one (top, high, upper and mid, with double window and step), on
+ * the same audio. A sender chooses the profile (robust only with heavy noise or if nobody reads it); the receiver cannot know in advance. The
  * robust one adds a 12 s ring and a 2,048-point FFT every 8 ms; the level and progress come from the normal one.
  */
 export class ReceiverHost implements Analyzer {

@@ -6,9 +6,13 @@ Kotlin implementation of the bysound v4 data-over-sound modem: text goes out as 
 
 - `bysound/` - Android library.
   - `modem` package: pure Kotlin, no Android imports (so it tests on the JVM). `Band`, `Profile`, `Modem` (encode), `Receiver` (streaming decoder), `ReceiverHost` (normal + robust receivers on the same audio), Reed-Solomon, CRCs, text packing.
-  - `audio` package: `SoundSender` (AudioTrack, built-in loudspeaker, music volume to maximum while sending) and `SoundListener` (AudioRecord, UNPROCESSED source when available, 48 kHz, background thread).
+  - `audio` package: `SoundSender` (AudioTrack, built-in loudspeaker, music volume to maximum while sending, only when the output is the loudspeaker) and `SoundListener` (AudioRecord, UNPROCESSED source when available, 48 kHz or 44.1 kHz, background thread).
   - The manifest declares `RECORD_AUDIO` and `MODIFY_AUDIO_SETTINGS`; request `RECORD_AUDIO` at runtime before listening.
 - `demo/` - one-screen app: text, band, Send/Stop, Listen/Stop, level bar, list of received texts.
+
+## Requirements
+
+JDK 21 (the Gradle build needs it) and the Android SDK, found through `ANDROID_HOME` (or `ANDROID_SDK_ROOT`), or through `sdk.dir` in `android/local.properties`.
 
 ## Tests
 
@@ -16,11 +20,11 @@ Kotlin implementation of the bysound v4 data-over-sound modem: text goes out as 
 ./gradlew :bysound:testDebugUnitTest
 ```
 
-They check the vectors in `../test-vectors/v4-frames.json`, Reed-Solomon, a render-noise-receive loopback on every band at 44.1 and 48 kHz (short and multi-block UTF-8 text, robust profile), and decoding of the C implementation's `c/test/golden/payload_wide_44100.i16` and the recording `c/test/recordings/falso-v4.wav`.
+They check the vectors in `../test-vectors/v4-frames.json`, Reed-Solomon, a render-noise-receive loopback on every band at 44.1 and 48 kHz (short and multi-block UTF-8 text, robust profile), and decoding of the C implementation's `c/test/golden/payload_wide_44100.i16` and the recording `c/test/recordings/payload-top-v4.wav`.
 
 ## Demo app
 
-Put `sdk.dir=/path/to/Android/sdk` in `android/local.properties` (it is gitignored), then:
+Set `ANDROID_HOME` to the SDK, or put `sdk.dir=/path/to/Android/sdk` in `android/local.properties` (it is gitignored), then:
 
 ```
 ./gradlew :demo:installDebug

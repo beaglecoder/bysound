@@ -23,7 +23,7 @@ final class CrossImplementationTests: XCTestCase {
     }
 
     func testRecordingFalso() throws {
-        let x = int16Samples(try Data(contentsOf: Repo.url("c/test/recordings/falso-v4.wav")), skip: 44)
+        let x = int16Samples(try Data(contentsOf: Repo.url("c/test/recordings/payload-top-v4.wav")), skip: 44)
         let out = listen(x, rate: 48000)
         XCTAssertEqual(out.heard.count, 1)
         XCTAssertTrue(out.heard.first?.text.hasPrefix("000201010212264700") ?? false)

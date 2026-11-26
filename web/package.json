@@ -1,8 +1,9 @@
 {
   "name": "bysound",
-  "version": "0.1.0",
+  "version": "4.0.0",
   "description": "bysound v4: send text over sound (near-inaudible multi-tone FSK) in the browser.",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/beaglecoder/bysound.git" },
   "private": false,
   "type": "module",
   "main": "src/index.ts",

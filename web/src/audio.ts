@@ -113,6 +113,10 @@ export interface ListenOptions {
   onLevel?(level: LevelEvent): void;
   /** A valid frame header was read on that band (the frame is still being received). */
   onHeader?(band: BandId): void;
+  /** Two transmissions overlapped: neither is delivered. */
+  onClash?(): void;
+  /** Every microphone block, before the receiver sees it (it is handed to a Worker afterwards: copy it to keep it). */
+  onSamples?(samples: Float32Array): void;
 }
 export interface Listening {
   stop(): void;
@@ -165,7 +169,7 @@ function analyzer(rate: number, events: AnalyzerEvents): Analyzer {
  * Opens the microphone (echo cancellation, noise suppression and AGC off: they destroy the tones) and decodes what it hears.
  * Call it from a user gesture. Needs HTTPS or localhost.
  */
-export async function listen({ onFrame, onLevel, onHeader }: ListenOptions): Promise<Listening> {
+export async function listen({ onFrame, onLevel, onHeader, onClash, onSamples }: ListenOptions): Promise<Listening> {
   const ctx = newContext();
   const fail = (code: SoundError['code'], message: string, cause?: unknown) => { void ctx.close().catch(() => undefined); return new SoundError(code, message, cause); };
   if (!navigator.mediaDevices?.getUserMedia) throw fail('UNSUPPORTED', 'The microphone needs HTTPS (or localhost) and a modern browser');
@@ -189,10 +193,13 @@ export async function listen({ onFrame, onLevel, onHeader }: ListenOptions): Pro
   }
   await resumed(ctx);
   if (ctx.state !== 'running') { stopTracks(); throw fail('UNSUPPORTED', 'The browser did not start audio: tap a button first'); }
-  const analysis = analyzer(ctx.sampleRate, { onFrame, onLevel, onHeader });
+  const analysis = analyzer(ctx.sampleRate, { onFrame, onLevel, onHeader, onClash });
   const source = ctx.createMediaStreamSource(stream);
   const tap = new AudioWorkletNode(ctx, 'sound-tap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
-  tap.port.onmessage = (e) => analysis.feed(e.data as Float32Array);
+  tap.port.onmessage = (e) => {
+    onSamples?.(e.data as Float32Array);
+    analysis.feed(e.data as Float32Array);
+  };
   const mute = ctx.createGain(); // Safari only processes nodes that reach the destination: route silently
   mute.gain.value = 0;
   source.connect(tap);

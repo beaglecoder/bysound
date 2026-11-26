@@ -46,6 +46,13 @@ class MaxDurationTest {
         assertEquals(700, Modem.maxPayloadBytes(Band.entries.first { it.id == "top" }))
         assertEquals(2114, Modem.maxPayloadBytes(Band.entries.first { it.id == "wide" }))
     }
+
+    @Test fun bandAboveNyquistIsRejected() {
+        val e = try { Modem.encode("hi", Band.TOP, Profile.NORMAL, 16000); null } catch (e: IllegalArgumentException) { e }
+        assertNotNull(e)
+        assertTrue(e!!.message!!.contains("Nyquist"))
+        assertTrue(Modem.encode("hi", Band.TOP, Profile.NORMAL, 48000).isNotEmpty())
+    }
 }
 
 class ReedSolomonTest {
@@ -125,7 +132,7 @@ class CrossImplementationTest {
     }
 
     @Test fun recordingFalso48k() {
-        val pcm = TestAudio.pcm16(java.io.File(TestAudio.root, "c/test/recordings/falso-v4.wav"), skip = 44)
+        val pcm = TestAudio.pcm16(java.io.File(TestAudio.root, "c/test/recordings/payload-top-v4.wav"), skip = 44)
         val heard = TestAudio.listen(pcm, 48000)
         assertTrue("nothing heard", heard.isNotEmpty())
         assertTrue(heard[0].text, heard[0].text.startsWith("000201010212264700"))

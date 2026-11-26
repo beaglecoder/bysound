@@ -14,3 +14,8 @@ sdkconfig
 sdkconfig.old
 managed_components/
 bench/third_party/
+.kotlin/
+/*.wav
+.vscode/
+.env*
+*.log

@@ -23,7 +23,7 @@ This document specifies **bysound v4**, a data-over-sound modem. A transmitter t
 13. [Repetitions (laps)](#13-repetitions-laps)
 14. [Receiver algorithm](#14-receiver-algorithm)
 15. [Integrity and multiple emitters](#15-integrity-and-multiple-emitters)
-16. [Other frame types (out of scope)](#16-other-frame-types-out-of-scope)
+16. [Other frame types](#16-other-frame-types)
 17. [Conformance and testing](#17-conformance-and-testing)
 18. [Worked example](#18-worked-example)
 19. [Appendix: checksums in pseudocode](#appendix-checksums-in-pseudocode)
@@ -447,7 +447,7 @@ Limits:
 - A much weaker second emitter on the same band may stay hidden under the stronger one.
 - Only bysound preambles are recognised; any other sound is treated as noise.
 
-## 16. Other frame types (out of scope)
+## 16. Other frame types
 
 The first header byte gives the frame type. The v4 format defines four:
 
@@ -458,7 +458,7 @@ The first header byte gives the frame type. The v4 format defines four:
 | `0x41` (`A`) | acknowledgement / receipt | 7 | 15 bytes |
 | `0x58` (`X`) | risk signal (another emitter detected) | 10 | 18 bytes |
 
-These types are used by a fuller protocol (fingerprint plus backend lookup, acknowledgements, risk signalling). It is not part of this public release. They are defined in `protocol/v4-reference.mjs`, with vectors in `test-vectors/v4-acks.json` and `test-vectors/v4-risk.json`, and implemented in the C library (`bys_frame_init_reference`, `bys_frame_init_ack`, `bys_frame_init_risk`). A payload-only receiver SHOULD still include their headers among its header candidates, then skip their bodies, so they are not misread as payload frames.
+Acknowledgements, risk signalling and reference mode (with a local resolver, no backend) are specified by the session layer, [SESSION.md](SESSION.md), with a TypeScript reference in `web/src/session/`; [SECURITY.md](SECURITY.md) describes the security model. The frames are defined in `protocol/v4-reference.mjs`, with vectors in `test-vectors/v4-acks.json` and `test-vectors/v4-risk.json`, and implemented in the C library (`bys_frame_init_reference`, `bys_frame_init_ack`, `bys_frame_init_risk`). A payload-only receiver SHOULD still include their headers among its header candidates, then skip their bodies, so they are not misread as payload frames.
 
 ## 17. Conformance and testing
 

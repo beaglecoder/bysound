@@ -1,4 +1,4 @@
-# bys_demo (ESP32-S3)
+# bysound_demo (ESP32-S3)
 
 Listens continuously for bysound v4 messages and logs every decoded text over serial. Press BOOT (GPIO0) to send a text (default
 `hello from esp32`) three times. Uses the [`../c`](../c) library (wrapped as the `bysound` component in `components/bysound`) and the I2S standard driver

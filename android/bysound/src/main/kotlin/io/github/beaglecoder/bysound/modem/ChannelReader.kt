@@ -5,7 +5,6 @@ import io.github.beaglecoder.bysound.modem.Protocol.ACK_LENGTH
 import io.github.beaglecoder.bysound.modem.Protocol.BLOCK_BYTES
 import io.github.beaglecoder.bysound.modem.Protocol.BLOCK_HEADER
 import io.github.beaglecoder.bysound.modem.Protocol.BLOCK_PARITY
-import io.github.beaglecoder.bysound.modem.Protocol.GAP_SECONDS
 import io.github.beaglecoder.bysound.modem.Protocol.HEADER_BYTES
 import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_ACK
 import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_PAYLOAD
@@ -20,7 +19,6 @@ import io.github.beaglecoder.bysound.modem.Protocol.RISK_BODY
 import io.github.beaglecoder.bysound.modem.Protocol.RISK_LENGTH
 import io.github.beaglecoder.bysound.modem.Protocol.VERSION
 
-private const val HOP_HISTORY = 160
 private const val FLOOR_SECONDS = 0.5
 private const val FLOOR_WARM_SECONDS = 0.3
 private const val FLOOR_WARM_TAU = 0.08
@@ -402,7 +400,7 @@ internal class ChannelReader(
             val leastSure = leastSureBytes(candidate, BLOCK_BYTES)
             for (f in BLOCK_ERASURE_TRIES) {
                 val d = Codec.decodeBlock(bytes, leastSure.take(f).toIntArray())
-                if (d != null && d.block.index == index && d.block.total == dataLength && d.block.chunk.size == 48) return d
+                if (d != null && d.block.index == index && d.block.total == dataLength && d.block.chunk.size == Protocol.BLOCK_DATA) return d
             }
         }
         return null

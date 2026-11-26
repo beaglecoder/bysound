@@ -1,7 +1,11 @@
 name: CI
 on:
   push:
+    branches: [main]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   c:
@@ -37,6 +41,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: swift test -c release
         working-directory: ios
+      - run: swift build
+      - run: xcodebuild -project ios/Demo/BySoundDemo.xcodeproj -scheme BySoundDemo -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
 
   android:
     name: Kotlin (Android)

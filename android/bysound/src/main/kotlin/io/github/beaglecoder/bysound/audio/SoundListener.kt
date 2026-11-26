@@ -22,75 +22,102 @@ class SoundListener(
     context: Context,
     private val onFrame: (Heard) -> Unit,
     private val onLevel: ((Level) -> Unit)? = null,
+    /** Called on the listening thread when reading from the microphone fails and listening stops by itself. */
+    private val onError: ((String) -> Unit)? = null,
 ) {
     private val audio = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    @Volatile private var running = false
-    private var thread: Thread? = null
+
+    /** One listening session: its own run flag, so a late-exiting old thread cannot stop a newer session. */
+    private class Session(val record: AudioRecord, val rate: Int) {
+        @Volatile var running = true
+        var thread: Thread? = null
+    }
+
+    @Volatile private var session: Session? = null
 
     /** True while listening. */
-    val isListening: Boolean get() = running
+    val isListening: Boolean get() = session?.running == true
+
+    /** Capture sample rate of the current (or last) session. */
+    @Volatile var sampleRate: Int = SAMPLE_RATES[0]
+        private set
 
     /** Starts listening. Throws [IllegalStateException] if no microphone can be opened. */
     @SuppressLint("MissingPermission")
     @Synchronized
     fun start() {
-        if (running) return
-        val record = open() ?: throw IllegalStateException("Could not open the microphone")
-        record.startRecording()
-        running = true
-        thread = Thread({ loop(record) }, "bysound-listener").also { it.start() }
+        if (isListening) return
+        val (record, rate) = open() ?: throw IllegalStateException("Could not open the microphone")
+        try {
+            record.startRecording()
+        } catch (e: Exception) {
+            record.release()
+            throw e
+        }
+        sampleRate = rate
+        val s = Session(record, rate)
+        session = s
+        s.thread = Thread({ loop(s) }, "bysound-listener").also { it.start() }
     }
 
     /** Stops listening and waits for the thread. Safe to call when idle. */
     @Synchronized
     fun stop() {
-        running = false
-        thread?.join(1000)
-        thread = null
+        val s = session ?: return
+        s.running = false
+        s.thread?.join(1000)
+        if (session === s) session = null
     }
 
     @SuppressLint("MissingPermission")
-    private fun open(): AudioRecord? {
+    private fun open(): Pair<AudioRecord, Int>? {
         val unprocessed = audio.getProperty(AudioManager.PROPERTY_SUPPORT_AUDIO_SOURCE_UNPROCESSED) == "true"
         val sources = if (unprocessed) intArrayOf(MediaRecorder.AudioSource.UNPROCESSED, MediaRecorder.AudioSource.VOICE_RECOGNITION)
         else intArrayOf(MediaRecorder.AudioSource.VOICE_RECOGNITION, MediaRecorder.AudioSource.MIC)
-        for (source in sources) {
-            val min = AudioRecord.getMinBufferSize(SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
+        for (rate in SAMPLE_RATES) for (source in sources) {
+            val min = AudioRecord.getMinBufferSize(rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
             if (min <= 0) continue
             val r = try {
-                AudioRecord(source, SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, SAMPLE_RATE / 5 * 2))
+                AudioRecord(source, rate, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(min, rate / 5 * 2))
             } catch (e: Exception) { null }
-            if (r != null && r.state == AudioRecord.STATE_INITIALIZED) {
+            if (r != null && r.state == AudioRecord.STATE_INITIALIZED && r.sampleRate == rate) {
                 audio.getDevices(AudioManager.GET_DEVICES_INPUTS).firstOrNull { it.type == AudioDeviceInfo.TYPE_BUILTIN_MIC }
                     ?.let { r.preferredDevice = it }
-                return r
+                return r to rate
             }
             r?.release()
         }
         return null
     }
 
-    private fun loop(record: AudioRecord) {
-        val host = ReceiverHost(SAMPLE_RATE, onLevel) { onFrame(it) }
-        val pcm = ShortArray(SAMPLE_RATE / 50)
+    private fun loop(s: Session) {
+        val host = ReceiverHost(s.rate, onLevel) { onFrame(it) }
+        val pcm = ShortArray(s.rate / 50)
         val chunk = FloatArray(pcm.size)
         try {
-            while (running) {
-                val n = record.read(pcm, 0, pcm.size)
-                if (n <= 0) { if (n < 0) break else continue }
+            while (s.running) {
+                val n = s.record.read(pcm, 0, pcm.size)
+                if (n < 0) {
+                    if (s.running) onError?.invoke("Microphone read failed (error $n)")
+                    break
+                }
+                if (n == 0) continue
                 val x = if (n == chunk.size) chunk else FloatArray(n)
                 for (i in 0 until n) x[i] = pcm[i] / 32768f
                 host.feed(x)
             }
         } finally {
-            runCatching { record.stop() }
-            record.release()
-            running = false
+            runCatching { s.record.stop() }
+            s.record.release()
+            s.running = false
         }
     }
 
     companion object {
-        /** Capture sample rate (48 kHz lets the receiver use the FFT). */
+        /** Capture sample rates tried in order (48 kHz lets the receiver use the FFT). */
+        val SAMPLE_RATES = intArrayOf(48000, 44100)
+
+        /** Preferred capture sample rate. */
         const val SAMPLE_RATE = 48000
     }
 }

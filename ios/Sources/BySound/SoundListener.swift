@@ -14,6 +14,11 @@ public final class SoundListener {
     /// Microphone RMS level, about every 60 ms (0 ... 1 for full scale).
     public var onLevel: ((Float) -> Void)?
 
+    /// Listening stopped by itself (audio route/configuration change or interruption). `isListening` is already false.
+    public var onStopped: (() -> Void)?
+
+    private var observers: [NSObjectProtocol] = []
+
     public private(set) var isListening = false
 
     public init() {}
@@ -31,12 +36,15 @@ public final class SoundListener {
     /// Starts listening. Throws if the audio session or engine cannot start; call after permission was granted.
     public func start() throws {
         stop()
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker])
-        try session.setActive(true)
+        try BySoundAudio.configureSession()
 
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            throw NSError(domain: "BySound", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Microphone input is not available (invalid input format: \(format.sampleRate) Hz, \(format.channelCount) channels)",
+            ])
+        }
         let rate = format.sampleRate
         let listener = Listener(sampleRate: rate)
         listener.onFrame = { [weak self] h in DispatchQueue.main.async { self?.onFrame?(h) } }
@@ -49,12 +57,25 @@ public final class SoundListener {
             self.queue.async { listener.feed(samples) }
         }
         engine.prepare()
-        try engine.start()
+        do {
+            try engine.start()
+        } catch {
+            input.removeTap(onBus: 0)
+            self.listener = nil
+            throw error
+        }
         isListening = true
+        observers = BySoundAudio.observeStops(engine: engine) { [weak self] in
+            guard let self = self, self.isListening else { return }
+            self.stop()
+            self.onStopped?()
+        }
     }
 
     public func stop() {
         guard isListening else { return }
+        observers.forEach(NotificationCenter.default.removeObserver)
+        observers = []
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         queue.sync {}

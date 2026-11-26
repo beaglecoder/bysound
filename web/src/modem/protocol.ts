@@ -1,6 +1,4 @@
 // bysound v4 constants. Normative source: protocol-v4.json (repo root); executable reference: protocol/v4-reference.mjs.
-export type SoundBand = 'top' | 'ultrasonic' | 'upper' | 'mid' | 'audible' | 'xhigh' | 'wide';
-/** Modem name: `high` is the API's `ultrasonic`. */
 export type BandId = 'top' | 'high' | 'upper' | 'mid' | 'audible' | 'xhigh' | 'wide';
 
 /** Frame profile. `robust` doubles symbol, window and search step (top, high, upper and mid only): twice the time in exchange for about 3 dB. */
@@ -56,9 +54,6 @@ export const BANDS: Record<BandId, Band> = {
   wide: band('wide', 320, 6, 0.2),
 };
 export const BAND_IDS = Object.keys(BANDS) as BandId[];
-
-export const toBandId = (b: SoundBand): BandId => (b === 'ultrasonic' ? 'high' : b);
-export const toSoundBand = (b: BandId): SoundBand => (b === 'high' ? 'ultrasonic' : b);
 
 export const samples = (seconds: number, rate: number) => Math.round(seconds * rate);
 export const symbolStart = (k: number, rate: number, b: Band) => Math.round(k * b.sym * rate);

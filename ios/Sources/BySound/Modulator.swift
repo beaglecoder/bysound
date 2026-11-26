@@ -27,10 +27,13 @@ public enum Modem {
         try Codec.payloadFrame(text, band: band, profile: profile)
     }
 
-    /// One frame followed by 350 ms of silence, as mono samples at `sampleRate`.
+    /// One frame followed by 350 ms of silence, as mono samples at `sampleRate`. Throws `ModemError.bandAboveNyquist` if the band does not fit the rate.
     /// `level` scales the output; the frame is only scaled down (never clipped) when its peak exceeds 1.
     public static func encode(text: String, band: Band, profile: Profile = .normal, sampleRate: Double, level: Float = 1) throws -> [Float] {
         let frame = try Codec.payloadFrame(text, band: band, profile: profile)
+        let ch = frame.channel
+        let top = ch.toneHz(group: ch.groups - 1, tone: Protocol.tones - 1)
+        guard top < sampleRate / 2 else { throw ModemError.bandAboveNyquist(highestToneHz: top, sampleRate: sampleRate) }
         return fitLevel(render(frame.symbols, frame.channel, rate: sampleRate, gapSeconds: Protocol.gapSeconds), level: level)
     }
 

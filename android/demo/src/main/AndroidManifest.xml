@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:allowBackup="false"
-        android:label="Transfer by Sound"
+        android:label="bysound"
         android:theme="@style/Theme.Demo">
         <activity android:name=".MainActivity" android:exported="true">
             <intent-filter>

@@ -22,9 +22,13 @@ object Modem {
     fun frameSeconds(text: String, band: Band, profile: Profile = Profile.NORMAL): Double =
         Codec.payloadFrame(text, band, profile).frameSeconds
 
-    /** The frame as audio samples in -1..1: one frame followed by a 350 ms gap, so it can be played in a loop. */
+    /** The frame as audio samples in -1..1: one frame followed by a 350 ms gap, so it can be played in a loop.
+     * Throws [IllegalArgumentException] if the band's highest tone is not below [sampleRate] / 2. */
     fun encode(text: String, band: Band, profile: Profile = Profile.NORMAL, sampleRate: Int, level: Float = 1f): FloatArray {
         val frame = Codec.payloadFrame(text, band, profile)
+        val ch = frame.channel
+        val top = ch.toneHz(ch.groups - 1, TONES - 1)
+        require(top < sampleRate / 2.0) { "Band ${band.id} needs tones up to $top Hz, which is not below Nyquist (${sampleRate / 2.0} Hz) at a sample rate of $sampleRate Hz" }
         return Modulator.fitLevel(Modulator.render(frame.symbols, frame.channel, sampleRate, GAP_SECONDS), level)
     }
 }

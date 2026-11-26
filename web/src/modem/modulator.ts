@@ -1,7 +1,14 @@
-// Audio of a frame: one tone per group, a 3 ms ramp at each symbol edge and a pause at the end. Port of Modulator.swift (ios/Sources/BySound).
+// Audio of a frame: one tone per group, a 3 ms ramp at each symbol edge and a pause at the end.
 import { RAMP_SECONDS, TONES, samples, symbolStart, toneHz, type Band } from './protocol';
 
+/** Throws if the highest tone of the band is not below Nyquist (rate / 2) (the same rule as BYS_E_RATE in the C library). */
+export function assertBandFitsRate(b: Band, rate: number): void {
+  const top = toneHz(b, b.groups - 1, TONES - 1);
+  if (top >= rate / 2) throw new RangeError(`Band ${b.id} needs tones up to ${top} Hz, which is not below Nyquist (${rate / 2} Hz) at a sample rate of ${rate} Hz`);
+}
+
 export function render(symbols: number[][], b: Band, rate: number, gapSeconds: number): Float32Array {
+  assertBandFitsRate(b, rate);
   const out = new Float32Array(symbolStart(symbols.length, rate, b) + samples(gapSeconds, rate));
   const ramp = samples(RAMP_SECONDS, rate);
   // Each tone is computed once for the whole length of a symbol (same arithmetic, so the audio is identical): a frame

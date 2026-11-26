@@ -92,7 +92,7 @@ internal fun toneEnergies(r: Receiver, x: DoubleArray, firstBin: Int, coeffs: Do
     for (t in out.indices) out[t] = fft.energy((firstBin + t) * stride)
 }
 
-private const val HOP_HISTORY = 160
+internal const val HOP_HISTORY = 160
 
 /** Energies of a grid of tones at every search hop: one pass for all the channels of that zone. */
 internal class ToneBank(val baseBin: Int, tones: Int, rate: Int) {

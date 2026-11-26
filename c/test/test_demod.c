@@ -19,8 +19,8 @@
 #ifndef VECTORS_DIR
 #define VECTORS_DIR "../test-vectors"
 #endif
-#ifndef EVAL_DIR
-#define EVAL_DIR "test/recordings"
+#ifndef RECORDINGS_DIR
+#define RECORDINGS_DIR "test/recordings"
 #endif
 
 static int checks, failures;
@@ -431,11 +431,11 @@ static void test_misc(void) {
 
 /* ---------- 4. recordings ---------- */
 static void test_recordings(void) {
-  printf("4. recordings (evaluation WAV files)\n");
-  static const char *wavs[] = { "top-v4", "mid-v4", "upper-v4", "v4", "cobro-v4", "falso-v4" };
+  printf("4. recordings (WAV files)\n");
+  static const char *wavs[] = { "top-v4", "mid-v4", "upper-v4", "v4", "reference-top-2-v4", "payload-top-v4" };
   for (unsigned i = 0; i < sizeof wavs / sizeof *wavs; i++) {
     char p[300];
-    snprintf(p, sizeof p, "%s/%s.wav", EVAL_DIR, wavs[i]);
+    snprintf(p, sizeof p, "%s/%s.wav", RECORDINGS_DIR, wavs[i]);
     FILE *f = fopen(p, "rb");
     if (!f) { printf("  %s.wav: no file (skipped)\n", wavs[i]); continue; }
     uint8_t hdr[44];
@@ -446,7 +446,7 @@ static void test_recordings(void) {
     run(&L, 48000, 0, all_normal(48000), MIX, ns, 0, 1);
     {
       int want_band = !strcmp(wavs[i], "mid-v4") ? BYS_MID : !strcmp(wavs[i], "upper-v4") ? BYS_UPPER : BYS_TOP;
-      int is_payload = !strcmp(wavs[i], "falso-v4");
+      int is_payload = !strcmp(wavs[i], "payload-top-v4");
       CHECK(L.n == 1 && L.ev[0].band == want_band && L.ev[0].kind == (is_payload ? BYS_KIND_PAYLOAD : BYS_KIND_REFERENCE) && L.clashes == 0);
       if (is_payload) CHECK(!strncmp(L.ev[0].text, "000201010212264700", 18));
     }

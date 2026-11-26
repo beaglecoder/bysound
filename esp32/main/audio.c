@@ -137,7 +137,7 @@ esp_err_t audio_start(audio_text_cb_t on_text) {
 
 esp_err_t audio_send(const char *text, int repeat) {
   if (s_tx_repeat > 0) return ESP_ERR_INVALID_STATE;
-  strlcpy(s_tx_text, text, sizeof s_tx_text);
+  if (strlcpy(s_tx_text, text, sizeof s_tx_text) >= sizeof s_tx_text) ESP_LOGW(TAG, "text truncated to %u bytes", (unsigned)(sizeof s_tx_text - 1));
   s_tx_repeat = repeat;
   return ESP_OK;
 }

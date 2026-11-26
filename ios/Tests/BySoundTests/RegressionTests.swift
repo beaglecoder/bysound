@@ -19,6 +19,14 @@ private func heard(_ text: String, profile: Profile, rate: Double, laps: Int = 1
 }
 
 final class RegressionTests: XCTestCase {
+    /// A band whose highest tone is not below Nyquist is rejected, like BYS_E_RATE in the C library.
+    func testBandAboveNyquistIsRejected() {
+        XCTAssertThrowsError(try Modem.encode(text: "hi", band: .top, sampleRate: 16000)) { error in
+            guard case ModemError.bandAboveNyquist = error else { return XCTFail("unexpected error \(error)") }
+        }
+        XCTAssertNoThrow(try Modem.encode(text: "hi", band: .top, sampleRate: 48000))
+    }
+
     /// RS also accepts the last block one byte short when its last parity byte is 0x00 (c(x) = x·c'(x)): the CRC-32 picks the length.
     func testZeroLastParityByte() throws {
         let short = try zeroParityText("zero parity")

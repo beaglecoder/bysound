@@ -223,7 +223,7 @@ def bands():
 # ---------------------------------------------------------------- hero.svg
 def hero():
     W, H = 820, 260
-    s = head(W, H, 'Transfer by sound', 'A phone sends data as sound waves to another phone and to an ESP32 board.')
+    s = head(W, H, 'bysound', 'A phone sends data as sound waves to another phone and to an ESP32 board.')
     # sender phone
     def phone(x, y, w, h, scr):
         return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{w*0.17:.1f}" fill="{TXT}" fill-opacity="0.08" stroke="{TXT}" stroke-width="2.2"/>'

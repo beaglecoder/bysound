@@ -81,6 +81,13 @@ class MainActivity : AppCompatActivity() {
 
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
 
+    override fun onStop() {
+        sender.stop()
+        listener.stop()
+        refresh()
+        super.onStop()
+    }
+
     override fun onDestroy() {
         sender.stop()
         listener.stop()

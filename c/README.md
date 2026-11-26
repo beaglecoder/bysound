@@ -61,6 +61,7 @@ while (!bys_tx_done(&tx)) { size_t n = bys_tx_fill(&tx, pcm, 480); /* play or st
 
 /* Decode: push audio of any chunk size; the callback fires once per verified frame. */
 static void on_event(void *user, const bys_demod_event_t *ev) {
+  (void)user;
   char text[256];
   if (ev->type == BYS_EV_FRAME && ev->payload && bys_unpack(ev->payload, ev->payload_len, text, sizeof text) >= 0) puts(text);
 }

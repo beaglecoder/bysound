@@ -1,4 +1,4 @@
-# bysound on the host (Apple clang). `make test`, `make cli`, `make cli-test`, `make size`, `make vectors` (regenerates the .h files with Node).
+# bysound on the host (clang). `make test`, `make cli`, `make cli-test`, `make size`, `make vectors` (regenerates the .h files with Node).
 CC      ?= clang
 CFLAGS  ?= -std=c99 -Wall -Wextra -Werror -pedantic -Iinclude -Isrc
 SRC     := $(wildcard src/*.c)
@@ -8,7 +8,7 @@ test: $(BUILD)/test_all demod
 	$(BUILD)/test_all
 
 # Demodulator: one binary per engine (float32 FFT and integer Goertzel), same tests; the two transcripts must match.
-DEMOD_DEFS := -DBYS_DEMOD_LOW_BANK=1 -DBYS_DEMOD_ROBUST=1 -DGOLDEN_DIR='"test/golden"' -DVECTORS_DIR='"../test-vectors"' -DEVAL_DIR='"test/recordings"'
+DEMOD_DEFS := -DBYS_DEMOD_LOW_BANK=1 -DBYS_DEMOD_ROBUST=1 -DGOLDEN_DIR='"test/golden"' -DVECTORS_DIR='"../test-vectors"' -DRECORDINGS_DIR='"test/recordings"'
 DEMOD_CFLAGS := $(CFLAGS) -O2 -g -fsanitize=address,undefined
 DEMOD_DEPS := $(SRC) test/test_demod.c $(wildcard include/*.h src/*.h test/*.h)
 demod: $(BUILD)/test_demod_fft $(BUILD)/test_demod_gz
@@ -58,7 +58,7 @@ $(BUILD)/bysound: examples/bysound_cli.c $(SRC) $(wildcard include/*.h src/*.h) 
 	$(CC) $(CFLAGS) -O2 $(CLI_DEFS) -o $@ $(SRC) examples/bysound_cli.c -lm
 
 cli-test: $(BUILD)/bysound
-	sh examples/cli_test.sh $(BUILD)/bysound test/recordings/falso-v4.wav $(BUILD)
+	sh examples/cli_test.sh $(BUILD)/bysound test/recordings/payload-top-v4.wav $(BUILD)
 
 vectors:
 	node tools/gen_tables.mjs

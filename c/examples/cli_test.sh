@@ -1,6 +1,6 @@
 #!/bin/sh
 # Round trip through the CLI: encode -> decode for every band (and robust, and other rates), plus a real recording.
-# usage: cli_test.sh path/to/bysound path/to/falso-v4.wav workdir
+# usage: cli_test.sh path/to/bysound path/to/payload-top-v4.wav workdir
 set -e
 BYSOUND=$1; REC=$2; DIR=$3/cli-test
 mkdir -p "$DIR"
@@ -22,7 +22,7 @@ done
 "$BYSOUND" encode "16k audible" -o "$DIR/16.wav" --band audible --rate 16000 >/dev/null; check "16000 Hz" "$DIR/16.wav" "text=16k audible"
 "$BYSOUND" encode "twice" -o "$DIR/rep.wav" --repeat 2 >/dev/null
 [ "$("$BYSOUND" decode "$DIR/rep.wav" | grep -c 'text=twice')" = 2 ] && echo "ok   repeat 2" || { echo "FAIL repeat 2"; fail=1; }
-check "recording falso-v4.wav" "$REC" "text=000201010212264700"
+check "recording payload-top-v4.wav" "$REC" "text=000201010212264700"
 "$BYSOUND" bands >/dev/null && echo "ok   bands"
 "$BYSOUND" bands | grep -q "max text" && echo "ok   bands max" || { echo "FAIL bands max"; fail=1; }
 long=$(awk 'BEGIN{for(i=0;i<5000;i++)printf "a"}')

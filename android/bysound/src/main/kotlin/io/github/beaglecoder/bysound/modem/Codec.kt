@@ -60,7 +60,7 @@ internal object Codec {
         val c = Checksums.crc32(content)
         val data = content + intArrayOf(((c ushr 24) and 255).toInt(), ((c ushr 16) and 255).toInt(), ((c ushr 8) and 255).toInt(), (c and 255).toInt())
         val total = (data.size + BLOCK_DATA - 1) / BLOCK_DATA
-        require(total <= MAX_BLOCKS) { "The text is too long to send by sound" }
+        require(total <= MAX_BLOCKS) { "More than $MAX_BLOCKS blocks (the 30 s cap on one transmission normally rejects the text first)" }
         val ch = Channel.of(band, requested)
         if (transmissionMicros(ch, content.size) > Protocol.MAX_FRAME_SECONDS * 1_000_000L) {
             val max = maxPayloadBytes(band, requested)

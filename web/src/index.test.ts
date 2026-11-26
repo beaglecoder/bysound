@@ -34,7 +34,7 @@ describe('encode / decode', () => {
   });
 
   it('decodes a real 48 kHz WAV recording', () => {
-    const wav = readFileSync(new URL('../../c/test/recordings/falso-v4.wav', import.meta.url));
+    const wav = readFileSync(new URL('../../c/test/recordings/payload-top-v4.wav', import.meta.url));
     const pcm = new Int16Array(wav.buffer.slice(wav.byteOffset + 44, wav.byteOffset + wav.byteLength - ((wav.byteLength - 44) % 2)));
     const samples = Float32Array.from(pcm, (v) => v / 32768);
     const heard = decode(samples, 48000);

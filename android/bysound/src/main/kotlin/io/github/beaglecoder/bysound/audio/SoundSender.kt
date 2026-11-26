@@ -13,8 +13,9 @@ import io.github.beaglecoder.bysound.modem.Profile
 /**
  * Plays a text as sound, looping the frame until [stop].
  *
- * While sending, the music volume is raised to the maximum and the track is pinned to the built-in loudspeaker even with
- * headphones connected (they would not reach the other device). The previous volume is restored on [stop]. Not thread-safe:
+ * While sending, the track is pinned to the built-in loudspeaker even with headphones connected (they would not reach the
+ * other device) and, only if that routing worked, the music volume is raised to the maximum (never when the output is a
+ * headset or Bluetooth). The previous volume is restored on [stop] and on every failure path. Not thread-safe:
  * call from one thread (the main thread is fine).
  */
 class SoundSender(context: Context) {
@@ -36,12 +37,16 @@ class SoundSender(context: Context) {
             .setBufferSizeInBytes(samples.size * 4)
             .build()
         try {
-            builtInSpeaker()?.let { t.preferredDevice = it }
+            // Only touch the volume when the sound really leaves through the built-in speaker.
+            val speaker = builtInSpeaker()
+            val onSpeaker = speaker != null && t.setPreferredDevice(speaker)
             check(t.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING) == samples.size) { "AudioTrack.write failed" }
             t.setLoopPoints(0, samples.size, -1)
-            raiseVolume()
+            if (onSpeaker) raiseVolume()
             t.play()
             track = t
+            val routed = t.routedDevice
+            if (routed != null && routed.type != AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) restoreVolume()
         } catch (e: Exception) {
             t.release()
             restoreVolume()

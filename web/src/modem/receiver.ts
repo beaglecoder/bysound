@@ -1,5 +1,5 @@
-// v4 streaming receiver: all 7 bands at once. Port of the v4 part of the Swift demodulator (ios/Sources/BySound).
-// Differences from the native ports, meant for the web:
+// v4 streaming receiver: all 7 bands at once. This is the reference implementation; the Swift, Kotlin and C receivers follow it.
+// Notable behaviours:
 //  - the last block of a payload frame is also combined across repetitions (a short payload is ONE block, and it is the last);
 //  - a new preamble after the frame's minimum length cuts off the read of a broken block, so the next repetition is not lost;
 //  - an unreadable header inside a frame being read is the look-alike preamble of another band: it does not count as a failure;

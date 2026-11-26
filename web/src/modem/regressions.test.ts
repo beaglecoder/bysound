@@ -54,3 +54,11 @@ describe('a body that looks like the preamble does not cut off the read (it used
     expect(out.map((h) => h.kind === 'payload' && h.payload)).toEqual([text, text]);
   });
 });
+
+describe('Nyquist', () => {
+  it('rejects a band whose highest tone is not below rate / 2', () => {
+    const f = payloadFrame('hi', 'top', 'normal');
+    expect(() => render(f.symbols, f.band, 16000, GAP_SECONDS)).toThrow(/Nyquist/);
+    expect(render(f.symbols, f.band, 48000, GAP_SECONDS).length).toBeGreaterThan(0);
+  });
+});
