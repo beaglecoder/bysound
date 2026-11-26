@@ -1,0 +1,19 @@
+# Pins, security level, gain... of the audio code are those of the esp32 demo.
+rsource "../../../esp32/main/Kconfig.projbuild"
+
+menu "Wi-Fi setup by sound"
+    config WIFISETUP_ALLOW_PLAIN
+        bool "Accept plain WIFI:T:WPA;S:...;P:...;; texts (no code, credentials travel in clear)"
+        default n
+        help
+            Off (default): only protected texts (BSW1|salt|iv|ciphertext, opened with the one-time code printed on the serial log) are accepted.
+    config WIFISETUP_CODE_SECONDS
+        int "One-time code validity (seconds)"
+        default 120
+    config WIFISETUP_MAX_ATTEMPTS
+        int "Wrong-code attempts before a new code is issued"
+        default 3
+    config WIFISETUP_CONNECT_TIMEOUT_S
+        int "Seconds to wait for an IP address before giving up"
+        default 20
+endmenu

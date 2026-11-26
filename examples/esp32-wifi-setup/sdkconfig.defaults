@@ -1,0 +1,5 @@
+# Added on top of ../../esp32/sdkconfig.defaults (see CMakeLists.txt).
+# Wi-Fi + the demodulators do not fit the default 1 MB app partition comfortably.
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+# PBKDF2 (200000 iterations) runs in the setup task: give it room, and use the hardware SHA.
+CONFIG_MBEDTLS_HARDWARE_SHA=y
