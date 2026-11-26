@@ -22,3 +22,9 @@ ggwave,ggwave dt-fastest,140,13.4187
 ggwave,ggwave mt-normal (fixed-len),64,33.792
 ggwave,ggwave mt-fast (fixed-len),64,22.528
 ggwave,ggwave mt-fastest (fixed-len),64,11.264
+ggwave,ggwave dt-normal @18k,140,38.8907
+ggwave,ggwave dt-fast @18k,140,26.1547
+ggwave,ggwave dt-fastest @18k,140,13.4187
+ggwave,ggwave mt-normal @18k (fixed-len),64,33.792
+ggwave,ggwave mt-fast @18k (fixed-len),64,22.528
+ggwave,ggwave mt-fastest @18k (fixed-len),64,11.264

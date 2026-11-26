@@ -441,3 +441,81 @@ ggwave,ggwave mt-fastest (fixed-len),48000,256,256,0,,,,,,cannot send
 ggwave,ggwave mt-fastest (fixed-len),48000,512,512,0,,,,,,cannot send
 ggwave,ggwave mt-fastest (fixed-len),48000,1024,1024,0,,,,,,cannot send
 ggwave,ggwave mt-fastest (fixed-len),48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave dt-normal @18k,48000,8,8,1,3.56267,3.56267,2.24551,2.24551,7.789,ok
+ggwave,ggwave dt-normal @18k,48000,16,16,1,5.48267,5.48267,2.91829,2.91829,7.491,ok
+ggwave,ggwave dt-normal @18k,48000,32,32,1,9.70667,9.70667,3.2967,3.2967,7.265,ok
+ggwave,ggwave dt-normal @18k,48000,48,48,1,13.9307,13.9307,3.44564,3.44564,7.18,ok
+ggwave,ggwave dt-normal @18k,48000,64,64,1,18.1547,18.1547,3.52526,3.52526,7.135,ok
+ggwave,ggwave dt-normal @18k,48000,96,96,1,26.9867,26.9867,3.55731,3.55731,7.087,ok
+ggwave,ggwave dt-normal @18k,48000,128,128,1,35.4347,35.4347,3.61228,3.61228,7.064,ok
+ggwave,ggwave dt-normal @18k,48000,140,140,1,38.8907,38.8907,3.59984,3.59984,7.057,ok
+ggwave,ggwave dt-normal @18k,48000,utf8,48,1,13.9307,13.9307,3.44564,3.44564,7.18,ok
+ggwave,ggwave dt-normal @18k,48000,256,256,0,,,,,,cannot send
+ggwave,ggwave dt-normal @18k,48000,512,512,0,,,,,,cannot send
+ggwave,ggwave dt-normal @18k,48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave dt-normal @18k,48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave dt-fast @18k,48000,8,8,1,2.60267,2.60267,3.07377,3.07377,8.117,ok
+ggwave,ggwave dt-fast @18k,48000,16,16,1,3.88267,3.88267,4.12088,4.12088,7.715,ok
+ggwave,ggwave dt-fast @18k,48000,32,32,1,6.69867,6.69867,4.77707,4.77707,7.396,ok
+ggwave,ggwave dt-fast @18k,48000,48,48,1,9.51467,9.51467,5.04484,5.04484,7.272,ok
+ggwave,ggwave dt-fast @18k,48000,64,64,1,12.3307,12.3307,5.19031,5.19031,7.206,ok
+ggwave,ggwave dt-fast @18k,48000,96,96,1,18.2187,18.2187,5.26932,5.26932,7.134,ok
+ggwave,ggwave dt-fast @18k,48000,128,128,1,23.8507,23.8507,5.36673,5.36673,7.1,ok
+ggwave,ggwave dt-fast @18k,48000,140,140,1,26.1547,26.1547,5.35277,5.35277,7.09,ok
+ggwave,ggwave dt-fast @18k,48000,utf8,48,1,9.51467,9.51467,5.04484,5.04484,7.271,ok
+ggwave,ggwave dt-fast @18k,48000,256,256,0,,,,,,cannot send
+ggwave,ggwave dt-fast @18k,48000,512,512,0,,,,,,cannot send
+ggwave,ggwave dt-fast @18k,48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave dt-fast @18k,48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave dt-fastest @18k,48000,8,8,1,1.64267,1.64267,4.87013,4.87013,8.978,ok
+ggwave,ggwave dt-fastest @18k,48000,16,16,1,2.28267,2.28267,7.00935,7.00935,8.307,ok
+ggwave,ggwave dt-fastest @18k,48000,32,32,1,3.69067,3.69067,8.67052,8.67052,7.758,ok
+ggwave,ggwave dt-fastest @18k,48000,48,48,1,5.09867,5.09867,9.41423,9.41423,7.531,ok
+ggwave,ggwave dt-fastest @18k,48000,64,64,1,6.50667,6.50667,9.83607,9.83607,7.408,ok
+ggwave,ggwave dt-fastest @18k,48000,96,96,1,9.45067,9.45067,10.158,10.158,7.276,ok
+ggwave,ggwave dt-fastest @18k,48000,128,128,1,12.2667,12.2667,10.4348,10.4348,7.206,ok
+ggwave,ggwave dt-fastest @18k,48000,140,140,1,13.4187,13.4187,10.4332,10.4332,7.187,ok
+ggwave,ggwave dt-fastest @18k,48000,utf8,48,1,5.09867,5.09867,9.41423,9.41423,7.531,ok
+ggwave,ggwave dt-fastest @18k,48000,256,256,0,,,,,,cannot send
+ggwave,ggwave dt-fastest @18k,48000,512,512,0,,,,,,cannot send
+ggwave,ggwave dt-fastest @18k,48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave dt-fastest @18k,48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,8,8,1,4.608,4.608,1.73611,1.73611,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,16,16,1,8.448,8.448,1.89394,1.89394,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,32,32,1,16.896,16.896,1.89394,1.89394,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,48,48,1,25.344,25.344,1.89394,1.89394,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,64,64,1,33.792,33.792,1.89394,1.89394,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,96,96,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,128,128,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,140,140,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,utf8,48,1,25.344,25.344,1.89394,1.89394,3.979,ok
+ggwave,ggwave mt-normal @18k (fixed-len),48000,256,256,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,512,512,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave mt-normal @18k (fixed-len),48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,8,8,1,3.072,3.072,2.60417,2.60417,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,16,16,1,5.632,5.632,2.84091,2.84091,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,32,32,1,11.264,11.264,2.84091,2.84091,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,48,48,1,16.896,16.896,2.84091,2.84091,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,64,64,1,22.528,22.528,2.84091,2.84091,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,96,96,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,128,128,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,140,140,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,utf8,48,1,16.896,16.896,2.84091,2.84091,3.979,ok
+ggwave,ggwave mt-fast @18k (fixed-len),48000,256,256,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,512,512,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave mt-fast @18k (fixed-len),48000,2048,2048,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,8,8,1,1.536,1.536,5.20833,5.20833,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,16,16,1,2.816,2.816,5.68182,5.68182,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,32,32,1,5.632,5.632,5.68182,5.68182,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,48,48,1,8.448,8.448,5.68182,5.68182,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,64,64,1,11.264,11.264,5.68182,5.68182,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,96,96,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,128,128,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,140,140,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,utf8,48,1,8.448,8.448,5.68182,5.68182,3.979,ok
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,256,256,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,512,512,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,1024,1024,0,,,,,,cannot send
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,2048,2048,0,,,,,,cannot send

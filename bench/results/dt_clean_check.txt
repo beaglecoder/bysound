@@ -1,0 +1,12 @@
+ggwave dt-normal           plan snr      : 100 clean trials, 8 failed, 8 of those decoded with noise at +60 dB SNR
+ggwave dt-fast             plan snr      : 100 clean trials, 8 failed, 8 of those decoded with noise at +60 dB SNR
+ggwave dt-fastest          plan snr      : 100 clean trials, 0 failed, 0 of those decoded with noise at +60 dB SNR
+ggwave dt-normal           plan size     : 120 clean trials, 38 failed, 38 of those decoded with noise at +60 dB SNR
+ggwave dt-fast             plan size     : 120 clean trials, 29 failed, 29 of those decoded with noise at +60 dB SNR
+ggwave dt-fastest          plan size     : 120 clean trials, 1 failed, 1 of those decoded with noise at +60 dB SNR
+ggwave dt-normal           plan cond     : 360 clean trials, 38 failed, 37 of those decoded with noise at +60 dB SNR
+ggwave dt-fast             plan cond     : 360 clean trials, 13 failed, 13 of those decoded with noise at +60 dB SNR
+ggwave dt-fastest          plan cond     : 360 clean trials, 0 failed, 0 of those decoded with noise at +60 dB SNR
+ggwave dt-normal @18k      plan inaudible: 380 clean trials, 9 failed, 9 of those decoded with noise at +60 dB SNR
+ggwave dt-fast @18k        plan inaudible: 380 clean trials, 10 failed, 10 of those decoded with noise at +60 dB SNR
+ggwave dt-fastest @18k     plan inaudible: 380 clean trials, 0 failed, 0 of those decoded with noise at +60 dB SNR

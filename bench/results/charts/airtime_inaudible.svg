@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="502" viewBox="0 0 1000 502" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12">
+<title>Inaudible channels (18–19.5 kHz): airtime vs payload size</title>
+<text x="64" y="24" fill="#888888" font-size="15" font-weight="600">Inaudible channels (18–19.5 kHz): airtime vs payload size</text>
+<text x="64" y="44" fill="#888888" font-size="12">computed from each encoder's output at 48 kHz (no channel)</text>
+<text x="64" y="60" fill="#888888" font-size="12">bysound includes its 350 ms trailing gap, ggwave DT its start/end markers</text>
+<text x="64" y="76" fill="#888888" font-size="12">ggwave MT (fixed-length) stops at 64 B, DT at 140 B</text>
+<line x1="64" x2="700" y1="450.0" y2="450.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="450.0" fill="#888888" text-anchor="end" dominant-baseline="middle">0</text>
+<line x1="64" x2="700" y1="406.2" y2="406.2" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="406.2" fill="#888888" text-anchor="end" dominant-baseline="middle">5</text>
+<line x1="64" x2="700" y1="362.5" y2="362.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="362.5" fill="#888888" text-anchor="end" dominant-baseline="middle">10</text>
+<line x1="64" x2="700" y1="318.8" y2="318.8" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="318.8" fill="#888888" text-anchor="end" dominant-baseline="middle">15</text>
+<line x1="64" x2="700" y1="275.0" y2="275.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="275.0" fill="#888888" text-anchor="end" dominant-baseline="middle">20</text>
+<line x1="64" x2="700" y1="231.2" y2="231.2" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="231.2" fill="#888888" text-anchor="end" dominant-baseline="middle">25</text>
+<line x1="64" x2="700" y1="187.5" y2="187.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="187.5" fill="#888888" text-anchor="end" dominant-baseline="middle">30</text>
+<line x1="64" x2="700" y1="143.8" y2="143.8" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="143.8" fill="#888888" text-anchor="end" dominant-baseline="middle">35</text>
+<line x1="64" x2="700" y1="100.0" y2="100.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="100.0" fill="#888888" text-anchor="end" dominant-baseline="middle">40</text>
+<line x1="100.3" x2="100.3" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="100.3" y="468" fill="#888888" text-anchor="middle">8</text>
+<line x1="209.4" x2="209.4" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="209.4" y="468" fill="#888888" text-anchor="middle">32</text>
+<line x1="354.7" x2="354.7" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="354.7" y="468" fill="#888888" text-anchor="middle">64</text>
+<line x1="500.1" x2="500.1" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="500.1" y="468" fill="#888888" text-anchor="middle">96</text>
+<line x1="645.5" x2="645.5" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="645.5" y="468" fill="#888888" text-anchor="middle">128</text>
+<line x1="700.0" x2="700.0" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="700.0" y="468" fill="#888888" text-anchor="middle">140</text>
+<line x1="64" x2="700" y1="450" y2="450" stroke="#888888" stroke-opacity="0.6" stroke-width="1"/>
+<text x="382.0" y="492" fill="#888888" text-anchor="middle">payload size (bytes)</text>
+<text transform="translate(16 275.0) rotate(-90)" fill="#888888" text-anchor="middle">airtime of one transmission (s)</text>
+<path d="M100.3 436.3 L136.7 434.1 L209.4 429.6 L282.1 421.2 L354.7 416.7 L500.1 403.8 L645.5 394.9 L700.0 391.5" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="100.3" cy="436.3" r="3.5" fill="#3987e5"><title>bysound top/normal: 8 → 1.566</title></circle>
+<circle cx="136.7" cy="434.1" r="3.5" fill="#3987e5"><title>bysound top/normal: 16 → 1.822</title></circle>
+<circle cx="209.4" cy="429.6" r="3.5" fill="#3987e5"><title>bysound top/normal: 32 → 2.334</title></circle>
+<circle cx="282.1" cy="421.2" r="3.5" fill="#3987e5"><title>bysound top/normal: 48 → 3.294</title></circle>
+<circle cx="354.7" cy="416.7" r="3.5" fill="#3987e5"><title>bysound top/normal: 64 → 3.806</title></circle>
+<circle cx="500.1" cy="403.8" r="3.5" fill="#3987e5"><title>bysound top/normal: 96 → 5.278</title></circle>
+<circle cx="645.5" cy="394.9" r="3.5" fill="#3987e5"><title>bysound top/normal: 128 → 6.302</title></circle>
+<circle cx="700.0" cy="391.5" r="3.5" fill="#3987e5"><title>bysound top/normal: 140 → 6.686</title></circle>
+<path d="M100.3 425.7 L136.7 421.2 L209.4 412.2 L282.1 395.4 L354.7 386.5 L500.1 360.7 L645.5 342.8 L700.0 336.1" fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="100.3" cy="425.7" r="3.5" fill="#d95926"><title>bysound top/robust: 8 → 2.782</title></circle>
+<circle cx="136.7" cy="421.2" r="3.5" fill="#d95926"><title>bysound top/robust: 16 → 3.294</title></circle>
+<circle cx="209.4" cy="412.2" r="3.5" fill="#d95926"><title>bysound top/robust: 32 → 4.318</title></circle>
+<circle cx="282.1" cy="395.4" r="3.5" fill="#d95926"><title>bysound top/robust: 48 → 6.238</title></circle>
+<circle cx="354.7" cy="386.5" r="3.5" fill="#d95926"><title>bysound top/robust: 64 → 7.262</title></circle>
+<circle cx="500.1" cy="360.7" r="3.5" fill="#d95926"><title>bysound top/robust: 96 → 10.206</title></circle>
+<circle cx="645.5" cy="342.8" r="3.5" fill="#d95926"><title>bysound top/robust: 128 → 12.254</title></circle>
+<circle cx="700.0" cy="336.1" r="3.5" fill="#d95926"><title>bysound top/robust: 140 → 13.022</title></circle>
+<path d="M100.3 418.8 L136.7 402.0 L209.4 365.1 L282.1 328.1 L354.7 291.1 L500.1 213.9 L645.5 139.9 L700.0 109.7" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="415.3" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 8 → 3.56267</title></rect>
+<rect x="133.2" y="398.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 16 → 5.48267</title></rect>
+<rect x="205.9" y="361.6" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 32 → 9.70667</title></rect>
+<rect x="278.6" y="324.6" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 48 → 13.9307</title></rect>
+<rect x="351.2" y="287.6" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 64 → 18.1547</title></rect>
+<rect x="496.6" y="210.4" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 96 → 26.9867</title></rect>
+<rect x="642.0" y="136.4" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 128 → 35.4347</title></rect>
+<rect x="696.5" y="106.2" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 140 → 38.8907</title></rect>
+<path d="M100.3 427.2 L136.7 416.0 L209.4 391.4 L282.1 366.7 L354.7 342.1 L500.1 290.6 L645.5 241.3 L700.0 221.1" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="423.7" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 8 → 2.60267</title></rect>
+<rect x="133.2" y="412.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 16 → 3.88267</title></rect>
+<rect x="205.9" y="387.9" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 32 → 6.69867</title></rect>
+<rect x="278.6" y="363.2" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 48 → 9.51467</title></rect>
+<rect x="351.2" y="338.6" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 64 → 12.3307</title></rect>
+<rect x="496.6" y="287.1" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 96 → 18.2187</title></rect>
+<rect x="642.0" y="237.8" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 128 → 23.8507</title></rect>
+<rect x="696.5" y="217.6" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 140 → 26.1547</title></rect>
+<path d="M100.3 435.6 L136.7 430.0 L209.4 417.7 L282.1 405.4 L354.7 393.1 L500.1 367.3 L645.5 342.7 L700.0 332.6" fill="none" stroke="#d55181" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="432.1" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 8 → 1.64267</title></rect>
+<rect x="133.2" y="426.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 16 → 2.28267</title></rect>
+<rect x="205.9" y="414.2" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 32 → 3.69067</title></rect>
+<rect x="278.6" y="401.9" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 48 → 5.09867</title></rect>
+<rect x="351.2" y="389.6" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 64 → 6.50667</title></rect>
+<rect x="496.6" y="363.8" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 96 → 9.45067</title></rect>
+<rect x="642.0" y="339.2" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 128 → 12.2667</title></rect>
+<rect x="696.5" y="329.1" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 140 → 13.4187</title></rect>
+<path d="M100.3 409.7 L136.7 376.1 L209.4 302.2 L282.1 228.2 L354.7 154.3" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="406.2" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 8 → 4.608</title></rect>
+<rect x="133.2" y="372.6" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 16 → 8.448</title></rect>
+<rect x="205.9" y="298.7" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 32 → 16.896</title></rect>
+<rect x="278.6" y="224.7" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 48 → 25.344</title></rect>
+<rect x="351.2" y="150.8" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 64 → 33.792</title></rect>
+<path d="M100.3 423.1 L136.7 400.7 L209.4 351.4 L282.1 302.2 L354.7 252.9" fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="419.6" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 8 → 3.072</title></rect>
+<rect x="133.2" y="397.2" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 16 → 5.632</title></rect>
+<rect x="205.9" y="347.9" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 32 → 11.264</title></rect>
+<rect x="278.6" y="298.7" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 48 → 16.896</title></rect>
+<rect x="351.2" y="249.4" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 64 → 22.528</title></rect>
+<path d="M100.3 436.6 L136.7 425.4 L209.4 400.7 L282.1 376.1 L354.7 351.4" fill="none" stroke="#e66767" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="96.8" y="433.1" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 8 → 1.536</title></rect>
+<rect x="133.2" y="421.9" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 16 → 2.816</title></rect>
+<rect x="205.9" y="397.2" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 32 → 5.632</title></rect>
+<rect x="278.6" y="372.6" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 48 → 8.448</title></rect>
+<rect x="351.2" y="347.9" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 64 → 11.264</title></rect>
+<line x1="718" x2="744" y1="106" y2="106" stroke="#3987e5" stroke-width="2"/>
+<circle cx="731" cy="106" r="3.5" fill="#3987e5"/>
+<text x="752" y="106" fill="#888888" dominant-baseline="middle">bysound top/normal</text>
+<line x1="718" x2="744" y1="128" y2="128" stroke="#d95926" stroke-width="2"/>
+<circle cx="731" cy="128" r="3.5" fill="#d95926"/>
+<text x="752" y="128" fill="#888888" dominant-baseline="middle">bysound top/robust</text>
+<line x1="718" x2="744" y1="150" y2="150" stroke="#199e70" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="146.5" width="7" height="7" rx="1" fill="#199e70"/>
+<text x="752" y="150" fill="#888888" dominant-baseline="middle">ggwave dt-normal @18k</text>
+<line x1="718" x2="744" y1="172" y2="172" stroke="#c98500" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="168.5" width="7" height="7" rx="1" fill="#c98500"/>
+<text x="752" y="172" fill="#888888" dominant-baseline="middle">ggwave dt-fast @18k</text>
+<line x1="718" x2="744" y1="194" y2="194" stroke="#d55181" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="190.5" width="7" height="7" rx="1" fill="#d55181"/>
+<text x="752" y="194" fill="#888888" dominant-baseline="middle">ggwave dt-fastest @18k</text>
+<line x1="718" x2="744" y1="216" y2="216" stroke="#0ca30c" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="212.5" width="7" height="7" rx="1" fill="#0ca30c"/>
+<text x="752" y="216" fill="#888888" dominant-baseline="middle">ggwave mt-normal @18k (fixed-len)</text>
+<line x1="718" x2="744" y1="238" y2="238" stroke="#9085e9" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="234.5" width="7" height="7" rx="1" fill="#9085e9"/>
+<text x="752" y="238" fill="#888888" dominant-baseline="middle">ggwave mt-fast @18k (fixed-len)</text>
+<line x1="718" x2="744" y1="260" y2="260" stroke="#e66767" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="256.5" width="7" height="7" rx="1" fill="#e66767"/>
+<text x="752" y="260" fill="#888888" dominant-baseline="middle">ggwave mt-fastest @18k (fixed-len)</text>
+</svg>

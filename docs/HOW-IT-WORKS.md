@@ -104,9 +104,9 @@ Both libraries use the same idea: MFSK on an orthogonal 46.875 Hz grid with Reed
 | The room is noisy or has echo: more margin against broadband noise and echo (tables below) | CPU or battery is tight: ggwave's receiver is 41–51× lighter while idle and 1.2–14× while decoding |
 | A wrong message is worse than none: 0 wrong in 87,380 trials; ggwave delivered 34 wrong in 67,320, 32 of them 8-byte messages | Messages are a few bytes: at 8 B ggwave fastest (1.00 s) is faster than every bysound channel except `wide` (0.96 s) |
 | Messages are longer than 140 bytes: up to 30 s per transmission (700–2,114 B) | You want a project with years of public use and a larger community |
-| It should be hard to hear: `top` (18–19.5 kHz), `high` (17.25–19.5 kHz); ggwave has no protocol confined above 18 kHz | You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino, RP2040 or ESP32 examples |
-| You want acks, second-sender alerts and channel adaptation (session layer, in all four implementations) | You want low-frequency modes with fewer tones (DT/MT at 1.1–2.6 kHz) |
-| You want native TypeScript, Swift, Kotlin and C (no `malloc`) sharing one format | You need results already proven over the air: bysound has only been measured in simulation |
+| It should be hard to hear: `top` (18–19.5 kHz), `high` (17.25–19.5 kHz); ggwave has no built-in protocol above 18 kHz (see below for its DT/MT moved there) | You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino, RP2040 or ESP32 examples |
+| You want acks, second-sender alerts and channel adaptation (session layer, in all four implementations) | You want modes with one or two tones (DT/MT at 1.1–2.6 kHz); MT, with a receiver that knows the length, tolerates the most noise measured, also when moved above 18 kHz |
+| You want native TypeScript, Swift, Kotlin and C (no `malloc`) sharing one format | You need a long real-world track record: ggwave has years of use; bysound's over-the-air data is one device pair in one room ([field/](../field/README.md)) |
 
 Both cover the same kinds of platforms (browser, iOS, Android, desktop, ESP32): bysound with four native implementations, ggwave with one C++ core and bindings.
 
@@ -139,8 +139,11 @@ Measured inside each mode's own band instead, the two are within 0–3 dB of eac
 |---|---|---|
 | Wrong texts delivered | 0 in 87,380 trials | 34 in 67,320 trials of its default protocols |
 | What else it does | Echo subtraction, per-tone noise floor, blocks with a CRC-32 over the text, acks, clash detection, alerts, adaptation | Start and end markers, one Reed–Solomon codeword of up to 140 B, DT/MT low-frequency modes |
+| Above 18 kHz (white noise, ≥ 90 %, 32 B) | `top`: ×25 noise, 2.33 s (robust ×40, 4.32 s) | No built-in mode. Moved there: DT fastest ×2.5, 3.69 s; MT ×63–100, 5.63–16.90 s, fixed length, ≤ 64 B |
 
-With echo, bysound tolerates 4–12 dB more noise in one transmission (4–8 dB when ggwave gets two). The [paper](../PAPER.md) explains each change, where the advantage comes from and where ggwave is better, and lists the limits: this is a simulation, the echo is one synthetic profile, and many phone speakers and microphones lose sensitivity above about 17 kHz.
+With echo, bysound tolerates 4–12 dB more noise in one transmission (4–8 dB when ggwave gets two).
+
+**Above 18 kHz.** ggwave's built-in modes are audible or start at 15 kHz, so `top` has no built-in counterpart. The benchmark also moves ggwave's 2-tone DT and 1-tone MT modes to start at 18 kHz (a custom configuration through its API, receiver restricted to them; 99.8–100 % of their power lands in 18.0–19.5 kHz). There `top` tolerates 10–12 dB more noise than DT and is faster; MT tolerates 4–6 dB more than `top` but needs the receiver to know the length, stops at 64 B and takes 2.4–7.3× as long ([paper, section 6.7](../PAPER.md#67-inaudible-channels-18195-khz)). The [paper](../PAPER.md) explains each change, where the advantage comes from and where ggwave is better, and lists the limits: this is a simulation, the echo is one synthetic profile, and many phone speakers and microphones lose sensitivity above about 17 kHz.
 
 ---
 

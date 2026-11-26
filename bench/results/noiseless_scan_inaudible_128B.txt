@@ -1,0 +1,8 @@
+bysound top/normal         128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+bysound top/robust         128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-normal @18k      128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fast @18k        128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fastest @18k     128 B: 0 of 300 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave mt-normal @18k (fixed-len) 128 B: cannot send
+ggwave mt-fast @18k (fixed-len) 128 B: cannot send
+ggwave mt-fastest @18k (fixed-len) 128 B: cannot send

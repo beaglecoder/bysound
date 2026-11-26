@@ -117,6 +117,12 @@ Airtime = length of one transmission as produced by the library's encoder: bysou
 | ggwave mt-normal (fixed-len) | 64 | 33.8 |
 | ggwave mt-fast (fixed-len) | 64 | 22.5 |
 | ggwave mt-fastest (fixed-len) | 64 | 11.3 |
+| ggwave dt-normal @18k | 140 | 38.9 |
+| ggwave dt-fast @18k | 140 | 26.2 |
+| ggwave dt-fastest @18k | 140 | 13.4 |
+| ggwave mt-normal @18k (fixed-len) | 64 | 33.8 |
+| ggwave mt-fast @18k (fixed-len) | 64 | 22.5 |
+| ggwave mt-fastest @18k (fixed-len) | 64 | 11.3 |
 
 bysound's limit is the 30 s cap on one transmission (preamble + header + body + 350 ms gap; `maxFrameSeconds` in `protocol-v4.json`), so it depends on the channel and profile; the figure is in packed bytes (ASCII letters pack 1:1; digit pairs pack 2:1, so numeric text can be twice as long). ggwave's variable-length mode truncates anything above 140 bytes, fixed-length mode accepts at most 64; its airtime at the maximum ranges from 5.0 s to 38.9 s.
 
@@ -405,6 +411,143 @@ bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`by
 | 128 B | 0 / 300 | 2 | 0 |
 | 512 B | 0 / 300 | 1 | 0 |
 
+## 11. Inaudible channels (18–19.5 kHz)
+
+ggwave has no built-in protocol above 18 kHz: its audible protocols use ~1.9–6.3 kHz, DT/MT ~1.1–2.6 kHz and “ultrasound” 15.0–19.4 kHz (6 tones × 16 bins = 4.5 kHz). The 6-tone layout does not fit above 18 kHz (it would reach 22.5 kHz), but the 2-tone DT protocols (2 × 16 bins = 1.5 kHz) and the 1-tone MT protocols (16 bins) do. For this section they were **moved to start at FFT bin 384 = 18,000 Hz** with ggwave's public C API (`ggwave_txProtocolSetFreqStart`, `ggwave_rxProtocolSetFreqStart`), a custom configuration, not a ggwave default. Everything else keeps the library defaults. DT's start/end markers are generated from the protocol's own start bin, so they move too. **The ggwave receiver is restricted to the six moved protocols** (`ggwave_rxToggleProtocol`); DT runs in the default variable-length mode, MT in fixed-length mode (the receiver knows the payload length, as in section 7). bysound is unchanged: `top` (18.0–19.5 kHz, 2 tones), with the same receivers as in the other sections (normal: 7 channels, robust: 4). Same channel, chunking, grids and trial counts as sections 1, 4 and 5, **and the same seeds** (one transmission).
+
+Seed check: 8140 bysound trials of this plan have a counterpart in the `snr`, `cond` or `size` plan; 8140 give the same result (success, decodes, wrong payloads, latency), 0 differ.
+
+
+### 11.1 Measured band (PSD of the encoded waveform, 32 B)
+
+Welch PSD (4096-point Hann) of each encoder's whole output, markers included (`bands.csv`). “Share in 18.0–19.5 kHz” = power in bysound `top`'s 32 tone slots (centres 18,000 + 46.875·k Hz, k = 0…31, each ±23.4 Hz, i.e. 17,977–19,477 Hz).
+
+| configuration | band holding 99 % of power (Hz) | share in 18.0–19.5 kHz | PAPR (dB) | offset white (dB) | offset pink (dB) |
+|---|---|---:|---:|---:|---:|
+| bysound top/normal | 17977–19477 | 98.96 % | 6.56 | 11.99 | 20.91 |
+| bysound top/robust | 17988–19465 | 99.58 % | 6.28 | 12.06 | 20.98 |
+| ggwave dt-normal @18k | 17988–19453 | 99.99 % | 7.26 | 12.10 | 21.02 |
+| ggwave dt-fast @18k | 17988–19453 | 99.96 % | 7.40 | 12.10 | 21.02 |
+| ggwave dt-fastest @18k | 17988–19465 | 99.84 % | 7.76 | 12.07 | 20.99 |
+| ggwave mt-normal @18k (fixed-len) | 18000–18715 | 100.00 % | 3.98 | 15.21 | 24.03 |
+| ggwave mt-fast @18k (fixed-len) | 18000–18715 | 100.00 % | 3.98 | 15.21 | 24.03 |
+| ggwave mt-fastest @18k (fixed-len) | 18000–18715 | 99.98 % | 3.98 | 15.19 | 24.02 |
+
+### 11.2 Success rate (%) vs SNR — 32 B, AWGN, 1 transmission (50 trials per cell)
+
+| configuration | -20 dB | -18 dB | -16 dB | -14 dB | -12 dB | -10 dB | -8 dB | -6 dB | -4 dB | +0 dB | clean | SNR90 full-band (step 2) | SNR90 in-band | SNR90 peak-ref. | false decodes | airtime 32 B (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 0 | 0 | 4 | 98 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | -14 | -2 | -7 | 0 | 2.33 |
+| bysound top/robust | 0 | 16 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | -16 | -4 | -10 | 0 | 4.32 |
+| ggwave dt-normal @18k | 0 | 0 | 0 | 0 | 0 | 0 | 4 | 30 | 82 | 100 | 98 | -2 | +10 | +5 | 0 | 9.71 |
+| ggwave dt-fast @18k | 0 | 0 | 0 | 0 | 0 | 0 | 4 | 32 | 86 | 100 | 96 | -2 | +10 | +5 | 0 | 6.70 |
+| ggwave dt-fastest @18k | 0 | 0 | 0 | 0 | 0 | 0 | 6 | 40 | 90 | 100 | 100 | -4 | +8 | +4 | 0 | 3.69 |
+| ggwave mt-normal @18k (fixed-len) | 94 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | -20 | -5 | -16 | 0 | 16.90 |
+| ggwave mt-fast @18k (fixed-len) | 0 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | -18 | -3 | -14 | 0 | 11.26 |
+| ggwave mt-fastest @18k (fixed-len) | 0 | 94 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | -18 | -3 | -14 | 0 | 5.63 |
+
+**ggwave DT at the noiseless point** (`dt_clean_check.txt`, from `bench dither`). Some DT trials fail at the clean point (signal at −40 dBFS, int16 quantisation, no noise) although they decode at 0 dB. ggwave's own log (`BENCH_GGWAVE_LOG=1 build/bench trial …`) shows the cause: the receiver detects its end marker inside the data, stops recording early and the decode fails. Each failing trial was re-run with the same seed plus noise at +60 dB SNR (−100 dBFS RMS, about the size of the int16 quantisation noise and far below anything a microphone adds):
+
+| DT protocols | clean-point trials | failed | of those, decoded with noise at +60 dB SNR |
+|---|---:|---:|---:|
+| moved to 18 kHz (plan inaudible) | 1140 | 19 (1.7 %) | 19 |
+| built-in, 1.1–2.6 kHz (plans snr, size, cond) | 1740 | 135 (7.8 %) | 134 |
+
+So these clean-point failures need input with no noise at all (the one built-in DT trial that still fails is under echo). The SNR90 definition still counts the clean point; for the DT protocols moved to 18 kHz it does not change any SNR90 in section 11.2, because their clean point stays at or above 90 %.
+
+
+### 11.3 Channel impairments — SNR90 (full-band dB, grid step 4), 32 B, 1 transmission (30 trials per cell)
+
+| configuration | AWGN (11.2, 4 dB grid) | echo | pink | babble | drift+100 | drift-100 | combo |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | -12 | -8 | -20 | -32 | -12 | -12 | -16 |
+| bysound top/robust | -16 | -12 | -24 | -32 | -16 | -16 | -20 |
+| ggwave dt-normal @18k | +0 | +4 | -8 | -32 | +0 | +0 | -4 |
+| ggwave dt-fast @18k | +0 | +4 | -12 | -32 | +0 | +0 | -4 |
+| ggwave dt-fastest @18k | -4 | +4 | -12 | -32 | -4 | -4 | -4 |
+| ggwave mt-normal @18k (fixed-len) | -20 | -12 | -28 | -32 | -20 | -20 | -20 |
+| ggwave mt-fast @18k (fixed-len) | -16 | -12 | -24 | -32 | -16 | -16 | -20 |
+| ggwave mt-fastest @18k (fixed-len) | -16 | -12 | -24 | -32 | -16 | -16 | -20 |
+
+Noiseless success (%) under each impairment, and wrong payloads accepted over all SNRs of the impairment runs:
+
+| configuration | echo | pink | babble | drift+100 | drift-100 | combo | wrong payloads |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| ggwave dt-normal @18k | 93 | 97 | 100 | 100 | 100 | 100 | 0 |
+| ggwave dt-fast @18k | 100 | 97 | 97 | 100 | 100 | 100 | 0 |
+| ggwave dt-fastest @18k | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| ggwave mt-normal @18k (fixed-len) | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| ggwave mt-fast @18k (fixed-len) | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+| ggwave mt-fastest @18k (fixed-len) | 100 | 100 | 100 | 100 | 100 | 100 | 0 |
+
+### 11.4 Payload size — airtime (deterministic) and SNR90 (full-band dB, grid step 4, 30 trials per cell)
+
+| configuration | 8 B air (s) | 32 B air (s) | 64 B air (s) | 128 B air (s) | 140 B air (s) | 8 B SNR90 | 32 B SNR90 | 64 B SNR90 | 128 B SNR90 | 140 B SNR90 | 8 B clean (%) | 32 B clean (%) | 64 B clean (%) | 128 B clean (%) | 140 B clean (%) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 1.57 | 2.33 | 3.81 | 6.30 | 6.69 | -12 | -12 | -12 | -12 | -12 | 100 | 100 | 100 | 100 | 100 |
+| bysound top/robust | 2.78 | 4.32 | 7.26 | 12.25 | 13.02 | -16 | -16 | -16 | -16 | -16 | 100 | 100 | 100 | 100 | 100 |
+| ggwave dt-normal @18k | 3.56 | 9.71 | 18.15 | 35.43 | 38.89 | +0 | +0 | +0 | +0 | +0 | 100 | 100 | 90 | 97 | 97 |
+| ggwave dt-fast @18k | 2.60 | 6.70 | 12.33 | 23.85 | 26.15 | +0 | -4 | +0 | +0 | +0 | 97 | 93 | 100 | 97 | 93 |
+| ggwave dt-fastest @18k | 1.64 | 3.69 | 6.51 | 12.27 | 13.42 | -4 | -4 | +0 | +0 | +0 | 100 | 100 | 100 | 100 | 100 |
+| ggwave mt-normal @18k (fixed-len) | 4.61 | 16.90 | 33.79 | cannot send | cannot send | -20 | -20 | -20 | cannot send | cannot send | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave mt-fast @18k (fixed-len) | 3.07 | 11.26 | 22.53 | cannot send | cannot send | -16 | -16 | -16 | cannot send | cannot send | 100 | 100 | 100 | cannot send | cannot send |
+| ggwave mt-fastest @18k (fixed-len) | 1.54 | 5.63 | 11.26 | cannot send | cannot send | -16 | -16 | -16 | cannot send | cannot send | 100 | 100 | 100 | cannot send | cannot send |
+
+### 11.5 Decode latency and receiver CPU (32 B, section 11.2 trials)
+
+As in section 3. In these trials bysound's receivers listen to all channels of their profile (7 / 4), ggwave's only to the six moved protocols; the idle table below also gives bysound listening to `top` only.
+
+| configuration | median latency clean (s) | airtime (s) | real-time factor, all trials | real-time factor, decoded trials | CPU per decoded trial (ms) | decoded trials |
+|---|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 1.99 | 2.33 | 465× | 462× | 9.6 | 551 |
+| bysound top/robust | 3.97 | 4.32 | 570× | 570× | 11.2 | 608 |
+| ggwave dt-normal @18k | 9.46 | 9.71 | 24715× | 6450× | 1.8 | 306 |
+| ggwave dt-fast @18k | 6.46 | 6.70 | 23885× | 1846× | 4.5 | 308 |
+| ggwave dt-fastest @18k | 3.45 | 3.69 | 22651× | 783× | 6.8 | 318 |
+| ggwave mt-normal @18k (fixed-len) | 16.81 | 16.90 | 610× | 566× | 32.9 | 697 |
+| ggwave mt-fast @18k (fixed-len) | 11.22 | 11.26 | 604× | 555× | 23.2 | 650 |
+| ggwave mt-fastest @18k (fixed-len) | 5.61 | 5.63 | 703× | 697× | 10.8 | 647 |
+
+Idle listening and false detections (no transmission; 10 × 60 s of each of white, pink and babble-like noise at −20 dBFS RMS, `inaudible-idle.csv`):
+
+| receiver | minutes | median CPU per 60 s of audio (ms) | real-time factor | detections | ggwave “could not decode” events |
+|---|---:|---:|---:|---:|---:|
+| bysound normal (top only) | 30 | 113.9 | 527× | 0 | n/a |
+| bysound robust (top only) | 30 | 120.9 | 496× | 0 | n/a |
+| ggwave DT/MT @18k only (fixed length 32 B) | 30 | 82.4 | 728× | 0 | 0 |
+| ggwave DT/MT @18k only (variable length) | 30 | 2.6 | 22965× | 0 | 0 |
+
+### 11.6 False decodes (all trials of this section)
+
+| configuration | trials | wrong payloads accepted | trials with at least one |
+|---|---:|---:|---:|
+| bysound top/normal | 4730 | 0 | 0 |
+| bysound top/robust | 4730 | 0 | 0 |
+| ggwave dt-normal @18k | 4730 | 0 | 0 |
+| ggwave dt-fast @18k | 4730 | 0 | 0 |
+| ggwave dt-fastest @18k | 4730 | 0 | 0 |
+| ggwave mt-normal @18k (fixed-len) | 4070 | 164 | 80 |
+| ggwave mt-fast @18k (fixed-len) | 4070 | 88 | 46 |
+| ggwave mt-fastest @18k (fixed-len) | 4070 | 24 | 16 |
+
+By payload size: 8 B: 276 wrong payloads (26 trials at the clean point). The fixed-length MT receiver decodes at every frame and can return a payload more than once per trial.
+
+
+### 11.7 Noiseless delivery scan (no channel; as section 10)
+
+| configuration | 8 B not delivered | 8 B wrong | 32 B not delivered | 32 B wrong | 128 B not delivered | 128 B wrong |
+|---|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| bysound top/robust | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| ggwave dt-normal @18k | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| ggwave dt-fast @18k | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| ggwave dt-fastest @18k | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
+| ggwave mt-normal @18k (fixed-len) | 0 / 500 | 758 | 0 / 500 | 36 | cannot send | — |
+| ggwave mt-fast @18k (fixed-len) | 0 / 500 | 501 | 0 / 500 | 20 | cannot send | — |
+| ggwave mt-fastest @18k (fixed-len) | 0 / 500 | 167 | 0 / 500 | 12 | cannot send | — |
+
 ## Charts
 
 - `charts/snr_ultrasonic_1x.svg`
@@ -424,3 +567,6 @@ bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`by
 - `charts/throughput_vs_size.svg`
 - `charts/airtime_vs_size.svg`
 - `charts/max_payload.svg`
+- `charts/snr_inaudible_1x.svg`
+- `charts/cond_echo_inaudible_1x.svg`
+- `charts/airtime_inaudible.svg`

@@ -32,21 +32,28 @@ Good for: pairing codes, links, payment references, Wi-Fi setup for IoT boards, 
 
 ## Compared with ggwave
 
-[ggwave](https://github.com/ggerganov/ggwave) is a widely used open-source library for data over sound. bysound starts from the same idea (tones on a 46.875 Hz grid with Reed–Solomon) and changes a few things:
+[ggwave](https://github.com/ggerganov/ggwave) is a widely used open-source library for data over sound. bysound starts from the same idea (tones on a 46.875 Hz grid with Reed–Solomon) and changes a few things. ggwave's built-in modes are audible (1.1–6.3 kHz) or start at 15 kHz ("ultrasound", 15–19.4 kHz, which many young people hear); none sits above 18 kHz.
 
 <img src="docs/assets/same-5-seconds.svg" alt="In the 5 seconds ggwave needs for 140 bytes, bysound sends 284 bytes on the same frequencies, or the same 140 bytes higher up, where most adults don't hear it" width="100%">
 
 - ⚡ **More data in the same time:** on the same frequencies, **twice as much** in 5 seconds.
 - 🔇 **Or the same speed, higher up:** for messages of about 64 bytes or more, the `high` channel (17.25–19.5 kHz) matches ggwave's fastest speed.
 
+**Above 18 kHz, like for like.** ggwave's 2-tone (DT) and 1-tone (MT) modes fit inside `top`'s 18–19.5 kHz when moved to start at 18 kHz, a custom configuration of ggwave:
+
+<img src="docs/assets/inaudible.svg" alt="Above 18 kHz: bysound top tolerates 25 times the message's power in noise and sends 32 bytes in 2.3 s; ggwave's DT moved there tolerates 2.5 times in 3.7 s; its MT tolerates 63 to 100 times but takes 5.6 to 16.9 s and stops at 64 bytes" width="100%">
+
+- 🔊 **Against ggwave's DT moved to 18 kHz,** `top` tolerates **10× more noise** and is faster (2.3 s against 3.7 s for 32 B).
+- 🐢 **ggwave's MT tolerates more** (×63–100) but is slower, stops at 64 B, needs the receiver to know the length, and delivered wrong 8-byte messages.
+
 | Choose bysound when… | Choose ggwave when… |
 |---|---|
 | 🏠 The room is noisy or echoey: on the narrow channels 2–8 dB more margin against broadband noise, and 4–12 dB more with echo (equal power, simulated) | 🔋 CPU or battery is tight: ggwave's receiver is 41–51× lighter while idle, 1.2–14× while decoding |
 | ✅ A wrong message is worse than none: 0 wrong in 87,380 trials (ggwave: 34 in 67,320, mostly 8-byte) | ⏱️ Messages are a few bytes: at 8 B ggwave (1.00 s) beats every bysound channel except `wide` (0.96 s) |
 | 📦 Messages go beyond 140 bytes: up to 30 s per transmission (700–2,114 B) | 🏛️ You want years of public use and a larger community |
-| 🔇 It should be hard to hear: `top` (18–19.5 kHz) and `high` (17.25–19.5 kHz) | 🧩 You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino/RP2040/ESP32 examples |
-| 🤝 You want acks, second-sender alerts and channel adaptation built in | 🎛️ You want low-frequency few-tone modes (DT/MT, 1.1–2.6 kHz) |
-| 🧰 You want native TypeScript, Swift, Kotlin and allocation-free C | 📡 You need something already proven over the air: bysound's numbers are simulation only |
+| 🔇 It should be hard to hear: `top` (18–19.5 kHz) and `high` (17.25–19.5 kHz); ggwave has no built-in mode above 18 kHz | 🧩 You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino/RP2040/ESP32 examples |
+| 🤝 You want acks, second-sender alerts and channel adaptation built in | 🎛️ You want 1–2-tone modes (DT/MT at 1.1–2.6 kHz): MT, if the receiver knows the length and time is no issue, tolerates the most noise measured |
+| 🧰 You want native TypeScript, Swift, Kotlin and allocation-free C | 📡 You need a long real-world track record: bysound's over-the-air data is one phone pair in one room |
 
 In-band, the two detectors are within 0–3 dB of each other: most of bysound's margin comes from narrower channels. Details and caveats: **[paper](PAPER.md#8-trade-offs)**, **[benchmark](bench/README.md)**.
 
@@ -63,6 +70,24 @@ Noise measured over the whole audio band (0–24 kHz), 32-byte message, simulate
 - 🎶 **Over music:** the message decodes on top of a song ([try it](#music--hidden-message)). A loud nightclub has not been tested.
 - 🧩 **Repairs damage:** doubtful bytes are marked and fixed, and if a noise burst ruins part of one repetition, the next one fills the gap (TypeScript, Swift and Kotlin receivers).
 
+**Measured over the air** ([field/](field/README.md)): a Galaxy A50 and an iPad 44–65 cm apart, with recorded noise played by a laptop usually closer to the listening device than the sender:
+
+<img src="field/charts/noise-by-scenario.svg" alt="Over-the-air reads by noise scenario" width="100%">
+
+- 📶 **Same threshold as in simulation:** the weakest real reads were at 7.8 dB (`top`) and 10.3 dB (`mid`) of measured SNR; the simulation predicts 9.9 and 10.1 dB. Real failures came from noise too close to the microphone, not from the decoder.
+- 🍻 **Bar, traffic, an audible alarm and a loud whistle at 18–19.5 kHz:** read every time. Music 23 of 30. Hair dryer 14 of 28 and vacuum 7 of 28, with the appliance closer to the microphone than the sender.
+- ⏱️ **About 1.1 s** from the first tones to the decoded message (6.5 s end to end in that app, including a 3 s pre-listen and a server lookup).
+
+
+## How far apart
+
+The figures above compare the message and the noise **where they reach the microphone**. Over the air, only 44–65 cm between devices has been measured. It matters because it changes how loud each one arrives:
+
+- 📏 **Twice as far, 4× weaker:** in open space, doubling the distance between sender and receiver makes the message 4× weaker (−6 dB), so it tolerates 4× less noise. On `top` next to a fan: ×25 at one distance, ×6 at twice that distance, ×1.5 at four times.
+- 🔊 **Where the noise is matters too:** a fan twice as close to the receiver as the sender counts 4× louder. Keep the listening device away from the noise.
+- 🤚 **Made for short range:** arm's length, or across a counter. At a few meters it depends on the speaker. Many phones lose a lot of volume above 17 kHz, so `top` carries less far than `mid` or `audible`.
+- 🏠 **Rooms aren't open space:** walls reflect sound back, so far from the sender it fades more slowly than the rule says. The echo they add is the "room with echo" case above.
+
 ## Integrity and safety
 
 - ✅ **Exact message or nothing:** three checks before anything is accepted (header checksum, error correction in every block, a CRC-32 over the whole text). No wrong message in 87,380 simulated trials.
@@ -71,6 +96,7 @@ Noise measured over the whole audio band (0–24 kHz), 32-byte message, simulate
 - ⚠ **Warns the others:** whoever notices another sender plays an alert, relayed at most twice. The suggested quarantine is only a callback: bysound never blocks anything.
 - 🎚️ **Security levels:** `basic`, `standard` or `maximum` (the default).
 - 🔐 **With a backend:** only a 12-byte fingerprint travels by sound; the real data, the sender's identity and blocking of suspicious messages live on your server ([how](docs/SECURITY.md#using-a-backend), [example](examples/backend-reference/)).
+- 📡 **Measured over the air:** no wrong message in 172 attempts with noise or in silence. With another sender playing, the real sender noticed and held back in 52 of 52 attempts. A second request registered on the same server is the hard case: with the latest build measured, all 8 attempts were delivered with a conflict warning after a median 1.8 s ([details](field/README.md)).
 - 🔓 **Not secret:** anyone nearby can hear the sound, just like anyone can photograph a QR code. Don't send passwords in the clear; sign or encrypt in your app if it matters.
 
 Session layer (acks, alerts, levels, adaptation): specified in **[docs/SESSION.md](docs/SESSION.md)** and implemented in TypeScript (the reference), Swift, Kotlin and C, which share its test vectors. What is and isn't protected: **[docs/SECURITY.md](docs/SECURITY.md)**.

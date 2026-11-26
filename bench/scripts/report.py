@@ -27,6 +27,8 @@ bands = load("bands.csv")
 maxp = load("max_payload.csv")
 runs = {p: load(p + ".csv") for p in ("snr", "size", "cond", "rate44", "mtfixed")}
 idle = load("idle.csv")
+inaud = load("inaudible.csv")          # plan column: inaudible-snr / inaudible-cond / inaudible-size
+idle18 = load("inaudible-idle.csv")
 
 papr = {}  # (config, rate) -> PAPR dB of the 32-byte payload
 for r in air:
@@ -95,6 +97,8 @@ BYS_ORDER = ["bysound top/normal", "bysound high/normal", "bysound upper/normal"
 GG_ORDER = ["ggwave ultrasound-normal", "ggwave ultrasound-fast", "ggwave ultrasound-fastest", "ggwave audible-normal", "ggwave audible-fast", "ggwave audible-fastest",
             "ggwave dt-normal", "ggwave dt-fast", "ggwave dt-fastest"]
 MT_ORDER = ["ggwave mt-normal (fixed-len)", "ggwave mt-fast (fixed-len)", "ggwave mt-fastest (fixed-len)"]
+INAUD_ORDER = ["bysound top/normal", "bysound top/robust", "ggwave dt-normal @18k", "ggwave dt-fast @18k", "ggwave dt-fastest @18k",
+               "ggwave mt-normal @18k (fixed-len)", "ggwave mt-fast @18k (fixed-len)", "ggwave mt-fastest @18k (fixed-len)"]
 ALL_ORDER = BYS_ORDER + GG_ORDER
 
 
@@ -359,6 +363,37 @@ if maxp:
     p = os.path.join(CH, "max_payload.svg")
     bar_chart(p, "Max payload in one transmission", "ASCII bytes the encoder accepts; bysound is capped at 30 s of airtime (350 ms gap included), ggwave at 140 B (64 B fixed length); airtime at the maximum in brackets",
               rows, "bytes (log scale)", left=300)
+    charts.append(p)
+
+# inaudible group: bysound top vs ggwave DT/MT moved to 18 kHz
+INAUD_SPECS = [(c, PALETTE[i]) for i, c in enumerate(INAUD_ORDER)]
+in_snr = cells([r for r in inaud if r["plan"] == "inaudible-snr"])
+in_cond = cells([r for r in inaud if r["plan"] == "inaudible-cond"])
+in_size = cells([r for r in inaud if r["plan"] == "inaudible-size"])
+if in_snr:
+    p = os.path.join(CH, "snr_inaudible_1x.svg")
+    line_chart(p, "Inaudible channels (18–19.5 kHz): success vs SNR",
+               "32-byte ASCII payload, AWGN, 48 kHz, 1 transmission, %d trials per point; ggwave DT/MT moved to start at 18 kHz (custom configuration), receiver restricted to them; "
+               "MT in fixed-length mode (receiver knows the length)" % ntrials(in_snr, "bysound top/normal"),
+               "SNR (dB): sound-on signal power / white-noise power in 0–24 kHz", "exact payload decoded (%)", curve_series(in_snr, INAUD_SPECS), SNR_X, (0, 100), SNR_TICKS,
+               PCT_TICKS, yfmt=lambda v: "%g%%" % v)
+    charts.append(p)
+if in_cond:
+    p = os.path.join(CH, "cond_echo_inaudible_1x.svg")
+    line_chart(p, "Inaudible channels (18–19.5 kHz): echo", "32-byte payload, 1 transmission, %s, %d trials per point" % (COND_DESC["echo"], ntrials(in_cond, "bysound top/normal", cond="echo")),
+               "SNR (dB): sound-on signal power / noise power in 0–24 kHz", "exact payload decoded (%)", curve_series(in_cond, INAUD_SPECS, cond="echo"), (-32, 4), (0, 100),
+               list(range(-32, 5, 4)), PCT_TICKS, yfmt=lambda v: "%g%%" % v)
+    charts.append(p)
+if air and any(r["config"].endswith("@18k") or "@18k " in r["config"] for r in air):
+    ser = []
+    for cfg, col in INAUD_SPECS:
+        pts = [(int(sz), float(airof(cfg, sz)["air_s"])) for sz in ("8", "16", "32", "48", "64", "96", "128", "140") if airof(cfg, sz)]
+        ser.append({"name": name(cfg), "color": col, "dash": cfg.startswith("ggwave"), "pts": pts})
+    p = os.path.join(CH, "airtime_inaudible.svg")
+    line_chart(p, "Inaudible channels (18–19.5 kHz): airtime vs payload size",
+               "computed from each encoder's output at 48 kHz (no channel); bysound includes its 350 ms trailing gap, ggwave DT its start/end markers; "
+               "ggwave MT (fixed-length) stops at 64 B, DT at 140 B", "payload size (bytes)", "airtime of one transmission (s)", ser, (0, 140), (0, 40),
+               [8, 32, 64, 96, 128, 140], [0, 5, 10, 15, 20, 25, 30, 35, 40], xfmt=lambda v: "%d" % v)
     charts.append(p)
 
 # ------------------------------------------------------------------ summary.md
@@ -638,6 +673,202 @@ if os.path.exists(cpath):
             fails, tried, zero, agree = int(m.group(2)), int(m.group(3)), int(m.group(4)), int(m.group(5))
             both = (fails + zero - (tried - agree)) // 2  # |fail xor zero| = tried - agree
             w("| %s B | %d / %d | %d | %d |" % (m.group(1), fails, tried, zero, both))
+
+# inaudible channels
+if inaud:
+    w("\n## 11. Inaudible channels (18–19.5 kHz)\n")
+    w("ggwave has no built-in protocol above 18 kHz: its audible protocols use ~1.9–6.3 kHz, DT/MT ~1.1–2.6 kHz and “ultrasound” 15.0–19.4 kHz (6 tones × 16 bins = 4.5 kHz). "
+      "The 6-tone layout does not fit above 18 kHz (it would reach 22.5 kHz), but the 2-tone DT protocols (2 × 16 bins = 1.5 kHz) and the 1-tone MT protocols (16 bins) do. "
+      "For this section they were **moved to start at FFT bin 384 = 18,000 Hz** with ggwave's public C API (`ggwave_txProtocolSetFreqStart`, `ggwave_rxProtocolSetFreqStart`), "
+      "a custom configuration, not a ggwave default. Everything else keeps the library defaults. DT's start/end markers are generated from the protocol's own start bin, so they move too. "
+      "**The ggwave receiver is restricted to the six moved protocols** (`ggwave_rxToggleProtocol`); DT runs in the default variable-length mode, MT in fixed-length mode "
+      "(the receiver knows the payload length, as in section 7). bysound is unchanged: `top` (18.0–19.5 kHz, 2 tones), with the same receivers as in the other sections "
+      "(normal: 7 channels, robust: 4). Same channel, chunking, grids and trial counts as sections 1, 4 and 5, **and the same seeds** (one transmission).\n")
+    # reproducibility check: bysound rows vs the snr/cond/size plans
+    def key(r, plan):
+        return (plan, r["config"], r["size"], r["condition"], r["snr_db"], r["clean"], r["reps"], r["trial"])
+    ref = {}
+    for pl in ("snr", "cond", "size"):
+        for r in runs[pl]:
+            if r["config"] in ("bysound top/normal", "bysound top/robust") and r["reps"] == "1":
+                ref[key(r, pl)] = (r["success"], r["n_correct"], r["n_wrong"], r["latency_s"])
+    same = diff = 0
+    for r in inaud:
+        if r["system"] != "bysound":
+            continue
+        k = key(r, r["plan"].replace("inaudible-", ""))
+        if k in ref:
+            if ref[k] == (r["success"], r["n_correct"], r["n_wrong"], r["latency_s"]):
+                same += 1
+            else:
+                diff += 1
+    if same + diff:
+        w("Seed check: %d bysound trials of this plan have a counterpart in the `snr`, `cond` or `size` plan; %d give the same result (success, decodes, wrong payloads, latency), %d differ.\n"
+          % (same + diff, same, diff))
+
+    w("\n### 11.1 Measured band (PSD of the encoded waveform, 32 B)\n")
+    w("Welch PSD (4096-point Hann) of each encoder's whole output, markers included (`bands.csv`). “Share in 18.0–19.5 kHz” = power in bysound `top`'s 32 tone slots "
+      "(centres 18,000 + 46.875·k Hz, k = 0…31, each ±23.4 Hz, i.e. 17,977–19,477 Hz).\n")
+    w("| configuration | band holding 99 % of power (Hz) | share in 18.0–19.5 kHz | PAPR (dB) | offset white (dB) | offset pink (dB) |")
+    w("|---|---|---:|---:|---:|---:|")
+    for cfg in INAUD_ORDER:
+        r = next((b for b in bands if b["config"] == cfg and b["rate"] == "48000"), None)
+        if r:
+            fr = r.get("frac_18k_19k5")
+            w("| %s | %s–%s | %s | %s | %s | %s |" % (name(cfg), r["band_lo_hz"], r["band_hi_hz"], "%.2f %%" % (100 * float(fr)) if fr else "—",
+                                                    "%.2f" % papr[(cfg, 48000)] if (cfg, 48000) in papr else "—", r["offset_white_db"], r["offset_pink_db"]))
+
+    if in_snr:
+        cols = [-20, -18, -16, -14, -12, -10, -8, -6, -4, 0, CLEAN]
+        w("\n### 11.2 Success rate (%%) vs SNR — 32 B, AWGN, 1 transmission (%d trials per cell)\n" % ntrials(in_snr, "bysound top/normal"))
+        w("| configuration | " + " | ".join(("%+d dB" % c) if c != CLEAN else "clean" for c in cols) + " | SNR90 full-band (step 2) | SNR90 in-band | SNR90 peak-ref. | false decodes | airtime 32 B (s) |")
+        w("|---|" + "---:|" * (len(cols) + 5))
+        for cfg in INAUD_ORDER:
+            c = in_snr.get((cfg, 48000, "32", "awgn", 1))
+            if not c:
+                continue
+            t = threshold(c)
+            a = airof(cfg, "32")
+            w("| %s | %s | %s | %s | %s | %d | %s |" % (name(cfg), " | ".join(pct(c, s_) for s_ in cols), fmt_thr(t),
+                                                       fmt_thr(t, offset.get((cfg, 48000, "white"), 0.0)) if t not in (None, CLEAN) else fmt_thr(t),
+                                                       fmt_thr(t, papr.get((cfg, 48000), 0.0)) if t not in (None, CLEAN) else fmt_thr(t),
+                                                       sum(v[2] for v in c.values()), "%.2f" % float(a["air_s"]) if a else "—"))
+
+    dpath = os.path.join(RES, "dt_clean_check.txt")
+    if os.path.exists(dpath):
+        dt = defaultdict(lambda: [0, 0, 0])
+        for line in open(dpath):
+            m = re.match(r"(ggwave dt-\S+( @18k)?)\s+plan (\S+)\s*: (\d+) clean trials, (\d+) failed, (\d+) of those", line)
+            if m:
+                a_ = dt["moved to 18 kHz (plan inaudible)" if m.group(2) else "built-in, 1.1–2.6 kHz (plans snr, size, cond)"]
+                a_[0] += int(m.group(4))
+                a_[1] += int(m.group(5))
+                a_[2] += int(m.group(6))
+        if dt:
+            w("\n**ggwave DT at the noiseless point** (`dt_clean_check.txt`, from `bench dither`). Some DT trials fail at the clean point (signal at −40 dBFS, int16 quantisation, "
+              "no noise) although they decode at 0 dB. ggwave's own log (`BENCH_GGWAVE_LOG=1 build/bench trial …`) shows the cause: the receiver detects its end marker "
+              "inside the data, stops recording early and the decode fails. Each failing trial was re-run with the same seed plus noise at +60 dB SNR "
+              "(−100 dBFS RMS, about the size of the int16 quantisation noise and far below anything a microphone adds):\n")
+            w("| DT protocols | clean-point trials | failed | of those, decoded with noise at +60 dB SNR |")
+            w("|---|---:|---:|---:|")
+            for k in sorted(dt, reverse=True):
+                w("| %s | %d | %d (%.1f %%) | %d |" % (k, dt[k][0], dt[k][1], 100.0 * dt[k][1] / max(1, dt[k][0]), dt[k][2]))
+            w("\nSo these clean-point failures need input with no noise at all (the one built-in DT trial that still fails is under echo). The SNR90 definition still counts the clean point; "
+              "for the DT protocols moved to 18 kHz it does not change any SNR90 in section 11.2, because their clean point stays at or above 90 %.\n")
+
+    if in_cond:
+        conds = ["echo", "pink", "babble", "drift+100", "drift-100", "combo"]
+        w("\n### 11.3 Channel impairments — SNR90 (full-band dB, grid step 4), 32 B, 1 transmission (%d trials per cell)\n" % ntrials(in_cond, "bysound top/normal", cond="echo"))
+        base = cells([r for r in inaud if r["plan"] == "inaudible-snr" and (r["snr_db"] == "" or float(r["snr_db"]) % 4 == 0)])
+        w("| configuration | AWGN (11.2, 4 dB grid) | " + " | ".join(conds) + " |")
+        w("|---|" + "---:|" * (len(conds) + 1))
+        for cfg in INAUD_ORDER:
+            row = [fmt_thr(threshold(base.get((cfg, 48000, "32", "awgn", 1), {})))]
+            for cd in conds:
+                c = in_cond.get((cfg, 48000, "32", cd, 1))
+                row.append(fmt_thr(threshold(c)) if c else "")
+            w("| %s | %s |" % (name(cfg), " | ".join(row)))
+        w("\nNoiseless success (%) under each impairment, and wrong payloads accepted over all SNRs of the impairment runs:\n")
+        w("| configuration | " + " | ".join(conds) + " | wrong payloads |")
+        w("|---|" + "---:|" * (len(conds) + 1))
+        for cfg in INAUD_ORDER:
+            wr = sum(v[2] for cd in conds for v in in_cond.get((cfg, 48000, "32", cd, 1), {}).values())
+            w("| %s | %s | %d |" % (name(cfg), " | ".join(pct(in_cond.get((cfg, 48000, "32", cd, 1), {}), CLEAN) for cd in conds), wr))
+
+    if in_size:
+        szs = ["8", "32", "64", "128", "140"]
+        w("\n### 11.4 Payload size — airtime (deterministic) and SNR90 (full-band dB, grid step 4, %d trials per cell)\n" % ntrials(in_size, "bysound top/normal", size="8"))
+        w("| configuration | " + " | ".join("%s B air (s)" % s_ for s_ in szs) + " | " + " | ".join("%s B SNR90" % s_ for s_ in szs) + " | " +
+          " | ".join("%s B clean (%%)" % s_ for s_ in szs) + " |")
+        w("|---|" + "---:|" * (3 * len(szs)))
+        for cfg in INAUD_ORDER:
+            airs = []
+            for s_ in szs:
+                a = airof(cfg, s_)
+                airs.append("%.2f" % float(a["air_s"]) if a else (statusof(cfg, s_) or "—"))
+            thr = [fmt_thr(threshold(in_size[(cfg, 48000, s_, "awgn", 1)])) if (cfg, 48000, s_, "awgn", 1) in in_size else (statusof(cfg, s_) or "—") for s_ in szs]
+            cln = [pct(in_size[(cfg, 48000, s_, "awgn", 1)], CLEAN) if (cfg, 48000, s_, "awgn", 1) in in_size else (statusof(cfg, s_) or "—") for s_ in szs]
+            w("| %s | %s | %s | %s |" % (name(cfg), " | ".join(airs), " | ".join(thr), " | ".join(cln)))
+
+    # CPU and latency
+    rr_all = [r for r in inaud if r["plan"] == "inaudible-snr"]
+    if rr_all:
+        w("\n### 11.5 Decode latency and receiver CPU (32 B, section 11.2 trials)\n")
+        w("As in section 3. In these trials bysound's receivers listen to all channels of their profile (7 / 4), ggwave's only to the six moved protocols; "
+          "the idle table below also gives bysound listening to `top` only.\n")
+        w("| configuration | median latency clean (s) | airtime (s) | real-time factor, all trials | real-time factor, decoded trials | CPU per decoded trial (ms) | decoded trials |")
+        w("|---|---:|---:|---:|---:|---:|---:|")
+        for cfg in INAUD_ORDER:
+            rr = [r for r in rr_all if r["config"] == cfg]
+            if not rr:
+                continue
+            lat = median([float(r["latency_s"]) for r in rr if r["clean"] == "1" and float(r["latency_s"]) >= 0])
+            rtf = median([float(r["audio_s"]) / float(r["cpu_s"]) for r in rr if float(r["cpu_s"]) > 0])
+            dd = [r for r in rr if r["success"] == "1" and float(r["cpu_s"]) > 0]
+            rtf_d = median([float(r["audio_s"]) / float(r["cpu_s"]) for r in dd])
+            cpu_d = median([1000 * float(r["cpu_s"]) for r in dd])
+            a = airof(cfg, "32")
+            w("| %s | %s | %s | %s | %s | %s | %d |" % (name(cfg), "%.2f" % lat if lat is not None else "—", "%.2f" % float(a["air_s"]) if a else "—",
+                                                       "%.0f×" % rtf if rtf else "—", "%.0f×" % rtf_d if rtf_d else "—", "%.1f" % cpu_d if cpu_d is not None else "—", len(dd)))
+    if idle18:
+        w("\nIdle listening and false detections (no transmission; 10 × 60 s of each of white, pink and babble-like noise at −20 dBFS RMS, `inaudible-idle.csv`):\n")
+        w("| receiver | minutes | median CPU per 60 s of audio (ms) | real-time factor | detections | ggwave “could not decode” events |")
+        w("|---|---:|---:|---:|---:|---:|")
+        by_rx = defaultdict(list)
+        det = defaultdict(lambda: [0, 0, 0])
+        for r in idle18:
+            by_rx[r["receiver"]].append(float(r["cpu_s"]) / float(r["seconds"]))
+            d = det[r["receiver"]]
+            d[0] += int(r["seconds"])
+            d[1] += int(r["detections"])
+            d[2] += int(r["failed"])
+        for rx in sorted(by_rx):
+            m = median(by_rx[rx])
+            w("| %s | %d | %.1f | %.0f× | %d | %s |" % (rx, det[rx][0] // 60, 60000 * m, 1 / m, det[rx][1], det[rx][2] if rx.startswith("ggwave") else "n/a"))
+
+    # false decodes over every inaudible trial
+    w("\n### 11.6 False decodes (all trials of this section)\n")
+    w("| configuration | trials | wrong payloads accepted | trials with at least one |")
+    w("|---|---:|---:|---:|")
+    fd = defaultdict(lambda: [0, 0, 0])
+    for r in inaud:
+        if r["success"] == "-1":
+            continue
+        a = fd[r["config"]]
+        a[0] += 1
+        a[1] += int(r["n_wrong"])
+        a[2] += 1 if int(r["n_wrong"]) else 0
+    for cfg in INAUD_ORDER:
+        if cfg in fd:
+            w("| %s | %d | %d | %d |" % (name(cfg), *fd[cfg]))
+    bysz = defaultdict(lambda: [0, 0])
+    for r in inaud:
+        if int(r["n_wrong"] or 0) and r["success"] != "-1":
+            bysz[r["size"]][0] += int(r["n_wrong"])
+            bysz[r["size"]][1] += 1 if r["clean"] == "1" else 0
+    if bysz:
+        w("\nBy payload size: " + "; ".join("%s B: %d wrong payloads (%d trials at the clean point)" % (k, v[0], v[1]) for k, v in sorted(bysz.items(), key=lambda kv: int(kv[0]))) +
+          ". The fixed-length MT receiver decodes at every frame and can return a payload more than once per trial.\n")
+
+    scan18 = {}
+    for sz in ("8", "32", "128"):
+        pth = os.path.join(RES, "noiseless_scan_inaudible_%sB.txt" % sz)
+        if not os.path.exists(pth):
+            continue
+        for line in open(pth):
+            m = re.match(r"(.+?)\s+(\d+) B: (\d+) of (\d+) payloads not delivered without noise, (\d+) wrong", line)
+            if m:
+                scan18[(m.group(1).strip(), sz)] = (int(m.group(3)), int(m.group(4)), int(m.group(5)))
+    if scan18:
+        w("\n### 11.7 Noiseless delivery scan (no channel; as section 10)\n")
+        w("| configuration | 8 B not delivered | 8 B wrong | 32 B not delivered | 32 B wrong | 128 B not delivered | 128 B wrong |")
+        w("|---|---:|---:|---:|---:|---:|---:|")
+        for cfg in INAUD_ORDER:
+            row = []
+            for sz in ("8", "32", "128"):
+                v = scan18.get((cfg, sz))
+                row += ["%d / %d" % (v[0], v[1]), "%d" % v[2]] if v else [statusof(cfg, sz) or "—", "—"]
+            w("| %s | %s |" % (name(cfg), " | ".join(row)))
 
 w("\n## Charts\n")
 for p in charts:

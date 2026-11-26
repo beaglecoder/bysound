@@ -1,35 +1,41 @@
-system,config,rate,band_lo_hz,band_hi_hz,sig_frac,offset_white_db,offset_pink_db,offset_babble_db
-bysound,bysound top/normal,48000,17977,19477,0.9936,11.99,20.91,45.39
-bysound,bysound top/normal,44100,17980,19477,0.9925,11.65,20.98,44.42
-bysound,bysound high/normal,48000,17238,19453,0.9934,10.31,19.14,43.53
-bysound,bysound high/normal,44100,17237,19444,0.9922,9.97,19.21,42.61
-bysound,bysound upper/normal,48000,16488,18703,0.9936,10.31,18.97,43.17
-bysound,bysound upper/normal,44100,16484,18691,0.9926,9.95,19.04,42.35
-bysound,bysound mid/normal,48000,14988,17203,0.9936,10.30,18.58,42.30
-bysound,bysound mid/normal,44100,14987,17194,0.9924,9.94,18.66,41.61
-bysound,bysound audible/normal,48000,1875,4840,0.9935,9.04,10.19,14.90
-bysound,bysound audible/normal,44100,1873,4834,0.9926,8.69,10.30,14.81
-bysound,bysound xhigh/normal,48000,16500,19465,0.9935,9.04,17.79,42.08
-bysound,bysound xhigh/normal,44100,16505,19466,0.9924,8.68,17.86,41.21
-bysound,bysound wide/normal,48000,15000,19441,0.9907,7.28,15.83,39.85
-bysound,bysound wide/normal,44100,14998,19444,0.9904,6.91,15.89,39.05
-bysound,bysound top/robust,48000,17988,19465,0.9944,12.06,20.98,45.46
-bysound,bysound top/robust,44100,17991,19466,0.9938,11.72,21.05,44.49
-bysound,bysound high/robust,48000,17238,19453,0.9962,10.32,19.16,43.55
-bysound,bysound high/robust,44100,17237,19455,0.9970,9.97,19.21,42.62
-bysound,bysound upper/robust,48000,16500,18703,0.9935,10.33,18.99,43.20
-bysound,bysound upper/robust,44100,16494,18702,0.9954,9.97,19.06,42.37
-bysound,bysound mid/robust,48000,15000,17203,0.9916,10.31,18.60,42.32
-bysound,bysound mid/robust,44100,14998,17205,0.9939,9.94,18.67,41.62
-ggwave,ggwave audible-normal,48000,1875,6281,0.9941,7.33,9.15,14.72
-ggwave,ggwave audible-fast,48000,1875,6281,0.9939,7.32,9.15,14.72
-ggwave,ggwave audible-fastest,48000,1863,6281,0.9971,7.33,9.14,14.66
-ggwave,ggwave ultrasound-normal,48000,15000,19406,0.9941,7.33,15.88,39.89
-ggwave,ggwave ultrasound-fast,48000,15000,19406,0.9939,7.33,15.88,39.89
-ggwave,ggwave ultrasound-fastest,48000,14988,19406,0.9971,7.33,15.88,39.89
-ggwave,ggwave dt-normal,48000,1113,2578,0.9957,12.10,10.71,9.75
-ggwave,ggwave dt-fast,48000,1113,2578,0.9951,12.10,10.71,9.75
-ggwave,ggwave dt-fastest,48000,1113,2590,0.9975,12.07,10.70,9.76
-ggwave,ggwave mt-normal (fixed-len),48000,1125,1840,0.9975,15.18,13.03,10.88
-ggwave,ggwave mt-fast (fixed-len),48000,1125,1840,0.9968,15.18,13.02,10.88
-ggwave,ggwave mt-fastest (fixed-len),48000,1125,1840,0.9940,15.17,13.01,10.87
+system,config,rate,band_lo_hz,band_hi_hz,sig_frac,offset_white_db,offset_pink_db,offset_babble_db,frac_18k_19k5
+bysound,bysound top/normal,48000,17977,19477,0.9936,11.99,20.91,45.39,0.9896
+bysound,bysound top/normal,44100,17980,19477,0.9925,11.65,20.98,44.42,0.9889
+bysound,bysound high/normal,48000,17238,19453,0.9934,10.31,19.14,43.53,0.6672
+bysound,bysound high/normal,44100,17237,19444,0.9922,9.97,19.21,42.61,0.6651
+bysound,bysound upper/normal,48000,16488,18703,0.9936,10.31,18.97,43.17,0.3328
+bysound,bysound upper/normal,44100,16484,18691,0.9926,9.95,19.04,42.35,0.3303
+bysound,bysound mid/normal,48000,14988,17203,0.9936,10.30,18.58,42.30,0.0000
+bysound,bysound mid/normal,44100,14987,17194,0.9924,9.94,18.66,41.61,0.0000
+bysound,bysound audible/normal,48000,1875,4840,0.9935,9.04,10.19,14.90,0.0000
+bysound,bysound audible/normal,44100,1873,4834,0.9926,8.69,10.30,14.81,0.0000
+bysound,bysound xhigh/normal,48000,16500,19465,0.9935,9.04,17.79,42.08,0.4968
+bysound,bysound xhigh/normal,44100,16505,19466,0.9924,8.68,17.86,41.21,0.4961
+bysound,bysound wide/normal,48000,15000,19441,0.9907,7.28,15.83,39.85,0.3341
+bysound,bysound wide/normal,44100,14998,19444,0.9904,6.91,15.89,39.05,0.3335
+bysound,bysound top/robust,48000,17988,19465,0.9944,12.06,20.98,45.46,0.9958
+bysound,bysound top/robust,44100,17991,19466,0.9938,11.72,21.05,44.49,0.9959
+bysound,bysound high/robust,48000,17238,19453,0.9962,10.32,19.16,43.55,0.6669
+bysound,bysound high/robust,44100,17237,19455,0.9970,9.97,19.21,42.62,0.6659
+bysound,bysound upper/robust,48000,16500,18703,0.9935,10.33,18.99,43.20,0.3330
+bysound,bysound upper/robust,44100,16494,18702,0.9954,9.97,19.06,42.37,0.3325
+bysound,bysound mid/robust,48000,15000,17203,0.9916,10.31,18.60,42.32,0.0000
+bysound,bysound mid/robust,44100,14998,17205,0.9939,9.94,18.67,41.62,0.0000
+ggwave,ggwave audible-normal,48000,1875,6281,0.9941,7.33,9.15,14.72,0.0000
+ggwave,ggwave audible-fast,48000,1875,6281,0.9939,7.32,9.15,14.72,0.0000
+ggwave,ggwave audible-fastest,48000,1863,6281,0.9971,7.33,9.14,14.66,0.0000
+ggwave,ggwave ultrasound-normal,48000,15000,19406,0.9941,7.33,15.88,39.89,0.3078
+ggwave,ggwave ultrasound-fast,48000,15000,19406,0.9939,7.33,15.88,39.89,0.2953
+ggwave,ggwave ultrasound-fastest,48000,14988,19406,0.9971,7.33,15.88,39.89,0.2667
+ggwave,ggwave dt-normal,48000,1113,2578,0.9957,12.10,10.71,9.75,0.0000
+ggwave,ggwave dt-fast,48000,1113,2578,0.9951,12.10,10.71,9.75,0.0000
+ggwave,ggwave dt-fastest,48000,1113,2590,0.9975,12.07,10.70,9.76,0.0000
+ggwave,ggwave mt-normal (fixed-len),48000,1125,1840,0.9975,15.18,13.03,10.88,0.0000
+ggwave,ggwave mt-fast (fixed-len),48000,1125,1840,0.9968,15.18,13.02,10.88,0.0000
+ggwave,ggwave mt-fastest (fixed-len),48000,1125,1840,0.9940,15.17,13.01,10.87,0.0000
+ggwave,ggwave dt-normal @18k,48000,17988,19453,0.9957,12.10,21.02,45.50,0.9999
+ggwave,ggwave dt-fast @18k,48000,17988,19453,0.9951,12.10,21.02,45.50,0.9996
+ggwave,ggwave dt-fastest @18k,48000,17988,19465,0.9975,12.07,20.99,45.48,0.9984
+ggwave,ggwave mt-normal @18k (fixed-len),48000,18000,18715,0.9975,15.21,24.03,48.44,1.0000
+ggwave,ggwave mt-fast @18k (fixed-len),48000,18000,18715,0.9968,15.21,24.03,48.44,1.0000
+ggwave,ggwave mt-fastest @18k (fixed-len),48000,18000,18715,0.9940,15.19,24.02,48.42,0.9998

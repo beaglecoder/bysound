@@ -1,0 +1,242 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="502" viewBox="0 0 1000 502" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12">
+<title>Inaudible channels (18–19.5 kHz): success vs SNR</title>
+<text x="64" y="24" fill="#888888" font-size="15" font-weight="600">Inaudible channels (18–19.5 kHz): success vs SNR</text>
+<text x="64" y="44" fill="#888888" font-size="12">32-byte ASCII payload, AWGN, 48 kHz, 1 transmission, 50 trials per point</text>
+<text x="64" y="60" fill="#888888" font-size="12">ggwave DT/MT moved to start at 18 kHz (custom configuration), receiver restricted to them</text>
+<text x="64" y="76" fill="#888888" font-size="12">MT in fixed-length mode (receiver knows the length)</text>
+<line x1="64" x2="700" y1="450.0" y2="450.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="450.0" fill="#888888" text-anchor="end" dominant-baseline="middle">0%</text>
+<line x1="64" x2="700" y1="362.5" y2="362.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="362.5" fill="#888888" text-anchor="end" dominant-baseline="middle">25%</text>
+<line x1="64" x2="700" y1="275.0" y2="275.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="275.0" fill="#888888" text-anchor="end" dominant-baseline="middle">50%</text>
+<line x1="64" x2="700" y1="187.5" y2="187.5" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="187.5" fill="#888888" text-anchor="end" dominant-baseline="middle">75%</text>
+<line x1="64" x2="700" y1="100.0" y2="100.0" stroke="#888888" stroke-opacity="0.22" stroke-width="1"/>
+<text x="56" y="100.0" fill="#888888" text-anchor="end" dominant-baseline="middle">100%</text>
+<line x1="64.0" x2="64.0" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="64.0" y="468" fill="#888888" text-anchor="middle">-36</text>
+<line x1="127.6" x2="127.6" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="127.6" y="468" fill="#888888" text-anchor="middle">-32</text>
+<line x1="191.2" x2="191.2" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="191.2" y="468" fill="#888888" text-anchor="middle">-28</text>
+<line x1="254.8" x2="254.8" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="254.8" y="468" fill="#888888" text-anchor="middle">-24</text>
+<line x1="318.4" x2="318.4" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="318.4" y="468" fill="#888888" text-anchor="middle">-20</text>
+<line x1="382.0" x2="382.0" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="382.0" y="468" fill="#888888" text-anchor="middle">-16</text>
+<line x1="445.6" x2="445.6" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="445.6" y="468" fill="#888888" text-anchor="middle">-12</text>
+<line x1="509.2" x2="509.2" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="509.2" y="468" fill="#888888" text-anchor="middle">-8</text>
+<line x1="572.8" x2="572.8" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="572.8" y="468" fill="#888888" text-anchor="middle">-4</text>
+<line x1="636.4" x2="636.4" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="636.4" y="468" fill="#888888" text-anchor="middle">0</text>
+<line x1="700.0" x2="700.0" y1="100" y2="450" stroke="#888888" stroke-opacity="0.12" stroke-width="1"/>
+<text x="700.0" y="468" fill="#888888" text-anchor="middle">4</text>
+<line x1="64" x2="700" y1="450" y2="450" stroke="#888888" stroke-opacity="0.6" stroke-width="1"/>
+<text x="382.0" y="492" fill="#888888" text-anchor="middle">SNR (dB): sound-on signal power / white-noise power in 0–24 kHz</text>
+<text transform="translate(16 275.0) rotate(-90)" fill="#888888" text-anchor="middle">exact payload decoded (%)</text>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 450.0 L382.0 436.0 L413.8 107.0 L445.6 100.0 L477.4 100.0 L509.2 100.0 L541.0 100.0 L572.8 100.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -36 → 0%</title></circle>
+<circle cx="95.8" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -34 → 0%</title></circle>
+<circle cx="127.6" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -32 → 0%</title></circle>
+<circle cx="159.4" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -30 → 0%</title></circle>
+<circle cx="191.2" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -28 → 0%</title></circle>
+<circle cx="223.0" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -26 → 0%</title></circle>
+<circle cx="254.8" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -24 → 0%</title></circle>
+<circle cx="286.6" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -22 → 0%</title></circle>
+<circle cx="318.4" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -20 → 0%</title></circle>
+<circle cx="350.2" cy="450.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -18 → 0%</title></circle>
+<circle cx="382.0" cy="436.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -16 → 4%</title></circle>
+<circle cx="413.8" cy="107.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -14 → 98%</title></circle>
+<circle cx="445.6" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -12 → 100%</title></circle>
+<circle cx="477.4" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -10 → 100%</title></circle>
+<circle cx="509.2" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -8 → 100%</title></circle>
+<circle cx="541.0" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -6 → 100%</title></circle>
+<circle cx="572.8" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -4 → 100%</title></circle>
+<circle cx="604.6" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: -2 → 100%</title></circle>
+<circle cx="636.4" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 0 → 100%</title></circle>
+<circle cx="668.2" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 2 → 100%</title></circle>
+<circle cx="700.0" cy="100.0" r="3.5" fill="#3987e5"><title>bysound top/normal: 4 → 100%</title></circle>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 394.0 L382.0 100.0 L413.8 100.0 L445.6 100.0 L477.4 100.0 L509.2 100.0 L541.0 100.0 L572.8 100.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="64.0" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -36 → 0%</title></circle>
+<circle cx="95.8" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -34 → 0%</title></circle>
+<circle cx="127.6" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -32 → 0%</title></circle>
+<circle cx="159.4" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -30 → 0%</title></circle>
+<circle cx="191.2" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -28 → 0%</title></circle>
+<circle cx="223.0" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -26 → 0%</title></circle>
+<circle cx="254.8" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -24 → 0%</title></circle>
+<circle cx="286.6" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -22 → 0%</title></circle>
+<circle cx="318.4" cy="450.0" r="3.5" fill="#d95926"><title>bysound top/robust: -20 → 0%</title></circle>
+<circle cx="350.2" cy="394.0" r="3.5" fill="#d95926"><title>bysound top/robust: -18 → 16%</title></circle>
+<circle cx="382.0" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -16 → 100%</title></circle>
+<circle cx="413.8" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -14 → 100%</title></circle>
+<circle cx="445.6" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -12 → 100%</title></circle>
+<circle cx="477.4" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -10 → 100%</title></circle>
+<circle cx="509.2" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -8 → 100%</title></circle>
+<circle cx="541.0" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -6 → 100%</title></circle>
+<circle cx="572.8" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -4 → 100%</title></circle>
+<circle cx="604.6" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: -2 → 100%</title></circle>
+<circle cx="636.4" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: 0 → 100%</title></circle>
+<circle cx="668.2" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: 2 → 100%</title></circle>
+<circle cx="700.0" cy="100.0" r="3.5" fill="#d95926"><title>bysound top/robust: 4 → 100%</title></circle>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 450.0 L382.0 450.0 L413.8 450.0 L445.6 450.0 L477.4 450.0 L509.2 436.0 L541.0 345.0 L572.8 163.0 L604.6 107.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -22 → 0%</title></rect>
+<rect x="314.9" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -20 → 0%</title></rect>
+<rect x="346.7" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -18 → 0%</title></rect>
+<rect x="378.5" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -16 → 0%</title></rect>
+<rect x="410.3" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -14 → 0%</title></rect>
+<rect x="442.1" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -12 → 0%</title></rect>
+<rect x="473.9" y="446.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -10 → 0%</title></rect>
+<rect x="505.7" y="432.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -8 → 4%</title></rect>
+<rect x="537.5" y="341.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -6 → 30%</title></rect>
+<rect x="569.3" y="159.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -4 → 82%</title></rect>
+<rect x="601.1" y="103.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: -2 → 98%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#199e70"><title>ggwave dt-normal @18k: 4 → 100%</title></rect>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 450.0 L382.0 450.0 L413.8 450.0 L445.6 450.0 L477.4 450.0 L509.2 436.0 L541.0 338.0 L572.8 149.0 L604.6 107.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -22 → 0%</title></rect>
+<rect x="314.9" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -20 → 0%</title></rect>
+<rect x="346.7" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -18 → 0%</title></rect>
+<rect x="378.5" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -16 → 0%</title></rect>
+<rect x="410.3" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -14 → 0%</title></rect>
+<rect x="442.1" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -12 → 0%</title></rect>
+<rect x="473.9" y="446.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -10 → 0%</title></rect>
+<rect x="505.7" y="432.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -8 → 4%</title></rect>
+<rect x="537.5" y="334.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -6 → 32%</title></rect>
+<rect x="569.3" y="145.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -4 → 86%</title></rect>
+<rect x="601.1" y="103.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: -2 → 98%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#c98500"><title>ggwave dt-fast @18k: 4 → 100%</title></rect>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 450.0 L382.0 450.0 L413.8 450.0 L445.6 450.0 L477.4 450.0 L509.2 429.0 L541.0 310.0 L572.8 135.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#d55181" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -22 → 0%</title></rect>
+<rect x="314.9" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -20 → 0%</title></rect>
+<rect x="346.7" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -18 → 0%</title></rect>
+<rect x="378.5" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -16 → 0%</title></rect>
+<rect x="410.3" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -14 → 0%</title></rect>
+<rect x="442.1" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -12 → 0%</title></rect>
+<rect x="473.9" y="446.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -10 → 0%</title></rect>
+<rect x="505.7" y="425.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -8 → 6%</title></rect>
+<rect x="537.5" y="306.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -6 → 40%</title></rect>
+<rect x="569.3" y="131.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -4 → 90%</title></rect>
+<rect x="601.1" y="96.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: -2 → 100%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#d55181"><title>ggwave dt-fastest @18k: 4 → 100%</title></rect>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 121.0 L350.2 100.0 L382.0 100.0 L413.8 100.0 L445.6 100.0 L477.4 100.0 L509.2 100.0 L541.0 100.0 L572.8 100.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#0ca30c" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -22 → 0%</title></rect>
+<rect x="314.9" y="117.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -20 → 94%</title></rect>
+<rect x="346.7" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -18 → 100%</title></rect>
+<rect x="378.5" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -16 → 100%</title></rect>
+<rect x="410.3" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -14 → 100%</title></rect>
+<rect x="442.1" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -12 → 100%</title></rect>
+<rect x="473.9" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -10 → 100%</title></rect>
+<rect x="505.7" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -8 → 100%</title></rect>
+<rect x="537.5" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -6 → 100%</title></rect>
+<rect x="569.3" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -4 → 100%</title></rect>
+<rect x="601.1" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): -2 → 100%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#0ca30c"><title>ggwave mt-normal @18k (fixed-len): 4 → 100%</title></rect>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 100.0 L382.0 100.0 L413.8 100.0 L445.6 100.0 L477.4 100.0 L509.2 100.0 L541.0 100.0 L572.8 100.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -22 → 0%</title></rect>
+<rect x="314.9" y="446.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -20 → 0%</title></rect>
+<rect x="346.7" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -18 → 100%</title></rect>
+<rect x="378.5" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -16 → 100%</title></rect>
+<rect x="410.3" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -14 → 100%</title></rect>
+<rect x="442.1" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -12 → 100%</title></rect>
+<rect x="473.9" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -10 → 100%</title></rect>
+<rect x="505.7" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -8 → 100%</title></rect>
+<rect x="537.5" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -6 → 100%</title></rect>
+<rect x="569.3" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -4 → 100%</title></rect>
+<rect x="601.1" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): -2 → 100%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#9085e9"><title>ggwave mt-fast @18k (fixed-len): 4 → 100%</title></rect>
+<path d="M64.0 450.0 L95.8 450.0 L127.6 450.0 L159.4 450.0 L191.2 450.0 L223.0 450.0 L254.8 450.0 L286.6 450.0 L318.4 450.0 L350.2 121.0 L382.0 100.0 L413.8 100.0 L445.6 100.0 L477.4 100.0 L509.2 100.0 L541.0 100.0 L572.8 100.0 L604.6 100.0 L636.4 100.0 L668.2 100.0 L700.0 100.0" fill="none" stroke="#e66767" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="7 4"/>
+<rect x="60.5" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -36 → 0%</title></rect>
+<rect x="92.3" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -34 → 0%</title></rect>
+<rect x="124.1" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -32 → 0%</title></rect>
+<rect x="155.9" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -30 → 0%</title></rect>
+<rect x="187.7" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -28 → 0%</title></rect>
+<rect x="219.5" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -26 → 0%</title></rect>
+<rect x="251.3" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -24 → 0%</title></rect>
+<rect x="283.1" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -22 → 0%</title></rect>
+<rect x="314.9" y="446.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -20 → 0%</title></rect>
+<rect x="346.7" y="117.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -18 → 94%</title></rect>
+<rect x="378.5" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -16 → 100%</title></rect>
+<rect x="410.3" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -14 → 100%</title></rect>
+<rect x="442.1" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -12 → 100%</title></rect>
+<rect x="473.9" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -10 → 100%</title></rect>
+<rect x="505.7" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -8 → 100%</title></rect>
+<rect x="537.5" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -6 → 100%</title></rect>
+<rect x="569.3" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -4 → 100%</title></rect>
+<rect x="601.1" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): -2 → 100%</title></rect>
+<rect x="632.9" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 0 → 100%</title></rect>
+<rect x="664.7" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 2 → 100%</title></rect>
+<rect x="696.5" y="96.5" width="7" height="7" rx="1" fill="#e66767"><title>ggwave mt-fastest @18k (fixed-len): 4 → 100%</title></rect>
+<line x1="718" x2="744" y1="106" y2="106" stroke="#3987e5" stroke-width="2"/>
+<circle cx="731" cy="106" r="3.5" fill="#3987e5"/>
+<text x="752" y="106" fill="#888888" dominant-baseline="middle">bysound top/normal</text>
+<line x1="718" x2="744" y1="128" y2="128" stroke="#d95926" stroke-width="2"/>
+<circle cx="731" cy="128" r="3.5" fill="#d95926"/>
+<text x="752" y="128" fill="#888888" dominant-baseline="middle">bysound top/robust</text>
+<line x1="718" x2="744" y1="150" y2="150" stroke="#199e70" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="146.5" width="7" height="7" rx="1" fill="#199e70"/>
+<text x="752" y="150" fill="#888888" dominant-baseline="middle">ggwave dt-normal @18k</text>
+<line x1="718" x2="744" y1="172" y2="172" stroke="#c98500" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="168.5" width="7" height="7" rx="1" fill="#c98500"/>
+<text x="752" y="172" fill="#888888" dominant-baseline="middle">ggwave dt-fast @18k</text>
+<line x1="718" x2="744" y1="194" y2="194" stroke="#d55181" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="190.5" width="7" height="7" rx="1" fill="#d55181"/>
+<text x="752" y="194" fill="#888888" dominant-baseline="middle">ggwave dt-fastest @18k</text>
+<line x1="718" x2="744" y1="216" y2="216" stroke="#0ca30c" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="212.5" width="7" height="7" rx="1" fill="#0ca30c"/>
+<text x="752" y="216" fill="#888888" dominant-baseline="middle">ggwave mt-normal @18k (fixed-len)</text>
+<line x1="718" x2="744" y1="238" y2="238" stroke="#9085e9" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="234.5" width="7" height="7" rx="1" fill="#9085e9"/>
+<text x="752" y="238" fill="#888888" dominant-baseline="middle">ggwave mt-fast @18k (fixed-len)</text>
+<line x1="718" x2="744" y1="260" y2="260" stroke="#e66767" stroke-width="2" stroke-dasharray="7 4"/>
+<rect x="727.5" y="256.5" width="7" height="7" rx="1" fill="#e66767"/>
+<text x="752" y="260" fill="#888888" dominant-baseline="middle">ggwave mt-fastest @18k (fixed-len)</text>
+</svg>

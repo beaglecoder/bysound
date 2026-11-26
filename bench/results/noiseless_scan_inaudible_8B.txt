@@ -1,0 +1,8 @@
+bysound top/normal         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+bysound top/robust         8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-normal @18k      8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fast @18k        8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave dt-fastest @18k     8 B: 0 of 500 payloads not delivered without noise, 0 wrong payloads accepted
+ggwave mt-normal @18k (fixed-len) 8 B: 0 of 500 payloads not delivered without noise, 758 wrong payloads accepted
+ggwave mt-fast @18k (fixed-len) 8 B: 0 of 500 payloads not delivered without noise, 501 wrong payloads accepted
+ggwave mt-fastest @18k (fixed-len) 8 B: 0 of 500 payloads not delivered without noise, 167 wrong payloads accepted

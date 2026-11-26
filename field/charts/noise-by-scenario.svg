@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 386" width="720" height="386" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<title>Over-the-air read rate per noise scenario</title>
+<style>.t{fill:#8b949e;font-size:13px}.s{fill:#8b949e;font-size:11px}.h{fill:#8b949e;font-size:15px;font-weight:600}.v{fill:#8b949e;font-size:12px;font-weight:700}</style>
+<text class="h" x="20" y="28">Over the air: requests read per noise scenario</text>
+<rect x="250" y="40" width="10" height="10" rx="2" fill="#14b8a6"/><text class="s" x="266" y="49">read before the request expired</text>
+<text class="t" x="20" y="83">Bar (voices, dishes)</text>
+<rect x="250" y="70" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="70" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Bar (voices, dishes): 30 of 30 read</title></rect>
+<text class="v" x="588" y="83">100 %  <tspan class="s" font-weight="400">30/30</tspan></text>
+<text class="t" x="20" y="113">Audible alarm (2-6 kHz)</text>
+<rect x="250" y="100" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="100" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Audible alarm (2-6 kHz): 6 of 6 read</title></rect>
+<text class="v" x="588" y="113">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
+<text class="t" x="20" y="143">Traffic</text>
+<rect x="250" y="130" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="130" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Traffic: 6 of 6 read</title></rect>
+<text class="v" x="588" y="143">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
+<text class="t" x="20" y="173">Loud whistle (18-19.5 kHz tones)</text>
+<rect x="250" y="160" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="160" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Loud whistle (18-19.5 kHz tones): 6 of 6 read</title></rect>
+<text class="v" x="588" y="173">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
+<text class="t" x="20" y="203">Cutlery</text>
+<rect x="250" y="190" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="190" width="275.0" height="18" rx="4" fill="#14b8a6"><title>Cutlery: 5 of 6 read</title></rect>
+<text class="v" x="588" y="203">83 %  <tspan class="s" font-weight="400">5/6</tspan></text>
+<text class="t" x="20" y="233">Music</text>
+<rect x="250" y="220" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="220" width="253.0" height="18" rx="4" fill="#14b8a6"><title>Music: 23 of 30 read</title></rect>
+<text class="v" x="588" y="233">77 %  <tspan class="s" font-weight="400">23/30</tspan></text>
+<text class="t" x="20" y="263">Hair dryer</text>
+<rect x="250" y="250" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="250" width="165.0" height="18" rx="4" fill="#14b8a6"><title>Hair dryer: 14 of 28 read</title></rect>
+<text class="v" x="588" y="263">50 %  <tspan class="s" font-weight="400">14/28</tspan></text>
+<text class="t" x="20" y="293">Sweep (15-20 kHz)</text>
+<rect x="250" y="280" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="280" width="110.0" height="18" rx="4" fill="#14b8a6"><title>Sweep (15-20 kHz): 2 of 6 read</title></rect>
+<text class="v" x="588" y="293">33 %  <tspan class="s" font-weight="400">2/6</tspan></text>
+<text class="t" x="20" y="323">Vacuum cleaner</text>
+<rect x="250" y="310" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
+<rect x="250" y="310" width="82.5" height="18" rx="4" fill="#14b8a6"><title>Vacuum cleaner: 7 of 28 read</title></rect>
+<text class="v" x="588" y="323">25 %  <tspan class="s" font-weight="400">7/28</tspan></text>
+<text class="s" x="20" y="354">Linear scale, 0–100 %. All layouts, levels and both directions pooled; one Galaxy A50 and one iPad, near-ultrasonic channels.</text>
+<text class="s" x="20" y="370">Noise played from a laptop placed closer to the listening microphone than the sender in most attempts (worst case).</text>
+</svg>

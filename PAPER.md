@@ -10,15 +10,16 @@ November 2026
 
 Data-over-sound lets two devices exchange a short message using only a speaker and a microphone. **ggwave**, a widely used open-source implementation, sends bytes with multi-frequency shift keying (MFSK) on a 46.875 Hz grid and protects them with Reed–Solomon (RS) coding. **bysound** keeps that foundation and changes the framing and the receiver: narrower band "channels" (2–6 simultaneous tones) inside 15–19.5 kHz, a per-tone noise floor, a keyed preamble, maximum-likelihood header selection, subtraction of the previous symbol's echo, RS in blocks with an end-to-end CRC-32, and a slower *robust* profile. Byte-compatible implementations of the modem exist in TypeScript, Swift, Kotlin and allocation-free C. A session layer on top of the modem (acknowledgements by sound, detection of a second sender, alert frames, security levels and automatic channel adaptation) is specified and implemented in all four languages (TypeScript as the reference), sharing test vectors.
 
-This report compares the C implementation of bysound with the unmodified ggwave library on the same simulated channel with the same seeds (157,670 trials). In summary, the two detectors perform within 0–3 dB of each other at equal SNR inside each mode's band; most of bysound's advantage against broadband noise comes from narrower channels and a lower peak-to-average power ratio; and ggwave uses less CPU and is the more mature project. In more detail:
+This report compares the C implementation of bysound with the unmodified ggwave library on the same simulated channel with the same seeds (157,670 trials), plus a like-for-like comparison above 18 kHz with ggwave reconfigured (35,860 trials). In summary, the two detectors perform within 0–3 dB of each other at equal SNR inside each mode's band; most of bysound's advantage against broadband noise comes from narrower channels and a lower peak-to-average power ratio; and ggwave uses less CPU and is the more mature project. In more detail:
 
 - **Detection is similar.** With the signal-to-noise ratio (SNR) measured inside each mode's own band, the two libraries reach 90 % success within 0–3 dB of each other.
 - **Narrow channels tolerate more full-band noise.** At equal average signal power, with noise measured over 0–24 kHz, bysound's normal channels reach 90 % success at −14 to −8 dB and its robust profile at −16 to −14 dB, against −8 dB for ggwave's ultrasound and audible protocols. This follows mostly from concentrating the same power in a narrower band, a comparison that favours narrowband modes by construction. At equal peak amplitude the difference is 1–12 dB (up to 15 dB for the robust profile), because fewer simultaneous tones give a lower peak-to-average power ratio. Normalised for energy per message, the advantage is about 3–5 dB.
 - **Echo.** With one synthetic two-tap echo and one transmission, bysound tolerates 4–12 dB more noise, depending on the channel. The part of that difference that is specific to echo (4 dB) is consistent with echo subtraction.
 - **Message size and integrity.** bysound limits a transmission to 30 s instead of 140 bytes. It delivered no wrong message in 87,380 simulated trials; a CRC-32 over the whole text guards delivery. ggwave delivered 34 wrong payloads in 67,320 trials of its default variable-length protocols, 32 of them for 8-byte messages.
 - **Cost.** ggwave's receiver uses less CPU: 41–51× less while idle and 1.2–14× less in trials that decode a message.
+- **Above 18 kHz.** ggwave has no built-in inaudible mode: its "ultrasound" protocols start at 15 kHz. Moved to 18 kHz through its API (a custom configuration, inside the span of bysound's `top` channel), its 2-tone DT mode needs 10–12 dB more SNR than `top` and is slower (3.7 s against 2.3 s for 32 bytes). Its 1-tone MT mode, whose receiver must know the message length, tolerates 4–6 dB more noise than `top` but takes 2.4–7.3× as long, stops at 64 bytes and delivered wrong 8-byte payloads.
 
-The benchmark was written by the author of bysound and exercises only the C receiver. The session layer is described and implemented but not part of the benchmark. Nothing in this report has been measured over the air.
+The benchmark was written by the author of bysound and exercises only the C receiver. The session layer is described and implemented but not part of the benchmark. A separate over-the-air dataset (277 attempts between a phone and a tablet, Section 6.8) shows the receiver needing the same SNR in a real room as in simulation, within about 2 dB; ggwave was not measured over the air.
 
 ## 1. Introduction
 
@@ -71,7 +72,7 @@ The comparison is with ggwave only, because it is the closest in design. Systems
 | `wide` | 15.0–19.5 kHz | 6 | 32 ms | 750 bit/s |
 | `audible` | 1.875–4.875 kHz | 4 | 40 ms | 400 bit/s |
 
-`wide` occupies the same span as ggwave's ultrasound protocols (15–19.4 kHz), so it is the like-for-like comparison. ggwave has no protocol confined above 18 kHz, which is where `top` sits.
+`wide` occupies the same span as ggwave's ultrasound protocols (15–19.4 kHz), so it is the like-for-like comparison. ggwave has no protocol confined above 18 kHz, which is where `top` sits; its dual-tone and mono-tone protocols can be moved there, which Section 6.7 does.
 
 **Frame.** A frame has four parts:
 1. An 8-symbol **preamble**, keyed per channel and profile.
@@ -172,7 +173,7 @@ The three columns answer different questions. *In band* compares the detectors a
 - **Equal peak**, the difference is 1–12 dB for the normal profile and up to 15 dB for `top` robust. Of that, PAPR alone contributes 0.8–6.6 dB (item 2); the rest is the full-band difference above. `wide` is 1–2 dB better than ggwave ultrasound (+3 dB against +4/+5 dB; lower is better). This comparison is against ggwave's 6-tone protocols; its DT protocols have a PAPR of 7.3–7.8 dB and its MT protocols 4.0 dB.
 - **Equal power is not equal energy.** The modes take different times to send the same 32 bytes: sound is on for 1.98 s on `top`, 1.44 s on `high`, 0.86 s on `wide` and 3.97 s on `top` robust, against 1.71 s for ggwave fastest. Correcting the full-band difference for the ratio of sound-on times, the advantage over ggwave ultrasound fastest in energy per message is 5.3 dB for `top`, 4.7 dB for `high`, 3.0 dB for `wide` (same SNR90 in half the time), 4.3 dB for `top` robust and 3.7 dB for `high` robust: roughly 3–5 dB in every case. ggwave's slower speeds reach the same SNR90 as its fastest on this grid.
 
-The ggwave `dt-normal` and `dt-fast` protocols have no SNR90 at 32 B because they decoded 86 % of the noiseless trials (100 % at 0 dB). The noiseless point is the signal at −40 dBFS surrounded by exact digital silence; in a separate scan at full scale they missed 0 of 500 payloads. This looks like an artefact of the test condition rather than a property of the protocols, and the noiseless-point requirement in SNR90 penalises only these two rows.
+The ggwave `dt-normal` and `dt-fast` protocols have no SNR90 at 32 B because they decoded 86 % of the noiseless trials (100 % at 0 dB). The noiseless point is the signal at −40 dBFS with int16 quantisation and no noise at all. ggwave's own log shows the cause: in those trials its receiver detects the end marker inside the data and stops recording early. Re-run with the same seed and noise at +60 dB SNR (−100 dBFS, about the size of the int16 quantisation noise), 134 of the 135 DT trials that failed at the noiseless point in any plan decode (`bench/results/dt_clean_check.txt`). It is an artefact of noise-free input, not something a microphone would produce, and the noiseless-point requirement in SNR90 penalises only these two rows.
 
 <p align="center"><img src="bench/results/charts/snr_ultrasonic_peak_1x.svg" alt="Success vs SNR at equal peak level" width="100%"></p>
 
@@ -252,6 +253,78 @@ Receiver CPU time on the benchmark host (Apple M4 Pro), expressed as a real-time
 
 The decoded-trial and all-trial rows are medians over the one-transmission trials of the white-noise plan, per configuration (11 for bysound, 9 for ggwave), receiver initialisation included; the last column divides the extremes of the two ranges. The all-trials row mixes in the many trials below the threshold, where ggwave does almost no work, so the first two rows describe the two real situations better. bysound's cost is nearly constant because it searches every channel at every step (4 ms, 8 ms in the robust profile) whether or not a message is present. Both run far faster than real time on this host. CPU load on a phone or a microcontroller was not measured.
 
+### 6.7 Inaudible channels (18–19.5 kHz)
+
+ggwave's built-in protocols are audible (about 1.9–6.3 kHz; DT and MT at 1.1–2.6 kHz) or start at 15 kHz ("ultrasound", 15.0–19.4 kHz, which many young listeners hear). bysound's `top` channel is the only mode in either library confined above 18 kHz. This section compares it with ggwave moved there.
+
+**Method.** A ggwave protocol is `{freqStart (FFT bin), framesPerTx, bytesPerTx, extra}`; it plays `2·bytesPerTx/extra` tones at once, each over 16 bins of 46.875 Hz. The 6-tone ultrasound layout spans 4.5 kHz and would reach 22.5 kHz from 18 kHz, so it cannot move. The dual-tone DT protocols (2 tones, 32 bins = 1.5 kHz) and mono-tone MT protocols (1 tone, 16 bins) can. They were moved to start at bin 384 = 18,000 Hz with ggwave's public C API (`ggwave_txProtocolSetFreqStart`, `ggwave_rxProtocolSetFreqStart`); every other parameter keeps its default. This is a custom configuration, not something ggwave ships.
+- **Markers.** DT's start and end markers are generated from the protocol's own start bin (16 marker bits on the same 32 bins), so they move with it; the receiver looks for markers on its enabled protocols and takes the matching start bin. MT runs only in fixed-length mode, which has no markers; there the receiver normalises the spectrum above the lowest start bin of its enabled protocols, which is now 384.
+- **Receiver.** The ggwave receiver was restricted to the six moved protocols (`ggwave_rxToggleProtocol`), so it searches only 18.0–19.5 kHz; DT runs in the default variable-length mode, MT in fixed-length mode (the receiver is given the payload length). bysound is unchanged and uses the receivers of the rest of Section 6 (all channels of its profile).
+- **Band check.** A Welch PSD of each encoder's whole output (32 B, markers included) puts 99.84–99.99 % of the DT power and 99.98–100 % of the MT power inside `top`'s 32 tone slots (17,977–19,477 Hz); bysound `top` puts 98.96 % there (robust 99.58 %). The bands holding 99 % of the power are 17,988–19,453/19,465 Hz for DT, 18,000–18,715 Hz for MT and 17,977–19,477 Hz for `top`.
+- **Trials.** Same channel, chunking, grids, trial counts and seeds as Sections 6.2–6.4 (one transmission): 35,860 trials. The 8,140 bysound trials that also exist in those plans gave identical results.
+
+SNR90, 32-byte message, one transmission (white noise on the 2 dB grid; the other columns on the 4 dB grid), and airtime:
+
+| Configuration | Full band | In band | Equal peak | Echo | Pink | 32 B | 140 B |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| bysound `top` | −14 dB | −2 dB | −7 dB | −8 dB | −20 dB | 2.33 s | 6.69 s |
+| bysound `top` robust | −16 dB | −4 dB | −10 dB | −12 dB | −24 dB | 4.32 s | 13.02 s |
+| ggwave DT fastest @18 kHz | −4 dB | +8 dB | +4 dB | +4 dB | −12 dB | 3.69 s | 13.42 s |
+| ggwave DT fast / normal @18 kHz | −2 dB | +10 dB | +5 dB | +4 dB | −12 / −8 dB | 6.70 / 9.71 s | 26.15 / 38.89 s |
+| ggwave MT fastest @18 kHz ³ | −18 dB | −3 dB | −14 dB | −12 dB | −24 dB | 5.63 s | — (max 64 B) |
+| ggwave MT fast / normal @18 kHz ³ | −18 / −20 dB | −3 / −5 dB | −14 / −16 dB | −12 dB | −24 / −28 dB | 11.26 / 16.90 s | — (max 64 B) |
+
+³ Fixed-length mode: the receiver must know the payload length; at most 64 B (11.26–33.79 s).
+
+Babble-like noise put every configuration at the bottom of the grid, and ±100 ppm drift changed no SNR90. Payload size changed little: `top` −12 dB and `top` robust −16 dB at every size from 8 to 140 B (4 dB grid), DT −4 to 0 dB, MT −20 or −16 dB up to 64 B. At 8 B, MT fastest (1.54 s) and DT fastest (1.64 s) take about as long as `top` (1.57 s).
+
+**Reading.**
+- **DT moved to 18 kHz** keeps the noise tolerance of the built-in DT at 1.1–2.6 kHz (−4 dB for the fastest speed at both positions). It is 10–12 dB behind `top` (11–12 dB at equal peak). Both put two tones in the same 1.5 kHz, so the full-band and in-band differences are the same: unlike the 6-tone comparison of Section 6.2, this gap is not a bandwidth effect. With echo it is 12 dB behind (+4 against −8 dB). It is also slower: 3.69–9.71 s for 32 B and 13.42–38.89 s for 140 B, against 2.33 s and 6.69 s.
+- **MT moved to 18 kHz** is the most noise-tolerant configuration measured: 4–6 dB better than `top` in full band (2–4 dB better than `top` robust), 1–3 dB in band, and 7–9 dB at equal peak, helped by a single tone (PAPR 4.0 dB against 6.6 dB) in half the bandwidth. With echo it matches `top` robust (−12 dB). It pays in time: 2.4–7.3× the airtime of `top` for 32 B. Normalised for energy per message, MT fastest is within 0.5 dB of `top` and MT normal and fast need 3.3–3.5 dB more; DT needs 12.7–18.9 dB more.
+- **Constraints.** MT needs a receiver that knows the payload length and carries at most 64 B. In these trials it delivered 276 wrong payloads in 142 of 12,210 trials, all 8-byte; DT and bysound delivered none (4,730 trials per configuration). In the noiseless scan, MT also returned a wrong payload besides the right one for many 8-byte payloads (167–758 wrong decodes over 500 payloads).
+- **Noiseless point.** 19 of the 1,140 noiseless DT trials at 18 kHz (1.7 %) failed in the same way as the built-in DT in Section 6.2; all 19 decode with noise at +60 dB SNR, and the clean point stays at or above 90 %, so no SNR90 in this section is affected.
+- **Cost.** Restricted to DT/MT, ggwave's variable-length receiver idles at 22,965× real time, 44–46× lighter than a bysound receiver listening to `top` only (496–527×); its fixed-length receiver, needed for MT, idles at 728×, 1.4–1.5× lighter. None of these receivers detected anything in 30 minutes of noise without a transmission.
+
+The two libraries occupy the same band here, so speaker and microphone roll-off above 18 kHz would affect both alike. There was no listening test.
+
+<p align="center"><img src="bench/results/charts/snr_inaudible_1x.svg" alt="Success vs SNR above 18 kHz" width="100%"></p>
+
+### 6.8 Over-the-air measurements
+
+Sections 6.2–6.6 use a simulated channel. This section reports what a real speaker-to-microphone link reached, and what the receiver did at that level. The data, the analysis script and the full tables are in [`field/`](field).
+
+**Setup.** The measurements come from the author's private application, built on earlier releases (4.0.0–4.2.0) of the same v4 over-the-air format and receiver family, not from the code in this repository. The application wraps the modem in a payment-style flow with a server: the sender registers a request and plays only a reference frame (a 12-byte fingerprint, Section 7, "With a backend"); the receiver resolves it on the server; acknowledgements and conflict watching run at security level `maximum`; a request lives 20 s and the receiver gives up after 22 s. The sender started on `top` and fell back to `mid` without an acknowledgement; the profile used was not recorded. One Samsung Galaxy A50 and one iPad (10th generation) lay on a table in an indoor room; a laptop's built-in speakers played noise recordings or another sender's frames. Each scenario ran in both directions. Five layouts were used (sender-to-microphone 44–65 cm), with the noise source 10–63 cm from the listening microphone, usually closer than the sender: estimated free-field margins of −24 to +3 dB, all in the medium, hard or ultra classes of the application's geometric scale. No sound level meter was used: there are no SPL figures, only the receiver's own measurements. ggwave was not run over the air. Fourteen runs on 1–5 November 2026 produced 293 v4 attempts; one run, in which the noise floor did not rise above the quiet baseline (the noise source was silent), is excluded, leaving 277 (146 with noise, 105 with another sender, 26 quiet).
+
+**What the receiver measures.** For each preamble symbol and tone group, the receiver divides the energy of the expected tone (1,024-sample window at 48 kHz, equivalent noise bandwidth 48.7 Hz) by that tone's running noise floor; the reported SNR is the median of those ratios. It is a per-tone, in-band figure that includes the room's echo in the noise, and it exists only for a decoded frame. With white noise it equals the benchmark's in-band SNR plus 10·log10(B ÷ (K · ENBW)): +11.9 dB on `top` (B = 1,500 Hz, K = 2) and +11.8 dB on `mid` (B = 2,215 Hz, K = 3).
+
+**Noise.** Table F1 summarises the noise attempts. In the quiet room all 26 attempts were read (median SNR 47.0 dB). Noise below the channels did not matter: bar (30/30), traffic (6/6) and an audible alarm (6/6) were read every time, as was a whistle at 18–19.5 kHz that covers `top` (6/6, all decoded on `mid`). Broadband noise close to the microphone was the limit: hair dryer 14/28 and vacuum cleaner 7/28, which together account for 34 of the 40 attempts where nothing was decoded. Six further attempts decoded on `mid` only after the request had expired (20.8–22.2 s), and one sweep was taken for another transmission and refused. Successful reads took a median of 6.5 s from the start of listening (including the application's 3 s pre-listen and server registration) and 1.09 s from the first preamble to the decoded frame. The link was asymmetric: with the iPad sending, 58/73 noise attempts were read and the quiet SNR was 49.3 dB; with the A50 sending, 41/73 and 40.2 dB. One device pair cannot separate speaker, microphone and placement.
+
+*Table F1. Over-the-air reads with noise, by geometric difficulty class (effective margin = 20·log10(noise→mic ÷ sender→mic) minus occlusion and off-axis penalties).*
+
+| Class | Effective margin | Read / attempts | 95 % CI | Median SNR of reads |
+|---|---:|---:|---:|---:|
+| medium | +3 dB | 13/16 | 57–93 % | 22.3 dB |
+| hard | −6 to −5 dB | 25/28 | 73–96 % | 23.6 dB |
+| ultra | −24 to −14 dB | 61/102 | 50–69 % | 19.6 dB |
+| all | | 99/146 | 60–75 % | |
+
+**Threshold.** Among decoded frames, all 79 at 20 dB or more and 43 of 48 at 10–20 dB were read in time; every miss in those rows was a frame decoded after expiry. The weakest successful reads were 7.8 dB on `top` and 10.3 dB on `mid`. The simulated SNR90 in white noise (Section 6.2), converted to the same per-tone measure, is 9.9 dB on `top` and 10.1 dB on `mid` with the normal profile, and 7.9 and 8.1 dB with the robust profile. The over-the-air minimum is therefore within 0.2 dB of the simulation on `mid` and 2.1 dB below it on `top`, where it matches the robust figure. The two statistics differ (a 90 % point on a 2 dB grid with a 32-byte payload, against the lowest success in a non-random sample with a shorter reference frame and repetition combining over up to 22 s), so the comparison holds to about ±2 dB. Within that, the decoder needed the same SNR over the air as in simulation; the failures came from links that never reached it.
+
+**Another sender.** Table F2 lists the outcomes. "As intended" means not delivered, refused, or delivered with a conflict warning within 3 s of delivery (an assumed time to confirm, not a measurement). An unregistered second sender never caused a delivery: with another request playing continuously on the same or another channel, the legitimate sender heard it and did not play in 52 of 52 attempts, and the receiver's lookup of the other request failed; intermittent rivals, two overlapping requests and risk frames were never delivered either. The hard case is a second request that is genuinely registered on the server and starts with the legitimate one: both resolve, the preambles collide, and the only protection is the conflict warning. Eleven of 34 such attempts were undue deliveries, all of the competing request, with no warning or with one 3.2–4.9 s after delivery. By build, these were 6 of 16 attempts with 4.0.0, 5 of 10 with 4.1.0 and 0 of 8 with 4.2.0, where every attempt was delivered with a warning after a median 1.8 s (1.4–2.5 s). No noise or quiet attempt delivered a wrong request (0 of 172).
+
+*Table F2. Attempts with another sender in the room.*
+
+| Scenario | Attempts | As intended | Undue delivery | Inconclusive |
+|---|---:|---:|---:|---:|
+| Another request, continuous, same or other channel | 52 | 52 | 0 | 0 |
+| Another request, intermittent (with or without bar noise) | 8 | 8 | 0 | 0 |
+| Two overlapping requests, no legitimate sender | 4 | 4 | 0 | 0 |
+| Risk frames | 3 | 3 | 0 | 0 |
+| Complete unregistered request, no legitimate sender | 4 | 2 (read, as designed) | 0 | 2 (not heard) |
+| Competing registered request, 0 / 1.5 / 4 s after | 34 | 22 | 11 | 1 |
+
+**Limits.** One device pair, one room, recordings played by laptop speakers, small cells (2–30 attempts per scenario), no absolute levels, worst-case geometry (no layout in the easy class; a counter with the noise 1–2 m away was not measured), and a private application around earlier builds rather than this repository's code. Section 9 lists them with the simulation's own limits.
+
 ## 7. Session layer and security
 
 The modem moves one text from a speaker to a microphone, intact or not at all. The session layer turns that into a two-party exchange. It is specified in [SESSION.md](docs/SESSION.md) and implemented in TypeScript ([`web/src/session/`](web/src/session), the reference), Swift, Kotlin and C, sharing the test vectors `session-acks.json`, `v4-acks.json`, `v4-risk.json` and `security-levels.json` in [`test-vectors/`](test-vectors). Its security model, including what it does not protect against, is in [SECURITY.md](docs/SECURITY.md). **The session layer is not part of the benchmark in Section 6**; its behaviour is checked by simulated tests in each implementation (in TypeScript `session.test.ts`, `adapt.test.ts`, `security.test.ts` and `frames.test.ts`; in Swift `SessionAir.swift`, in Kotlin `SimAir.kt`, in C `test_session.c`), which mix the sound of several simulated devices into each microphone with white noise.
@@ -299,24 +372,25 @@ The table collects the comparison in one place. Every row refers to the evidence
 | White noise, full band and equal peak | 2–8 dB lower SNR90 than ggwave ultrasound (`wide` equal); 1–15 dB at equal peak | — | Full band favours narrow bands by construction; about 3–5 dB per unit of energy. Section 6.2 |
 | Echo (one synthetic profile) | Costs 4 dB relative to white noise | Costs 8 dB | 4–12 dB difference with one transmission, 0–8 dB with two. Section 6.3 |
 | Pink and babble-like noise | Pink: −20 dB on the 2- and 3-tone channels, −16 dB on `wide` | Pink: −16 dB (ultrasound) | Babble-like: both at the grid floor. Section 6.3 |
-| Most noise-tolerant mode measured | `top` robust: −16 dB (4 dB grid), 4.32 s for 32 B | `mt-normal`: −20 dB, 16.9 s for 32 B; receiver must know the length | Sections 6.3 and 6.5 (footnote 2) |
+| Most noise-tolerant mode measured | `top` robust: −16 dB (4 dB grid), 4.32 s for 32 B | `mt-normal`: −20 dB, 16.9 s for 32 B, also when moved to 18 kHz; receiver must know the length | Sections 6.3, 6.5 (footnote 2) and 6.7 |
 | Wrong messages delivered | 0 in 87,380 trials; CRC-32 over the text | 34 in 67,320 trials (32 at 8 B); no checksum after RS | Section 6.5 |
 | Airtime, short messages (8 B) | 0.96 s (`wide`) to 1.57 s (`top`) | 1.00 s (fastest) | Section 6.4 |
 | Airtime, 128 B | 2.53 s (`wide`), 4.41 s (`high`), 6.30 s (`top`) | 4.59 s (fastest) | Section 6.4 |
 | Maximum message per transmission | 335–2,114 B (30 s cap) | 140 B (64 B fixed length) | Section 6.4 |
-| Audibility | `top` at 18–19.5 kHz, `high` at 17.25–19.5 kHz; an audible channel | Ultrasound at 15–19.4 kHz; audible, DT and MT protocols | Section 3. No listening test |
+| Audibility | `top` at 18–19.5 kHz, `high` at 17.25–19.5 kHz; an audible channel | No built-in mode above 18 kHz: ultrasound at 15–19.4 kHz; audible, DT and MT protocols | Section 3. No listening test |
+| Above 18 kHz, same span | `top`: −14 dB, 2.33 s for 32 B, 6.69 s for 140 B; robust −16 dB, 4.32 s | Moved there (custom): DT −2 to −4 dB, 3.69–9.71 s for 32 B; MT −18 to −20 dB, 5.63–16.90 s, fixed length, ≤ 64 B, wrong 8-byte payloads | Section 6.7 |
 | CPU while idle | 371–463× real time | 18,993× | ggwave 41–51× lighter. Section 6.6 |
 | CPU while decoding | 426–533× real time | 660–5,903× | ggwave 1.2–14× lighter. Section 6.6 |
 | Code and memory | C: no `malloc`; ≈ 35 KB object code on the host (+ ≈ 19 KB session layer); ESP32-S3 image 287 KB, ≈ 161 KB static RAM with the session layer (build only) | ≈ 60 KB object code on the host; microcontroller footprint not measured here | Section 5 |
 | Acks, clash detection, alerts, adaptation | Specified; implemented in all four languages; simulated tests | Not provided | Section 7, not measured in the benchmark |
 | Implementations and platforms | Four native implementations (TypeScript, Swift, Kotlin, C99) sharing test vectors, covering the browser, iOS, Android, desktop and ESP32-S3 | One C++ core with ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and examples for Arduino, RP2040 and ESP32 boards | Repositories; not measured |
-| Maturity | New; no over-the-air measurement yet; ESP32 demo not yet run on a board | Years of public use, a larger community, a single self-contained source file | Not measured |
+| Maturity | New; over-the-air data from one device pair in one room (Section 6.8); ESP32 demo not yet run on a board | Years of public use, a larger community, a single self-contained source file | Not measured |
 
 ## 9. Limitations
 
 **Scope of the evidence**
 
-- **Simulation only.** The channel has no speaker or microphone frequency response, no non-linearity, no automatic gain control or noise suppression, and no measured room response. Many phone speakers and microphones lose sensitivity above about 17 kHz, which would affect `top` (18–19.5 kHz) the most and could change the ranking of the modes. Apart from one recorded transmission in the test suite, there is no over-the-air test yet.
+- **Mostly simulation.** The comparison with ggwave runs on a simulated channel with no speaker or microphone frequency response, no non-linearity, no automatic gain control or noise suppression, and no measured room response. Many phone speakers and microphones lose sensitivity above about 17 kHz, which would affect `top` (18–19.5 kHz) the most. The over-the-air data (Section 6.8) covers bysound only, with one device pair in one room, a private application built on earlier releases of the same format, worst-case noise placement and no absolute sound levels.
 - **No hardware measurements.** The ESP32 demo builds but has not been run on a board; it needs an external I2S microphone and amplifier. CPU load was measured only on a desktop host.
 - **No listening test.** The statements about audibility rest on general knowledge of adult hearing, not on a test with listeners. Younger listeners hear higher frequencies, and a speaker driven hard can produce audible artefacts.
 - **Only the C receiver was measured.** Soft symbols, erasure decoding and lap combining (items 7, 9 and 13) exist in the TypeScript, Swift and Kotlin receivers and are not in these numbers. Clash detection and text packing were not exercised either.
@@ -328,13 +402,13 @@ The table collects the comparison in one place. Every row refers to the evidence
 - **Prior information.** The bysound receiver is told the profile; ggwave listens to all its protocols.
 - **Full-band SNR favours narrowband modes by construction.** The in-band and equal-peak figures are given alongside for that reason, and the energy-per-message figure in Section 6.2 shows that part of the remaining difference is transmission time.
 - **Code rate differs** between the libraries and with message length, so the comparison is between complete systems, not between detectors at equal redundancy.
-- **ggwave options not tested:** its direct-sequence spreading mode, 44.1 kHz operation, and receivers restricted to one protocol.
+- **ggwave options not tested:** its direct-sequence spreading mode and 44.1 kHz operation. A receiver restricted to a subset of protocols was tested only for the DT/MT protocols moved to 18 kHz (Section 6.7), which is itself a custom configuration of ggwave.
 
 **Statistics and models**
 
 - 30–50 trials per cell (20 at 512 B, 10 at 2048 B) on a 2 or 4 dB grid, with no confidence intervals. SNR90 values are quantised to the grid, and differences of one grid step are within the resolution of the method.
 - The noise models are synthetic; the babble-like noise is shaped noise, not recorded speech. The echo is a single two-tap profile.
-- The noiseless point (signal at −40 dBFS with digital silence around it) does not occur with a real microphone. It affects ggwave's `dt-normal` and `dt-fast` rows and probably part of the mono-tone wrong payloads.
+- The noiseless point (signal at −40 dBFS with no noise at all) does not occur with a real microphone. It makes ggwave's DT receiver detect a false end marker in some trials (Section 6.2), which removes the SNR90 of the built-in `dt-normal` and `dt-fast` rows, and probably accounts for part of the mono-tone wrong payloads.
 - Payloads are random ASCII without digits. Real payloads with numbers would be shorter on bysound because of digit packing.
 
 **Security**
@@ -343,12 +417,12 @@ The table collects the comparison in one place. Every row refers to the evidence
 
 ## 10. Conclusion
 
-bysound keeps ggwave's core (MFSK on a 46.875 Hz grid with Reed–Solomon) and changes the framing and the receiver. In this simulation the two detectors are within 0–3 dB of each other at equal in-band SNR. The larger differences come from design choices around the detector: narrow channels and a lower peak-to-average power ratio give more margin against broadband noise for the same speaker level, echo subtraction accounts for a 4 dB smaller echo penalty under one synthetic echo, and RS in blocks with an end-to-end CRC-32 allows longer messages and produced no wrong delivery in 87,380 trials. On top of the modem, a session layer adds acknowledgements, second-sender detection, alerts and automatic channel adaptation; it is specified and implemented in all four languages but not measured here. The costs are CPU, most visibly while idle, and airtime for very short messages on the narrow channels. Whether these results hold over the air, with real speakers, microphones and rooms, has not been measured and is the next step. The code, test vectors, benchmark and raw results are MIT-licensed.
+bysound keeps ggwave's core (MFSK on a 46.875 Hz grid with Reed–Solomon) and changes the framing and the receiver. In this simulation the two detectors are within 0–3 dB of each other at equal in-band SNR. The larger differences come from design choices around the detector: narrow channels and a lower peak-to-average power ratio give more margin against broadband noise for the same speaker level, echo subtraction accounts for a 4 dB smaller echo penalty under one synthetic echo, and RS in blocks with an end-to-end CRC-32 allows longer messages and produced no wrong delivery in 87,380 trials. On top of the modem, a session layer adds acknowledgements, second-sender detection, alerts and automatic channel adaptation; it is specified and implemented in all four languages but not measured here. The costs are CPU, most visibly while idle, and airtime for very short messages on the narrow channels. Above 18 kHz, where ggwave has no built-in mode, `top` needs 10–12 dB less SNR than ggwave's dual-tone mode moved there; ggwave's mono-tone mode moved there tolerates 4–6 dB more noise than `top`, at 2.4–7.3× the airtime, with a receiver that must know the length. Over the air, with one phone and one tablet, the receiver needed the same SNR as in simulation (within about 2 dB); failures came from noise placed close to the microphone, and no wrong message was delivered in 172 attempts without a rival. Measuring ggwave on the same real setup, more devices and rooms, and absolute sound levels is the next step. The code, test vectors, benchmark and raw results are MIT-licensed.
 
 ## Reproducibility
 
 ```sh
-cd bench && ./fetch-ggwave.sh && make && make run     # ≈ 8 min on an Apple M4 Pro
+cd bench && ./fetch-ggwave.sh && make && make run     # ≈ 11 min on an Apple M4 Pro (`make inaudible`: Section 6.7 only, ≈ 2.5 min)
 ```
 
 Raw CSV files, the summary and every chart are in [`bench/results/`](bench/results). Results are deterministic except for the CPU columns.

@@ -3,8 +3,12 @@
 //   bench info  <outdir>                      deterministic tables: airtime, max payload, PAPR, occupied band, resampler check
 //   bench jobs  [plan]                         number of jobs in a plan
 //   bench run   <plan> <shard> <nshards> <out.csv>
+//   bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial> [noise_snr]   replay one trial verbosely
+//   bench scan  <size> <n> [inaudible]          noiseless delivery scan
+//   bench dither <plan>...                      ggwave DT clean-point failures, re-run with noise at +60 dB SNR
 //
-// Plans: snr, size, cond, rate44, mtfixed, idle, all (everything except idle), quick (smoke test).
+// Plans: snr, size, cond, rate44, mtfixed, idle, all (everything except the idle and inaudible plans), quick (smoke test),
+// inaudible (bysound top vs ggwave DT/MT moved to 18 kHz; same seeds as snr/cond/size) and inaudible-idle.
 // Every trial is seeded from (plan cell without the system/config, trial index), so both systems see the same payload,
 // the same lead silence and the same noise realization.
 #include "bysound.h"
@@ -62,6 +66,7 @@ struct Config {
   std::string name;  // e.g. "bysound top/normal", "ggwave ultrasound-fast"
   int band = 0, profile = 0;            // bysound
   int proto = 0; bool fixed = false;    // ggwave (fixed: fixed-length mode, payloadLength = payload size)
+  int freq = 0;                         // ggwave: 0 = library defaults; > 0 = DT/MT moved to start at this FFT bin (see gg_protocols)
 };
 static std::vector<Config> bys_configs() {
   static const char *bn[] = { "top", "high", "upper", "mid", "audible", "xhigh", "wide" };
@@ -83,6 +88,44 @@ static std::vector<Config> gg_configs(bool include_mt_fixed) {
     static const P mt[] = { { GGWAVE_PROTOCOL_MT_NORMAL, "mt-normal" }, { GGWAVE_PROTOCOL_MT_FAST, "mt-fast" }, { GGWAVE_PROTOCOL_MT_FASTEST, "mt-fastest" } };
     for (auto &p : mt) { Config c; c.sys = GGWAVE; c.proto = p.id; c.fixed = true; c.name = std::string("ggwave ") + p.n + " (fixed-len)"; v.push_back(c); }
   }
+  return v;
+}
+
+// ggwave has no built-in protocol above 18 kHz (ultrasound = 15.0-19.4 kHz). Its 2-tone DT protocols (2 x 16 bins) and 1-tone MT
+// protocols (16 bins) fit in bysound top's span when moved to start at bin 384 = 18000 Hz / 46.875 Hz: DT 18.0-19.5 kHz, MT
+// 18.0-18.75 kHz. Done only through ggwave's public C API (ggwave_tx/rxProtocolSetFreqStart, ggwave_rxToggleProtocol); every
+// other parameter keeps its library default. DT's start/end markers are placed from the protocol's own freqStart (bitFreq), so
+// they move with it; the receiver's marker search and fixed-length normalisation use the enabled rx protocols (minFreqStart).
+static const int GG_BIN_18K = 384;
+static std::vector<Config> gg_inaudible_configs() {
+  struct P { int id; const char *n; bool fixed; };
+  static const P ps[] = {
+    { GGWAVE_PROTOCOL_DT_NORMAL, "dt-normal", false }, { GGWAVE_PROTOCOL_DT_FAST, "dt-fast", false }, { GGWAVE_PROTOCOL_DT_FASTEST, "dt-fastest", false },
+    { GGWAVE_PROTOCOL_MT_NORMAL, "mt-normal", true }, { GGWAVE_PROTOCOL_MT_FAST, "mt-fast", true }, { GGWAVE_PROTOCOL_MT_FASTEST, "mt-fastest", true },
+  };
+  std::vector<Config> v;
+  for (auto &p : ps) {
+    Config c; c.sys = GGWAVE; c.proto = p.id; c.fixed = p.fixed; c.freq = GG_BIN_18K;
+    c.name = std::string("ggwave ") + p.n + " @18k" + (p.fixed ? " (fixed-len)" : "");
+    v.push_back(c);
+  }
+  return v;
+}
+// Sets ggwave's global protocol tables, which an instance copies when it is created. freq = 0: library defaults (every protocol
+// enabled on rx, DT/MT at bin 24). freq > 0: DT and MT start at bin `freq` on tx and rx, and the receiver has only those six enabled.
+static void gg_protocols(int freq) {
+  for (int id = GGWAVE_PROTOCOL_AUDIBLE_NORMAL; id <= GGWAVE_PROTOCOL_MT_FASTEST; id++) {
+    bool dtmt = id >= GGWAVE_PROTOCOL_DT_NORMAL;
+    ggwave_rxToggleProtocol((ggwave_ProtocolId)id, freq == 0 || dtmt);
+    if (dtmt) {
+      ggwave_txProtocolSetFreqStart((ggwave_ProtocolId)id, freq ? freq : 24);
+      ggwave_rxProtocolSetFreqStart((ggwave_ProtocolId)id, freq ? freq : 24);
+    }
+  }
+}
+static std::vector<Config> bys_top_configs() {
+  std::vector<Config> v;
+  for (auto &c : bys_configs()) if (c.band == 0) v.push_back(c);
   return v;
 }
 
@@ -119,16 +162,19 @@ struct Wave {
   const char *why = nullptr;  // when !ok: "exceeds 30 s cap" (bysound, BYS_E_TOO_LONG) or "cannot send" (ggwave limits)
 };
 static int g_tx = -1;
-static int g_tx_fixed_len = 0;
-static int gg_tx_instance(int fixed_len) {
-  if (g_tx >= 0 && g_tx_fixed_len == fixed_len) return g_tx;
+static int g_tx_fixed_len = 0, g_tx_freq = 0;
+static int gg_tx_instance(int fixed_len, int freq) {
+  if (g_tx >= 0 && g_tx_fixed_len == fixed_len && g_tx_freq == freq) return g_tx;
   if (g_tx >= 0) ggwave_free(g_tx);
   ggwave_Parameters p = ggwave_getDefaultParameters();
   p.payloadLength = fixed_len > 0 ? fixed_len : -1;
   p.sampleFormatOut = GGWAVE_SAMPLE_FORMAT_F32;
   p.operatingMode = GGWAVE_OPERATING_MODE_TX;
+  gg_protocols(freq);
   g_tx = ggwave_init(p);
+  gg_protocols(0);
   g_tx_fixed_len = fixed_len;
+  g_tx_freq = freq;
   return g_tx;
 }
 static Wave encode(const Config &c, const std::string &msg, unsigned rate) {
@@ -152,7 +198,7 @@ static Wave encode(const Config &c, const std::string &msg, unsigned rate) {
   // ggwave silently truncates longer payloads to 140 bytes (variable length) and cannot prepare a fixed-length instance above
   // 64 bytes: both are reported as "cannot send" rather than encoded.
   if (msg.size() > (c.fixed ? 64u : 140u) || msg.empty()) { w.why = "cannot send"; return w; }
-  int inst = gg_tx_instance(c.fixed ? (int)msg.size() : 0);
+  int inst = gg_tx_instance(c.fixed ? (int)msg.size() : 0, c.freq);
   int nbytes = ggwave_encode(inst, msg.data(), (int)msg.size(), (ggwave_ProtocolId)c.proto, 10 /* GGWave::kDefaultVolume */, nullptr, 1);
   if (nbytes <= 0) return w;
   w.x.resize((size_t)nbytes / sizeof(float));
@@ -322,6 +368,7 @@ struct RxResult {
   double cpu_s = 0;
 };
 static int g_verbose = 0;
+static double g_snr_override = NAN;  // replay only: run the trial with its condition's noise at this SNR instead of the cell's (same seed)
 static void dump(const char *tag, const char *d, size_t n) {
   printf("    %s (%zu bytes): \"", tag, n);
   for (size_t i = 0; i < n; i++) { unsigned char c = (unsigned char)d[i]; if (c >= 0x20 && c < 0x7f && c != '"') putchar(c); else printf("\\x%02x", c); }
@@ -347,13 +394,13 @@ static bys_demod_t *g_demod;
 static uint8_t g_demod_out[255 * 48 + 8];
 // bysound receiver listens to every channel its profile has (normal: 7 channels; robust: top, high, upper, mid): it does not
 // know in advance which one the sender uses, like ggwave's receiver, which by default tries every protocol.
-static RxResult rx_sbs(const std::vector<int16_t> &pcm, unsigned rate, int profile, const std::string *expect) {
+static RxResult rx_sbs(const std::vector<int16_t> &pcm, unsigned rate, int profile, const std::string *expect, uint8_t band_mask = 0) {
   RxResult res;
   if (!g_demod) g_demod = (bys_demod_t *)calloc(1, sizeof(bys_demod_t));
   SbsCtx ctx{ expect, &res, 0 };
   double t0 = cpu_now();
   bys_demod_cfg_t cfg; bys_demod_cfg_default(&cfg);
-  cfg.sample_rate = rate; cfg.profile = (bys_profile_t)profile; cfg.band_mask = profile ? 0x0f : 0x7f;
+  cfg.sample_rate = rate; cfg.profile = (bys_profile_t)profile; cfg.band_mask = band_mask ? band_mask : profile ? 0x0f : 0x7f;
   cfg.out = g_demod_out; cfg.out_cap = sizeof g_demod_out; cfg.cb = bys_cb; cfg.user = &ctx;
   int r = bys_demod_init(g_demod, &cfg);
   if (r != BYS_OK) { fprintf(stderr, "bys_demod_init failed %d\n", r); exit(3); }
@@ -367,15 +414,17 @@ static RxResult rx_sbs(const std::vector<int16_t> &pcm, unsigned rate, int profi
   return res;
 }
 // ggwave receiver: library defaults (48 kHz, 1024 samples per frame, every protocol enabled, variable-length payloads);
-// input format set to int16 because that is what the channel produces.
-static RxResult rx_gg(const std::vector<int16_t> &pcm, int fixed_len, const std::string *expect) {
+// input format set to int16 because that is what the channel produces. freq > 0: only DT/MT, moved to that bin (gg_protocols).
+static RxResult rx_gg(const std::vector<int16_t> &pcm, int fixed_len, const std::string *expect, int freq = 0) {
   RxResult res;
   double t0 = cpu_now();
   ggwave_Parameters p = ggwave_getDefaultParameters();
   p.payloadLength = fixed_len > 0 ? fixed_len : -1;
   p.sampleFormatInp = GGWAVE_SAMPLE_FORMAT_I16;
   p.operatingMode = GGWAVE_OPERATING_MODE_RX;
+  gg_protocols(freq);
   int inst = ggwave_init(p);
+  gg_protocols(0);
   if (inst < 0) { fprintf(stderr, "ggwave_init failed\n"); exit(3); }
   static char buf[1024];
   for (size_t i = 0; i < pcm.size(); i += CHUNK) {
@@ -397,6 +446,7 @@ static RxResult rx_gg(const std::vector<int16_t> &pcm, int fixed_len, const std:
 // ---------------------------------------------------------------- plans
 struct Cell {
   std::string plan;
+  std::string seed_plan;  // plan name used in the seed key (empty = plan): the inaudible plan reuses the snr/cond/size seeds
   Config cfg;
   unsigned rate;
   std::string size;   // payload label
@@ -413,9 +463,10 @@ static std::vector<Cell> make_plan(const std::string &plan) {
   auto all = bys_configs();
   auto gg = gg_configs(false);
   all.insert(all.end(), gg.begin(), gg.end());
+  std::string seed_plan;
   auto add = [&](const std::string &pl, const Config &c, unsigned rate, const std::string &size, const std::string &cond, const std::vector<double> &snrs, bool with_clean, int reps, int trials) {
-    for (double s : snrs) cells.push_back(Cell{ pl, c, rate, size, cond, s, false, reps, trials });
-    if (with_clean) cells.push_back(Cell{ pl, c, rate, size, cond, 0, true, reps, trials });
+    for (double s : snrs) cells.push_back(Cell{ pl, seed_plan, c, rate, size, cond, s, false, reps, trials });
+    if (with_clean) cells.push_back(Cell{ pl, seed_plan, c, rate, size, cond, 0, true, reps, trials });
   };
   const bool everything = plan == "all";
   // 1. main curve: AWGN, 32-byte ASCII, 48 kHz, single and double transmission
@@ -451,6 +502,24 @@ static std::vector<Cell> make_plan(const std::string &plan) {
     auto g = grid(-32, 4, 4);
     for (auto &c : gg_configs(true)) if (c.fixed) for (const char *sz : { "8", "32", "64" }) add("mtfixed", c, 48000, sz, "awgn", g, true, 1, 30);
   }
+  // 6. inaudible channels: bysound top (normal, robust) vs ggwave DT/MT moved to 18 kHz. Same grids, trial counts and seeds as the
+  // snr (1 transmission), cond (1 transmission) and size plans, so the bysound rows reproduce those plans exactly.
+  if (plan == "inaudible") {
+    auto cfgs = bys_top_configs();
+    auto gi = gg_inaudible_configs();
+    cfgs.insert(cfgs.end(), gi.begin(), gi.end());
+    seed_plan = "snr";
+    for (auto &c : cfgs) add("inaudible-snr", c, 48000, "32", "awgn", grid(-36, 4, 2), true, 1, 50);
+    seed_plan = "cond";
+    for (const char *cd : { "echo", "pink", "babble", "drift+100", "drift-100", "combo" })
+      for (auto &c : cfgs) add("inaudible-cond", c, 48000, "32", cd, grid(-32, 4, 4), true, 1, 30);
+    seed_plan = "size";
+    for (auto &c : cfgs) for (const char *sz : { "8", "32", "64", "128", "140" }) {
+      if (!encode(c, make_payload(sz, 0), 48000).ok) continue;  // MT fixed-length mode stops at 64 B
+      add("inaudible-size", c, 48000, sz, "awgn", grid(-32, 4, 4), true, 1, 30);
+    }
+    seed_plan.clear();
+  }
   if (plan == "quick") {
     for (auto &c : all) add("quick", c, 48000, "32", "awgn", { -12, -4 }, true, 1, 2);
   }
@@ -466,7 +535,7 @@ static std::vector<Job> jobs_of(const std::vector<Cell> &cells) {
 
 static std::string fmt(double v, int prec = 6) { char b[64]; snprintf(b, sizeof b, "%.*g", prec, v); return b; }
 
-static void run_trial(FILE *f, const Cell &c, int t);
+static int run_trial(FILE *f, const Cell &c, int t);
 static void run_plan(const std::string &plan, int shard, int nshards, const char *outpath) {
   auto cells = make_plan(plan);
   auto jobs = jobs_of(cells);
@@ -481,23 +550,24 @@ static void run_plan(const std::string &plan, int shard, int nshards, const char
   fclose(f);
 }
 
-static void run_trial(FILE *f, const Cell &c, int t) {
+static int run_trial(FILE *f, const Cell &c, int t) {
   {
     std::string msg = make_payload(c.size, t);
     Wave w = encode(c.cfg, msg, c.rate);
     // same seed for both systems: the key leaves out the system and configuration
-    std::string key = c.plan + "|" + std::to_string(c.rate) + "|" + c.size + "|" + c.cond + "|" + (c.clean ? std::string("clean") : fmt(c.snr)) + "|" + std::to_string(c.reps) + "|" + std::to_string(t);
+    std::string key = (c.seed_plan.empty() ? c.plan : c.seed_plan) + "|" + std::to_string(c.rate) + "|" + c.size + "|" + c.cond + "|" + (c.clean ? std::string("clean") : fmt(c.snr)) + "|" + std::to_string(c.reps) + "|" + std::to_string(t);
     double air = 0, act = 0;
     int success = 0;
     RxResult rr;
     Received rx;
     if (w.ok) {
-      rx = channel(w, c.cfg.sys, c.reps, c.rate, cond_of(c.cond), c.snr, c.clean, fnv64(key));
+      bool ov = !std::isnan(g_snr_override);
+      rx = channel(w, c.cfg.sys, c.reps, c.rate, cond_of(c.cond), ov ? g_snr_override : c.snr, ov ? false : c.clean, fnv64(key));
       size_t gap = c.cfg.sys == GGWAVE && c.reps > 1 ? (size_t)(0.35 * c.rate) * (size_t)(c.reps - 1) : 0;
       air = (double)(w.x.size() * (size_t)c.reps + gap) / c.rate;
       act = (double)w.active * c.reps / c.rate;
       if (c.cfg.sys == SBSND) rr = rx_sbs(rx.pcm, c.rate, c.cfg.profile, &msg);
-      else rr = rx_gg(rx.pcm, c.cfg.fixed ? (int)msg.size() : 0, &msg);
+      else rr = rx_gg(rx.pcm, c.cfg.fixed ? (int)msg.size() : 0, &msg, c.cfg.freq);
       success = rr.n_correct > 0;
     }
     double lat = rr.first_ok_sample >= 0 ? (double)((long)rr.first_ok_sample - (long)rx.lead) / c.rate : -1;
@@ -506,12 +576,46 @@ static void run_trial(FILE *f, const Cell &c, int t) {
             w.ok ? success : -1, rr.n_correct, rr.n_wrong, rr.n_failed, fmt(air).c_str(), fmt(act).c_str(), fmt(lat).c_str(),
             fmt((double)rx.pcm.size() / c.rate).c_str(), fmt(rr.cpu_s).c_str(), fmt(rx.clip_frac, 3).c_str());
     if (g_verbose) { printf("  lead %zu samples, %zu samples total, clip %.4f\n", rx.lead, rx.pcm.size(), rx.clip_frac); dump("sent", msg.data(), msg.size()); }
+    return w.ok ? success : -1;
   }
 }
 
+// ggwave DT failures at the noiseless point: every clean-point trial of a ggwave DT configuration in the given plans is run as in the
+// plan and, if it fails, again with the condition's noise at +60 dB SNR (-100 dBFS RMS for a -40 dBFS signal, about the int16 quantisation noise) and the same seed.
+static void dither_check(int nplans, char **plans) {
+  FILE *nul = fopen("/dev/null", "w");
+  for (int i = 0; i < nplans; i++) {
+    std::map<std::string, std::vector<int>> per;  // config -> clean trials, failures, failures decoded with +60 dB noise
+    std::vector<std::string> order;
+    for (auto &c : make_plan(plans[i])) {
+      if (!c.clean || c.cfg.sys != GGWAVE || c.cfg.name.find(" dt-") == std::string::npos) continue;
+      if (!per.count(c.cfg.name)) { per[c.cfg.name] = { 0, 0, 0 }; order.push_back(c.cfg.name); }
+      auto &v = per[c.cfg.name];
+      for (int t = 0; t < c.trials; t++) {
+        g_snr_override = NAN;
+        int s0 = run_trial(nul, c, t);
+        if (s0 < 0) continue;
+        v[0]++;
+        if (s0) continue;
+        v[1]++;
+        g_snr_override = 60;
+        v[2] += run_trial(nul, c, t) == 1;
+        g_snr_override = NAN;
+      }
+    }
+    for (auto &n : order) printf("%-26s plan %-9s: %d clean trials, %d failed, %d of those decoded with noise at +60 dB SNR\n", n.c_str(), plans[i], per[n][0], per[n][1], per[n][2]);
+  }
+  fclose(nul);
+}
+
 // Replays one trial of a plan verbosely (same seed as in the CSV): bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial>
+// [noise_snr]: with the extra argument, the same trial (payload, lead silence, seed) is run with the condition's noise at noise_snr dB,
+// e.g. a clean-point trial at +60 dB (-100 dBFS RMS, about the int16 quantisation noise) to check whether its failure needs exact digital silence.
 static void replay(const char *plan, const char *config, const char *size, const char *cond, const char *snr, int reps, int trial) {
-  for (auto &c : make_plan(plan)) {
+  // the inaudible plan holds three sub-plans: "inaudible-snr", "inaudible-cond" or "inaudible-size" (the CSV's plan column) selects one
+  std::string pl(plan), base = pl.rfind("inaudible-", 0) == 0 ? "inaudible" : pl;
+  for (auto &c : make_plan(base)) {
+    if (base != pl && c.plan != pl) continue;
     if (c.cfg.name != config || c.size != size || c.cond != cond || c.reps != reps) continue;
     if (!strcmp(snr, "clean") ? !c.clean : (c.clean || fmt(c.snr) != fmt(atof(snr)))) continue;
     g_verbose = 1;
@@ -615,12 +719,14 @@ static void codec_scan(const char *size, int n) {
 
 // Fraction of random payloads that a noiseless channel fails to deliver, per configuration of both systems (encoder output at
 // full scale straight into the receiver, 12345 zero samples before it and 1 s after, 1024-sample chunks).
-static void scan_sbs(const char *size, int n) {
-  auto all = bys_configs();
-  auto gg = gg_configs(false);
+// inaudible: bysound top only and ggwave DT/MT moved to 18 kHz (receiver restricted to them).
+static void scan_sbs(const char *size, int n, bool inaudible) {
+  auto all = inaudible ? bys_top_configs() : bys_configs();
+  auto gg = inaudible ? gg_inaudible_configs() : gg_configs(false);
   all.insert(all.end(), gg.begin(), gg.end());
   for (auto &c : all) {
     int fails = 0, wrong = 0; std::string which;
+    if (!encode(c, make_payload(size, 0), 48000).ok) { printf("%-26s %s B: cannot send\n", c.name.c_str(), size); continue; }
     for (int t = 0; t < n; t++) {
       std::string msg = make_payload(size, t);
       Wave w = encode(c, msg, 48000);
@@ -628,7 +734,7 @@ static void scan_sbs(const char *size, int n) {
       std::vector<int16_t> pcm(12345, 0);
       for (float v : w.x) pcm.push_back((int16_t)std::lrint(v * 32768.0f));
       pcm.insert(pcm.end(), 48000, 0);
-      RxResult rr = c.sys == SBSND ? rx_sbs(pcm, 48000, c.profile, &msg) : rx_gg(pcm, 0, &msg);
+      RxResult rr = c.sys == SBSND ? rx_sbs(pcm, 48000, c.profile, &msg) : rx_gg(pcm, c.fixed ? (int)msg.size() : 0, &msg, c.freq);
       wrong += rr.n_wrong;
       if (!rr.n_correct) { fails++; if (which.size() < 60) which += " " + std::to_string(t); }
     }
@@ -638,14 +744,16 @@ static void scan_sbs(const char *size, int n) {
 
 // ---------------------------------------------------------------- noise-only false detections
 // Each receiver listens to 10 segments x 60 s of each noise type at -20 dBFS RMS (no transmission at all).
-static void run_idle(int shard, int nshards, const char *outpath) {
+// inaudible: bysound listening to top only, and ggwave restricted to DT/MT at 18 kHz (variable length, and fixed length 32 B).
+static void run_idle(int shard, int nshards, const char *outpath, bool inaudible) {
   FILE *f = fopen(outpath, "w");
   if (!f) { perror(outpath); exit(1); }
   fprintf(f, "receiver,noise,segment,seconds,detections,failed,cpu_s\n");
   const char *rxs[] = { "bysound normal (7 channels)", "bysound robust (4 channels)", "ggwave (all protocols; variable length)" };
+  const char *rxi18[] = { "bysound normal (top only)", "bysound robust (top only)", "ggwave DT/MT @18k only (variable length)", "ggwave DT/MT @18k only (fixed length 32 B)" };
   const char *nn[] = { "white", "pink", "babble" };
-  int job = 0;
-  for (int rxi = 0; rxi < 3; rxi++) for (int nt = 0; nt < 3; nt++) for (int seg = 0; seg < 10; seg++, job++) {
+  int job = 0, nrx = inaudible ? 4 : 3;
+  for (int rxi = 0; rxi < nrx; rxi++) for (int nt = 0; nt < 3; nt++) for (int seg = 0; seg < 10; seg++, job++) {
     if (job % nshards != shard) continue;
     Rng r(fnv64("idle|" + std::string(nn[nt]) + "|" + std::to_string(seg)));
     size_t n = 60 * 48000;
@@ -655,8 +763,10 @@ static void run_idle(int shard, int nshards, const char *outpath) {
     double g = 0.1 / std::sqrt(en);
     std::vector<int16_t> pcm(n);
     for (size_t i = 0; i < n; i++) { double s = std::nearbyint(noise[i] * g * 32768.0); pcm[i] = (int16_t)std::max(-32768.0, std::min(32767.0, s)); }
-    RxResult rr = rxi < 2 ? rx_sbs(pcm, 48000, rxi, nullptr) : rx_gg(pcm, 0, nullptr);
-    fprintf(f, "%s,%s,%d,60,%d,%d,%s\n", rxs[rxi], nn[nt], seg, rr.n_wrong + rr.n_correct, rr.n_failed, fmt(rr.cpu_s).c_str());
+    RxResult rr;
+    if (!inaudible) rr = rxi < 2 ? rx_sbs(pcm, 48000, rxi, nullptr) : rx_gg(pcm, 0, nullptr);
+    else rr = rxi < 2 ? rx_sbs(pcm, 48000, rxi, nullptr, 0x01) : rx_gg(pcm, rxi == 3 ? 32 : 0, nullptr, GG_BIN_18K);
+    fprintf(f, "%s,%s,%d,60,%d,%d,%s\n", inaudible ? rxi18[rxi] : rxs[rxi], nn[nt], seg, rr.n_wrong + rr.n_correct, rr.n_failed, fmt(rr.cpu_s).c_str());
   }
   fclose(f);
 }
@@ -694,6 +804,8 @@ static void info(const char *outdir) {
   auto all = bys_configs();
   auto gg = gg_configs(true);
   all.insert(all.end(), gg.begin(), gg.end());
+  auto gi = gg_inaudible_configs();
+  all.insert(all.end(), gi.begin(), gi.end());
   for (auto &c : all) for (unsigned rate : { 48000u, 44100u }) {
     if (rate == 44100 && c.sys == GGWAVE) continue;
     for (const char *sz : { "8", "16", "32", "48", "64", "96", "128", "140", "utf8", "256", "512", "1024", "2048" }) {
@@ -725,7 +837,9 @@ static void info(const char *outdir) {
   // occupied band (99 % of the signal power) and the in-band SNR offset for each noise type:
   // SNR_inband = SNR_fullband + 10 log10(P_sig_in_band / P_sig) - 10 log10(P_noise_in_band / P_noise)
   f = fopen((od + "/bands.csv").c_str(), "w");
-  fprintf(f, "system,config,rate,band_lo_hz,band_hi_hz,sig_frac,offset_white_db,offset_pink_db,offset_babble_db\n");
+  // frac_18k_19k5: share of the signal power in 18.0-19.5 kHz, taken as the 32 tone slots of bysound top (centres 18000 + 46.875 k Hz,
+  // k = 0..31, each slot +-23.4 Hz: 17976.6-19476.6 Hz), the inaudible-channel check.
+  fprintf(f, "system,config,rate,band_lo_hz,band_hi_hz,sig_frac,offset_white_db,offset_pink_db,offset_babble_db,frac_18k_19k5\n");
   std::vector<std::vector<double>> npsd[2];
   for (unsigned rate : { 48000u, 44100u }) {
     int ri = rate == 48000 ? 0 : 1;
@@ -756,7 +870,8 @@ static void info(const char *outdir) {
       double qt = 0, qi = 0; for (size_t k = 0; k < q.size(); k++) { qt += q[k]; if (k >= lo && k <= hi) qi += q[k]; }
       fprintf(f, ",%.2f", 10 * std::log10(sin_ / tot) - 10 * std::log10(qi / qt));
     }
-    fprintf(f, "\n");
+    double s18 = 0; for (size_t k = 0; k < p.size(); k++) { double fk = (double)k * hz; if (fk >= 18000.0 - 46.875 / 2 && fk < 18000.0 + 31.5 * 46.875) s18 += p[k]; }
+    fprintf(f, ",%.4f\n", s18 / tot);
   }
   fclose(f);
 
@@ -778,25 +893,29 @@ static void info(const char *outdir) {
 }
 
 int main(int argc, char **argv) {
-  ggwave_setLogFile(nullptr);
+  ggwave_setLogFile(getenv("BENCH_GGWAVE_LOG") ? stderr : nullptr);  // BENCH_GGWAVE_LOG=1: ggwave's own log on stderr (for replays)
   if (argc >= 2 && !strcmp(argv[1], "info") && argc == 3) { info(argv[2]); return 0; }
-  if (argc == 9 && !strcmp(argv[1], "trial")) { replay(argv[2], argv[3], argv[4], argv[5], argv[6], atoi(argv[7]), atoi(argv[8])); return 0; }
+  if ((argc == 9 || argc == 10) && !strcmp(argv[1], "trial")) {
+    if (argc == 10) g_snr_override = atof(argv[9]);
+    replay(argv[2], argv[3], argv[4], argv[5], argv[6], atoi(argv[7]), atoi(argv[8])); return 0; }
   if (argc >= 6 && !strcmp(argv[1], "repro")) { repro_sbs(atoi(argv[2]), atoi(argv[3]), argv[4], atoi(argv[5]), argc > 6 ? atoi(argv[6]) : 0, argc > 7 ? atoi(argv[7]) : 1024); return 0; }
   if (argc == 4 && !strcmp(argv[1], "codec")) { g_verbose = 1; codec_scan(argv[2], atoi(argv[3])); return 0; }
-  if (argc == 4 && !strcmp(argv[1], "scan")) { scan_sbs(argv[2], atoi(argv[3])); return 0; }
+  if (argc >= 3 && !strcmp(argv[1], "dither")) { dither_check(argc - 2, argv + 2); return 0; }
+  if ((argc == 4 || argc == 5) && !strcmp(argv[1], "scan")) { scan_sbs(argv[2], atoi(argv[3]), argc == 5 && !strcmp(argv[4], "inaudible")); return 0; }
   if (argc >= 2 && !strcmp(argv[1], "jobs")) {
     std::string plan = argc >= 3 ? argv[2] : "all";
     if (plan == "idle") { printf("90\n"); return 0; }
+    if (plan == "inaudible-idle") { printf("120\n"); return 0; }
     printf("%zu\n", jobs_of(make_plan(plan)).size());
     return 0;
   }
   if (argc == 6 && !strcmp(argv[1], "run")) {
     std::string plan = argv[2];
     int shard = atoi(argv[3]), ns = atoi(argv[4]);
-    if (plan == "idle") run_idle(shard, ns, argv[5]);
+    if (plan == "idle" || plan == "inaudible-idle") run_idle(shard, ns, argv[5], plan == "inaudible-idle");
     else run_plan(plan, shard, ns, argv[5]);
     return 0;
   }
-  fprintf(stderr, "usage: bench info <outdir> | bench jobs [plan] | bench run <plan> <shard> <nshards> <out.csv>\n");
+  fprintf(stderr, "usage: bench info <outdir> | bench jobs [plan] | bench run <plan> <shard> <nshards> <out.csv> | bench scan <size> <n> [inaudible]\n");
   return 2;
 }

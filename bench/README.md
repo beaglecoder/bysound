@@ -15,11 +15,12 @@ The bysound receiver measured here is the C one: hard decisions per symbol, echo
 ./fetch-ggwave.sh   # clones ggwave into third_party/ggwave and checks out the pinned commit (not vendored; see .gitignore)
 make                # builds build/bench (Apple clang, -O2): harness + ../c/src/*.c + ggwave.cpp
 make run            # every plan sharded over all CPUs, then the scans, then results/summary.md and results/charts/*.svg
+make inaudible      # only the inaudible comparison (bysound top vs ggwave DT/MT moved to 18 kHz), its scans and the report
 ```
 
-On the machine below, the plans of `make run` take about 7–8 min of wall time (about 4,300 s of CPU time on 12 processes), plus about 1 min for the scans. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` re-runs only the noiseless scans.
+On the machine below, the plans of `make run` take about 9 min of wall time and the scans about 2 min more (about 5,400 s of CPU time in all, on 12 processes). `make inaudible` alone takes about 2.5 min. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` / `make scans-inaudible` re-run only the noiseless scans.
 
-Results are deterministic. Re-running reproduces every CSV column except `cpu_s` and the `audio_s / cpu_s` ratios; this was checked by re-running 110 `snr` trials and comparing them row by row. Single trials can be replayed verbosely (same seed as in the CSV): `build/bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial>`, for example `build/bench trial snr "bysound top/robust" 32 awgn 4 1 4`.
+Results are deterministic. Re-running reproduces every CSV column except `cpu_s` and the `audio_s / cpu_s` ratios; this was checked by re-running 110 `snr` trials and comparing them row by row. Single trials can be replayed verbosely (same seed as in the CSV): `build/bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial> [noise_snr]`, for example `build/bench trial snr "bysound top/robust" 32 awgn 4 1 4`. For the inaudible plan, `<plan>` is the CSV's plan column (`inaudible-snr`, `inaudible-cond` or `inaudible-size`). The optional `noise_snr` re-runs the same trial with the condition's noise at that SNR, and `BENCH_GGWAVE_LOG=1` prints ggwave's own log.
 
 **Machine:** Apple M4 Pro (12 logical CPUs), macOS 27.2.1, Apple clang 21.0.0 (clang-2100.1.1.101), Python 3.15.2 (standard library only, for the report).
 
@@ -31,6 +32,7 @@ Results are deterministic. Re-running reproduces every CSV column except `cpu_s`
 |---|---|
 | bysound | normal profile on all 7 channels: `top` (~18.0–19.5 kHz, 2 tones), `high` (~17.2–19.5 kHz, 3 tones), `upper`, `mid` (~15.0–17.2 kHz), `xhigh` (4 tones), `wide` (6 tones, 15.0–19.4 kHz), `audible` (~1.9–4.8 kHz, 4 tones); robust profile on `top`, `high`, `upper`, `mid` |
 | ggwave | `audible-normal/fast/fastest`, `ultrasound-normal/fast/fastest`, `dt-normal/fast/fastest`, all in the default variable-length mode. The mono-tone `mt-*` protocols **cannot be used in variable-length mode** (ggwave refuses them: "Mono-tone protocols with variable length are not supported"), so they were run separately in fixed-length mode (section 7 of the summary), which requires the receiver to know the payload length in advance. |
+| ggwave moved to 18 kHz (`inaudible` plan only) | `dt-*@18k` and `mt-*@18k (fixed-len)`: the DT and MT protocols with their start bin moved from 24 to **384 = 18,000 Hz** (`ggwave_txProtocolSetFreqStart`, `ggwave_rxProtocolSetFreqStart`). A custom configuration: ggwave has no built-in protocol above 18 kHz. DT then spans 18.0–19.5 kHz (2 tones × 16 bins), MT 18.0–18.75 kHz (1 tone). Compared with bysound `top/normal` and `top/robust`. |
 
 The exact frequency band of each mode (the band holding 99 % of its signal power, measured from the waveform) is in `results/bands.csv`.
 
@@ -40,6 +42,7 @@ The two receivers are not given the same prior information:
 
 - bysound: one demodulator per profile, as the library is built. **The receiver is told which profile to use** (normal or robust), not the channel. For the normal profile it listens to all 7 channels (`band_mask = 0x7f`); for the robust profile to `top`, `high`, `upper` and `mid` (`0x0f`).
 - ggwave: `ggwave_getDefaultParameters()` (48 kHz, 1024 samples per frame, variable-length payloads, every protocol enabled for reception), so it searches all its protocols at once. The only change is the input format: int16 samples, because the channel produces int16 for both systems.
+- ggwave in the `inaudible` plan: the same, except that **only the six moved DT/MT protocols are enabled for reception** (`ggwave_rxToggleProtocol`), so it searches only 18.0–19.5 kHz; MT in fixed-length mode as above. The bysound receivers stay as described (all channels of the profile); `inaudible-idle` also measures bysound listening to `top` only.
 
 Audio is fed in chunks of 1024 samples to both. The TX side also uses library defaults: bysound at full level with its 350 ms trailing gap, and ggwave at `volume = 10` (`GGWave::kDefaultVolume`) with float output. Volume does not matter here because the channel normalises the level.
 
@@ -96,9 +99,11 @@ The RNG is xoshiro256\*\*. Its seed comes from (plan, rate, size, condition, SNR
 | `rate44` | bysound at 44.1 kHz, 32 B, AWGN | 30 |
 | `mtfixed` | ggwave `mt-*` in fixed-length mode, 8, 32 and 64 B | 30 |
 | `idle` | no transmission: 10 × 60 s of each noise type at −20 dBFS, into each receiver | — |
-| scans | noiseless delivery of 300–500 different payloads per configuration, and the bysound symbol-level codec round trip | — |
+| `inaudible` | bysound `top/normal` and `top/robust` against ggwave `dt-*@18k` and `mt-*@18k (fixed-len)`, one transmission, with the grids and **seeds** of three plans: `snr` (32 B, AWGN, 2 dB grid), `cond` (32 B, each impairment) and `size` (8, 32, 64, 128, 140 B; MT stops at 64 B). The 8,140 bysound trials that also exist in those plans reproduce them exactly (checked in the summary) | 50 / 30 / 30 |
+| `inaudible-idle` | as `idle`, for bysound listening to `top` only and ggwave restricted to the moved DT/MT protocols (variable length, and fixed length 32 B) | — |
+| scans | noiseless delivery of 300–500 different payloads per configuration (also for the inaudible group), the bysound symbol-level codec round trip, and `bench dither`: every clean-point trial of ggwave's DT protocols, failing ones re-run with noise at +60 dB SNR | — |
 
-In total: **157,670 transmission trials**: 87,380 for bysound and 70,290 for ggwave (67,320 in its default variable-length protocols and 2,970 in the fixed-length mono-tone runs).
+In total: **157,670 transmission trials** in the main plans: 87,380 for bysound and 70,290 for ggwave (67,320 in its default variable-length protocols and 2,970 in the fixed-length mono-tone runs). The `inaudible` plan adds **35,860**: 9,460 for bysound `top` (8,140 of them repeat main-plan trials with the same seed) and 26,400 for ggwave moved to 18 kHz (14,190 DT, 12,210 MT).
 
 **SNR90** in the tables is the lowest grid SNR from which every higher grid point, the clean point included, reached at least 90 % success. "—" means even the clean point stayed below 90 %. No confidence intervals are given; with 30–50 trials per cell, one trial moves a cell by 2–3 percentage points.
 
@@ -129,7 +134,7 @@ All 20 configurations, and the 2-transmission results, are in `results/summary.m
 - Measured **in band**, most of that gap disappears: bysound −1 to −4 dB against ggwave −1 dB. Most of bysound's full-band advantage comes from concentrating the same power into a narrower band (1.5–3 kHz for the 2- to 4-tone channels, against ggwave's 4.4 kHz), not from a better detector at equal in-band SNR.
 - At **equal peak level**, the gap grows: bysound's waveforms have a lower PAPR (6.3–11.4 dB against 12.1–12.9 dB for ggwave's 6-tone protocols), so peak-referenced SNR90 is −10 to +3 dB for bysound against +4 to +5 dB for ggwave. `wide` (+3 dB) is 1–2 dB better than ggwave ultrasound (+4/+5 dB). ggwave's DT protocols have a lower PAPR (7.3–7.8 dB) and its MT protocols 4.0 dB.
 - The modes do not take the same time to send 32 bytes, so equal power is not equal energy. Corrected for sound-on time, the full-band advantage over ggwave ultrasound fastest is about 3–5 dB in energy per message (PAPER.md, section 6.2).
-- ggwave `dt-normal` and `dt-fast` have no SNR90 because they decoded 86 % of the clean trials while decoding 100 % at 0 dB; in the full-scale noiseless scan (section 10 of the summary) they missed 0 of 500 payloads. This points to the exact digital silence of the clean point, which the SNR90 definition then penalises.
+- ggwave `dt-normal` and `dt-fast` have no SNR90 because they decoded 86 % of the clean trials while decoding 100 % at 0 dB; in the full-scale noiseless scan (section 10 of the summary) they missed 0 of 500 payloads. ggwave's log shows its receiver detecting the end marker inside the data in those trials; re-run with the same seed and noise at +60 dB SNR (−100 dBFS, about the size of the int16 quantisation noise), 134 of the 135 DT trials that failed at a clean point in any plan decode (`results/dt_clean_check.txt`). It is an artefact of noise-free input, which the SNR90 definition then penalises.
 
 ### Impairments (32 B, SNR90 in full-band dB, grid step 4, 1 transmission, 30 trials per cell)
 
@@ -148,6 +153,33 @@ The AWGN column is the `snr` plan (50 trials) read on the same 4 dB grid. "≤ �
 **Echo.** With one transmission, bysound needs 4–12 dB less SNR than ggwave under this echo: 8 dB for the 2- and 3-tone channels (−8 against +0 dB), 12 dB for `top/robust`, 4 dB for `xhigh`, `wide` and `audible`. With two transmissions ggwave's ultrasound protocols reach −4 dB, which leaves 4–8 dB (none for `wide`). Relative to AWGN alone the echo costs the bysound configurations above 4 dB and ggwave 8 dB; that 4 dB difference is the part attributable to bysound's echo subtraction.
 
 ![echo](results/charts/cond_echo_1x.svg)
+
+### Inaudible channels (18–19.5 kHz): bysound `top` vs ggwave DT/MT moved to 18 kHz
+
+ggwave's built-in protocols are audible or start at 15 kHz ("ultrasound", 15.0–19.4 kHz); its 6-tone layout would reach 22.5 kHz from 18 kHz. Its DT (2 tones) and MT (1 tone) protocols fit when their start bin is moved to 384 (18,000 Hz). DT's start/end markers are generated from the protocol's start bin, so they move too; the receiver was restricted to the moved protocols. Measured on each encoder's whole output (Welch PSD, 32 B), 99.84–99.99 % of DT's power and 99.98–100 % of MT's lies in `top`'s 32 tone slots (17,977–19,477 Hz), against 98.96 % for `top` itself (99.58 % robust); `bands.csv` column `frac_18k_19k5`. Full tables: `results/summary.md` section 11.
+
+![inaudible channels](results/charts/snr_inaudible_1x.svg)
+
+| configuration | SNR90 full-band | in-band | peak-ref. | echo | pink | airtime 32 B | airtime 140 B | wrong payloads |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | −14 | −2 | −7 | −8 | −20 | 2.33 s | 6.69 s | 0 |
+| bysound top/robust | −16 | −4 | −10 | −12 | −24 | 4.32 s | 13.02 s | 0 |
+| ggwave dt-fastest @18k | −4 | +8 | +4 | +4 | −12 | 3.69 s | 13.42 s | 0 |
+| ggwave dt-fast @18k | −2 | +10 | +5 | +4 | −12 | 6.70 s | 26.15 s | 0 |
+| ggwave dt-normal @18k | −2 | +10 | +5 | +4 | −8 | 9.71 s | 38.89 s | 0 |
+| ggwave mt-fastest @18k (fixed-len) | −18 | −3 | −14 | −12 | −24 | 5.63 s | — (≤ 64 B) | 24 |
+| ggwave mt-fast @18k (fixed-len) | −18 | −3 | −14 | −12 | −24 | 11.26 s | — | 88 |
+| ggwave mt-normal @18k (fixed-len) | −20 | −5 | −16 | −12 | −28 | 16.90 s | — | 164 |
+
+SNR90 in dB at 32 B, one transmission; full-band on the 2 dB grid (50 trials), echo and pink on the 4 dB grid (30 trials). Wrong payloads are counted over all 4,730 (bysound, DT) or 4,070 (MT) trials of the plan; every one of MT's was an 8-byte payload.
+
+- **DT moved to 18 kHz** reaches the same SNR90 as the built-in DT (−4 dB for `dt-fastest`) and is 10–12 dB behind `top`, in full band and in band alike, since both put two tones in the same 1.5 kHz. With echo the gap is 12 dB. It is also slower at every size, only slightly at 8 B (1.64 s against 1.57 s).
+- **MT moved to 18 kHz** tolerates 4–6 dB more white noise than `top` (2–4 dB more than `top/robust`; 1–3 dB in band; 7–9 dB at equal peak, PAPR 4.0 dB) and matches `top/robust` under echo. It needs 2.4–7.3× the airtime of `top` for 32 B, so per unit of energy MT fastest is within 0.5 dB of `top` and MT normal/fast need 3.3–3.5 dB more. It requires a receiver that knows the payload length, stops at 64 B, and delivered 276 wrong 8-byte payloads in 142 of 12,210 trials.
+- **Clean point:** 19 of 1,140 clean DT trials at 18 kHz failed (1.7 %, against 7.8 % for the built-in DT), all by the false end marker described above; all 19 decode with noise at +60 dB SNR. No SNR90 in this group is affected.
+- **CPU:** idle, ggwave restricted to DT/MT runs at 22,965× real time in variable-length mode (44–46× lighter than bysound listening to `top` only, 496–527×) and at 728× in the fixed-length mode MT needs (1.4–1.5× lighter). No receiver detected anything in 30 minutes of noise.
+- Babble-like noise sends every configuration to the bottom of the grid, and ±100 ppm drift changes no SNR90.
+
+![airtime above 18 kHz](results/charts/airtime_inaudible.svg)
 
 ### Airtime and throughput (deterministic, from the encoders)
 
@@ -231,7 +263,7 @@ The fixed-length mono-tone runs are reported separately (summary section 8): 315
 - **CPU:** its receiver costs 41–51× less while idle and 1.2–14× less in trials that decode a payload, partly because bysound evaluates every channel of its profile with a 4 ms search step.
 - **Short messages:** for 8–32 byte payloads, ggwave `fastest` (1.00 s at 8 B, 1.71 s at 32 B) is faster than every bysound channel except `wide` (and `xhigh` at 32 B). bysound's 350 ms trailing gap is a large share of a short message.
 - **Maturity and ecosystem:** years of public use, a larger community, a single self-contained C++ file, and ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) with examples for Arduino, RP2040 and ESP32 boards. bysound covers the same kinds of platforms with four native implementations (TypeScript, Swift, Kotlin, C), but it is new and has not been measured over the air.
-- **Low-frequency, few-tone modes:** the DT/MT protocols sit at 1.1–2.6 kHz. In fixed-length mode, MT reaches SNR90 = −16 to −20 dB (the lowest figure measured), but its receiver must know the payload length and it is slow (1.9–5.7 B/s).
+- **Low-frequency, few-tone modes:** the DT/MT protocols sit at 1.1–2.6 kHz. In fixed-length mode, MT reaches SNR90 = −16 to −20 dB (the lowest figure measured), also when moved to 18 kHz, but its receiver must know the payload length and it is slow (1.9–5.7 B/s).
 
 **Two transmissions** help both systems only a little (sections 1 and 5 of the summary). The C demodulator does not combine laps (memory is bounded), so for bysound the 2-lap gain is just "two independent chances". Lap combining exists in the TypeScript, Swift and Kotlin receivers, which this benchmark does not exercise.
 
@@ -242,8 +274,9 @@ The fixed-length mono-tone runs are reported separately (summary section 8): 315
   - Real-air results can rank the modes differently.
 - **SNR is a modelling choice.** The full-band, in-band and peak-referenced views lead to different conclusions; all three are reported. Full-band SNR favours narrowband modes by construction. Peak-referenced assumes the speaker's limit is digital full scale.
 - **Noise models are synthetic.** The pink filter is designed for 44.1 kHz (it was used at 48 kHz). "Babble" is a modulated, speech-shaped noise, not real speech. White noise is the main condition. The echo is one synthetic profile.
-- **Clean ≠ realistic.** Exact digital silence around the signal triggers behaviour that does not occur with a real microphone. ggwave `dt-normal` and `dt-fast` fail 14 % at the clean point but 0 % at 0 dB, and 0/500 in the full-scale noiseless scan; the cause was not investigated. The +4 dB point is the realistic upper end.
-- **Receiver setup.** bysound was told the profile and listened to all channels of that profile. ggwave listened to all protocols. A deployment that listens to fewer channels would use less CPU and could have a different false-decode exposure.
+- **Clean ≠ realistic.** Input with no noise at all triggers behaviour that does not occur with a real microphone. ggwave `dt-normal` and `dt-fast` fail 14 % at the clean point but 0 % at 0 dB, and 0/500 in the full-scale noiseless scan: their receiver detects a false end marker inside the data, and with noise at +60 dB SNR 134 of the 135 such DT failures decode (`results/dt_clean_check.txt`). The +4 dB point is the realistic upper end.
+- **Receiver setup.** bysound was told the profile and listened to all channels of that profile. ggwave listened to all protocols, except in the `inaudible` plan, where it listened only to the six DT/MT protocols moved to 18 kHz. A deployment that listens to fewer channels would use less CPU and could have a different false-decode exposure.
+- **ggwave above 18 kHz is a custom configuration.** It uses only ggwave's public API, but ggwave does not ship it, and its author may tune such a setup differently (marker threshold, frame size).
 - **Only the C receiver.** Soft symbols, erasure decoding and lap combining (TypeScript, Swift and Kotlin receivers) are not measured, nor is the session layer.
 - **Payload statistics.** Random ASCII without digits. Real payloads (URLs, JSON, numbers) favour bysound's digit packing, which is not reflected here.
 - **Grid resolution and statistics.** SNR90 is quantised to the grid: 2 dB for section 1, 4 dB elsewhere. Trial counts are 50, 30, 20 or 10 per cell, so one failure moves a cell by 2–10 %. No confidence intervals.
@@ -263,8 +296,9 @@ The fixed-length mono-tone runs are reported separately (summary section 8): 315
   - the channel model;
   - both encoders and receivers;
   - the plans;
-  - the commands `info`, `jobs`, `run`, `trial`, `repro`, `scan` and `codec`.
+  - the commands `info`, `jobs`, `run`, `trial`, `repro`, `scan`, `codec` and `dither`.
 - `scripts/report.py`: `results/summary.md` and the SVG charts (Python standard library only; transparent background, mid-tone palette validated for contrast and colour-vision deficiency on both `#ffffff` and `#0d1117`).
 - `results/*.csv`: raw results, one row per trial; `airtime.csv` (with a `status` column: ok, exceeds 30 s cap, cannot send), `bands.csv` and `max_payload.csv` are deterministic. A `success` of −1 means the payload could not be sent.
-- `results/*.txt`: noiseless scans, codec scan, resampler check.
-- `results/charts/*.svg`: 17 charts.
+- `results/inaudible.csv` (plan column `inaudible-snr`, `inaudible-cond`, `inaudible-size`) and `results/inaudible-idle.csv`: the inaudible comparison.
+- `results/*.txt`: noiseless scans (`noiseless_scan_inaudible_*B.txt` for the inaudible group), codec scan, resampler check, `dt_clean_check.txt` (ggwave DT clean-point failures re-run with noise at +60 dB SNR).
+- `results/charts/*.svg`: 20 charts (`snr_inaudible_1x.svg`, `cond_echo_inaudible_1x.svg` and `airtime_inaudible.svg` for the inaudible group).

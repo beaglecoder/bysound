@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 420" width="720" height="420" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<title>Outcomes of the security scenarios over the air</title>
+<style>.t{fill:#8b949e;font-size:13px}.s{fill:#8b949e;font-size:11px}.h{fill:#8b949e;font-size:15px;font-weight:600}.v{fill:#8b949e;font-size:12px;font-weight:700}</style>
+<defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#8b949e" fill-opacity=".25"/><line x1="0" y1="0" x2="0" y2="6" stroke="#8b949e" stroke-width="2"/></pattern></defs>
+<text class="h" x="20" y="28">Another sender in the room: what the receiver did</text>
+<rect x="345" y="40" width="10" height="10" rx="2" fill="#14b8a6"/><text class="s" x="361" y="49">as intended</text>
+<rect x="435" y="40" width="10" height="10" rx="2" fill="#d97706"/><text class="s" x="451" y="49">undue delivery</text>
+<rect x="545" y="40" width="10" height="10" rx="2" fill="url(#hatch)"/><text class="s" x="561" y="49">inconclusive</text>
+<text class="t" x="20" y="83">Another sender, same channel</text>
+<rect x="345.0" y="70" width="268.0" height="18" rx="4" fill="#14b8a6"><title>Another sender, same channel: 26 as intended</title></rect>
+<text class="v" x="623.0" y="83">26 ok</text>
+<text class="t" x="20" y="113">Another sender, other channel</text>
+<rect x="345.0" y="100" width="268.0" height="18" rx="4" fill="#14b8a6"><title>Another sender, other channel: 26 as intended</title></rect>
+<text class="v" x="623.0" y="113">26 ok</text>
+<text class="t" x="20" y="143">Another sender, intermittent</text>
+<rect x="345.0" y="130" width="39.5" height="18" rx="4" fill="#14b8a6"><title>Another sender, intermittent: 4 as intended</title></rect>
+<text class="v" x="394.5" y="143">4 ok</text>
+<text class="t" x="20" y="173">Another sender, intermittent, with bar noise</text>
+<rect x="345.0" y="160" width="39.5" height="18" rx="4" fill="#14b8a6"><title>Another sender, intermittent, with bar noise: 4 as intended</title></rect>
+<text class="v" x="394.5" y="173">4 ok</text>
+<text class="t" x="20" y="203">Two overlapping rogue requests</text>
+<rect x="345.0" y="190" width="39.5" height="18" rx="4" fill="#14b8a6"><title>Two overlapping rogue requests: 4 as intended</title></rect>
+<text class="v" x="394.5" y="203">4 ok</text>
+<text class="t" x="20" y="233">Risk-signal frames from another device</text>
+<rect x="345.0" y="220" width="29.2" height="18" rx="4" fill="#14b8a6"><title>Risk-signal frames from another device: 3 as intended</title></rect>
+<text class="v" x="384.2" y="233">3 ok</text>
+<text class="t" x="20" y="263">Rogue complete request (no real sender)</text>
+<rect x="345.0" y="250" width="18.8" height="18" rx="4" fill="#14b8a6"><title>Rogue complete request (no real sender): 2 as intended</title></rect>
+<rect x="365.8" y="250" width="18.8" height="18" rx="4" fill="url(#hatch)"><title>Rogue complete request (no real sender): 2 inconclusive</title></rect>
+<text class="v" x="394.5" y="263">2 ok · 2 inconcl.</text>
+<text class="t" x="20" y="293">Competing registered request, simultaneous</text>
+<rect x="345.0" y="280" width="164.2" height="18" rx="4" fill="#14b8a6"><title>Competing registered request, simultaneous: 16 as intended</title></rect>
+<rect x="511.2" y="280" width="101.8" height="18" rx="4" fill="#d97706"><title>Competing registered request, simultaneous: 10 undue delivery</title></rect>
+<text class="v" x="623.0" y="293">16 ok · 10 undue</text>
+<text class="t" x="20" y="323">Competing registered request, +1.5 s</text>
+<rect x="345.0" y="310" width="29.2" height="18" rx="4" fill="#14b8a6"><title>Competing registered request, +1.5 s: 3 as intended</title></rect>
+<rect x="376.2" y="310" width="8.4" height="18" rx="4" fill="#d97706"><title>Competing registered request, +1.5 s: 1 undue delivery</title></rect>
+<text class="v" x="394.5" y="323">3 ok · 1 undue</text>
+<text class="t" x="20" y="353">Competing registered request, +4 s</text>
+<rect x="345.0" y="340" width="29.2" height="18" rx="4" fill="#14b8a6"><title>Competing registered request, +4 s: 3 as intended</title></rect>
+<rect x="376.2" y="340" width="8.4" height="18" rx="4" fill="url(#hatch)"><title>Competing registered request, +4 s: 1 inconclusive</title></rect>
+<text class="v" x="394.5" y="353">3 ok · 1 inconcl.</text>
+<text class="s" x="20" y="384">Bar length = number of attempts (linear). "As intended" = not delivered, refused, or delivered with a conflict warning within 3 s.</text>
+<text class="s" x="20" y="400">The rogue complete request is read by design: the receiver cannot tell it from a real one; confirmation and the backend must.</text>
+</svg>
