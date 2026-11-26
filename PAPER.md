@@ -8,7 +8,7 @@ November 2026
 
 ## Abstract
 
-Data-over-sound lets two devices exchange a short message using only a speaker and a microphone. **ggwave**, a widely used open-source implementation, sends bytes with multi-frequency shift keying (MFSK) on a 46.875 Hz grid and protects them with Reed–Solomon (RS) coding. **bysound** keeps that foundation and changes the framing and the receiver: narrower band "channels" (2–6 simultaneous tones) inside 15–19.5 kHz, a per-tone noise floor, a keyed preamble, maximum-likelihood header selection, subtraction of the previous symbol's echo, RS in blocks with an end-to-end CRC-32, and a slower *robust* profile. Byte-compatible implementations of the modem exist in TypeScript, Swift, Kotlin and allocation-free C. A session layer on top of the modem (acknowledgements by sound, detection of a second sender, alert frames, security levels and automatic channel adaptation) is specified, with a TypeScript reference implementation.
+Data-over-sound lets two devices exchange a short message using only a speaker and a microphone. **ggwave**, a widely used open-source implementation, sends bytes with multi-frequency shift keying (MFSK) on a 46.875 Hz grid and protects them with Reed–Solomon (RS) coding. **bysound** keeps that foundation and changes the framing and the receiver: narrower band "channels" (2–6 simultaneous tones) inside 15–19.5 kHz, a per-tone noise floor, a keyed preamble, maximum-likelihood header selection, subtraction of the previous symbol's echo, RS in blocks with an end-to-end CRC-32, and a slower *robust* profile. Byte-compatible implementations of the modem exist in TypeScript, Swift, Kotlin and allocation-free C. A session layer on top of the modem (acknowledgements by sound, detection of a second sender, alert frames, security levels and automatic channel adaptation) is specified and implemented in all four languages (TypeScript as the reference), sharing test vectors.
 
 This report compares the C implementation of bysound with the unmodified ggwave library on the same simulated channel with the same seeds (157,670 trials). In summary, the two detectors perform within 0–3 dB of each other at equal SNR inside each mode's band; most of bysound's advantage against broadband noise comes from narrower channels and a lower peak-to-average power ratio; and ggwave uses less CPU and is the more mature project. In more detail:
 
@@ -18,7 +18,7 @@ This report compares the C implementation of bysound with the unmodified ggwave 
 - **Message size and integrity.** bysound limits a transmission to 30 s instead of 140 bytes. It delivered no wrong message in 87,380 simulated trials; a CRC-32 over the whole text guards delivery. ggwave delivered 34 wrong payloads in 67,320 trials of its default variable-length protocols, 32 of them for 8-byte messages.
 - **Cost.** ggwave's receiver uses less CPU: 41–51× less while idle and 1.2–14× less in trials that decode a message.
 
-The benchmark was written by the author of bysound and exercises only the C receiver. The session layer is described but not part of the benchmark. Nothing in this report has been measured over the air.
+The benchmark was written by the author of bysound and exercises only the C receiver. The session layer is described and implemented but not part of the benchmark. Nothing in this report has been measured over the air.
 
 ## 1. Introduction
 
@@ -40,7 +40,7 @@ ggwave [1] made the approach easy to adopt: a small C++ library, ready-made bind
 **Contributions.**
 - A specification of **bysound v4**, a payload framing on the same 46.875 Hz grid ([PROTOCOL.md](docs/PROTOCOL.md)).
 - A specification of a **session layer** for two-party exchanges by sound ([SESSION.md](docs/SESSION.md)), with a security model ([SECURITY.md](docs/SECURITY.md)).
-- Four interoperable open-source implementations of the modem that share test vectors.
+- Four interoperable open-source implementations of the modem and the session layer that share test vectors, with examples.
 - A reproducible benchmark against unmodified ggwave, with all raw data.
 - An analysis that separates the sources of the difference (bandwidth, peak-to-average power, coding, detection) and lists where ggwave is better.
 
@@ -115,19 +115,20 @@ How much items 7, 9 and 13 add is not known from this benchmark. ggwave also has
 
 ## 5. Implementations
 
-| | Language | Lines | Notes |
-|---|---|---:|---|
-| `web/src/modem` | TypeScript | ≈ 1.6 k | Reference modem receiver; Web Audio, AudioWorklet and a Worker |
-| `web/src/session` | TypeScript | ≈ 1.8 k | Reference session layer (Section 7) |
-| `ios/Sources` | Swift | ≈ 1.7 k | vDSP FFT at 48 kHz, Goertzel at 44.1 kHz; AVAudioEngine |
-| `android/bysound/src/main` | Kotlin | ≈ 1.8 k | Modem in plain Kotlin (testable on the JVM), AudioTrack/AudioRecord |
-| `c/src` | C99 | ≈ 1.7 k | No `malloc`, streaming transmitter and receiver; FFT (float) or Goertzel engine |
+| Implementation | Modem | Session layer | Notes |
+|---|---:|---:|---|
+| TypeScript (`web/src`) | ≈ 1.6 k | ≈ 1.7 k | Reference modem receiver and session layer; Web Audio, AudioWorklet and a Worker |
+| Swift (`ios/Sources/BySound`) | ≈ 2.0 k | ≈ 1.9 k | vDSP FFT at 48 kHz, Goertzel at 44.1 kHz; AVAudioEngine |
+| Kotlin (`android/bysound/src/main`) | ≈ 2.1 k | ≈ 1.4 k | Modem and session in plain Kotlin (testable on the JVM); AudioTrack/AudioRecord |
+| C99 (`c/src`) | ≈ 1.7 k | ≈ 0.9 k | No `malloc`, streaming transmitter and receiver; FFT (float) or Goertzel engine |
 
-Lines are counted with `wc -l` over the source files in each folder, comments and blank lines included and test files excluded. The C figure includes the internal tables header in `c/src` and excludes the public header `c/include/bysound.h` (≈ 0.4 k lines); the Swift and Kotlin figures include the audio input/output wrappers.
+Lines are counted with `wc -l`, comments and blank lines included, test files and simulation helpers excluded. **Modem:** `web/src/modem`; the Swift files directly in `ios/Sources/BySound` except `BySoundSession.swift`; the Kotlin `modem` package plus `audio/SoundSender.kt` and `audio/SoundListener.kt`; `c/src` except `session.c` and `sha256.c`, including the internal tables header. **Session layer:** `web/src/session`; `ios/Sources/BySound/Session` plus `BySoundSession.swift`; the Kotlin `session` package plus `audio/BySoundSession.kt`; `session.c` and `sha256.c`. The C public headers are not counted (`bysound.h` ≈ 0.4 k lines, `bysound_session.h` ≈ 0.3 k). The Swift and Kotlin figures include the audio input/output wrappers.
 
-The four modem implementations are tested against the frames in `test-vectors/v4-frames.json`, and the Swift and Kotlin tests also decode audio produced by the C implementation and one recorded transmission. On the benchmark host the C library compiles to about 35 KB of object code (`__TEXT` of the `c/src` objects, arm64, `-O2`), against about 60 KB for `ggwave.o`.
+The four modem implementations are tested against the frames in `test-vectors/v4-frames.json`, and the Swift and Kotlin tests also decode audio produced by the C implementation and one recorded transmission. The four session layers are tested against `session-acks.json`, `v4-acks.json`, `v4-risk.json` and `security-levels.json` and run the same scenarios on simulated air (Section 7). On the benchmark host the C modem compiles to about 35 KB of object code (`__TEXT` of the `c/src` objects other than the session layer, arm64, `-O2`), against about 60 KB for `ggwave.o`; the session layer adds about 19 KB.
 
-The ESP32-S3 demo builds with ESP-IDF 5.4; its image is 252 KB with about 70 KB of static RAM and no PSRAM (from `idf.py size`, see [`esp32/README.md`](esp32/README.md)). These figures come from the build, not from the benchmark. The demo needs an external I2S microphone and an I2S amplifier, and it has not been run on a board, so on-device behaviour and CPU load are not measured.
+The ESP32-S3 demo builds with ESP-IDF 5.4 and runs the session layer on the four ladder bands with two robust-capable demodulators; its image is 286.7 KB, with 150.1 KB of `.bss` and 10.8 KB of `.data` and no PSRAM (from `idf.py size`, see [`esp32/README.md`](esp32/README.md)). Without the robust receiver it needs about 85 KB less RAM. These figures come from the build, not from the benchmark. The demo needs an external I2S microphone and an I2S amplifier, and it has not been run on a board, so on-device behaviour and CPU load are not measured.
+
+The [`examples/`](examples) folder holds small complete applications built on the libraries: a chat, a small file, Wi-Fi setup and the channel ladder in the browser, a Node command-line tool, WAV tools in C, link sharing on iOS, contact sharing on Android and the device side of Wi-Fi setup on the ESP32-S3. They are not part of the evaluation.
 
 ## 6. Evaluation
 
@@ -253,7 +254,7 @@ The decoded-trial and all-trial rows are medians over the one-transmission trial
 
 ## 7. Session layer and security
 
-The modem moves one text from a speaker to a microphone, intact or not at all. The session layer turns that into a two-party exchange. It is specified in [SESSION.md](docs/SESSION.md), and the TypeScript implementation in [`web/src/session/`](web/src/session) is the reference. Its security model, including what it does not protect against, is in [SECURITY.md](docs/SECURITY.md). **The session layer is not part of the benchmark in Section 6**; its behaviour is checked by simulated tests in `web/src/session` (`session.test.ts`, `adapt.test.ts`, `security.test.ts`, `frames.test.ts`), which mix the sound of several simulated devices into each microphone with white noise.
+The modem moves one text from a speaker to a microphone, intact or not at all. The session layer turns that into a two-party exchange. It is specified in [SESSION.md](docs/SESSION.md) and implemented in TypeScript ([`web/src/session/`](web/src/session), the reference), Swift, Kotlin and C, sharing the test vectors `session-acks.json`, `v4-acks.json`, `v4-risk.json` and `security-levels.json` in [`test-vectors/`](test-vectors). Its security model, including what it does not protect against, is in [SECURITY.md](docs/SECURITY.md). **The session layer is not part of the benchmark in Section 6**; its behaviour is checked by simulated tests in each implementation (in TypeScript `session.test.ts`, `adapt.test.ts`, `security.test.ts` and `frames.test.ts`; in Swift `SessionAir.swift`, in Kotlin `SimAir.kt`, in C `test_session.c`), which mix the sound of several simulated devices into each microphone with white noise.
 
 **Frames.** Two v4 frame types are used besides the payload and reference frames, both in the normal profile with a single RS codeword (8 parity bytes) and a CRC-16:
 - **Ack and receipt** (`0x41`): the first 4 bytes of SHA-256 of the text, plus the channel and profile where the receiver read it. Acks are looped on `mid`, receipts on `high`; the two channels share no tone, so both sides can play at once.
@@ -284,7 +285,7 @@ Every field can be overridden; the exact table is `test-vectors/security-levels.
 - **Robust switch:** after 6 normal-profile repetitions without an ack, it continues in the robust profile.
 - **Calibration memory:** the ack says where the receiver read the frame; the sender stores that channel and profile and starts there next time (with 6 repetitions per channel), for up to 10 sends unless it is confirmed again. With a simulated speaker that cannot play above about 17 kHz, the first send steps down the ladder to `mid`, and the next send starts on `mid` and is read on its first repetition (`adapt.test.ts`).
 
-**Limits.** The session layer adds detection and signalling, not secrecy or authentication. The text travels in the clear; anyone can play a valid frame, record and replay one, or play a fake ack or a fake alert. A fake alert can stop exchanges nearby (a denial of service) but cannot cause a wrong delivery. An emitter that no microphone hears cannot be detected. Applications that need confidentiality, sender authentication or single use add them inside the text (encryption, a signature, a nonce and an expiry). In the reference implementation, ack and risk frames are read by a separate, smaller decoder that does not subtract echo or combine laps, so control frames are somewhat less robust than data in heavy noise.
+**Limits.** The session layer adds detection and signalling, not secrecy or authentication. The text travels in the clear; anyone can play a valid frame, record and replay one, or play a fake ack or a fake alert. A fake alert can stop exchanges nearby (a denial of service) but cannot cause a wrong delivery. An emitter that no microphone hears cannot be detected. Applications that need confidentiality, sender authentication or single use add them inside the text (encryption, a signature, a nonce and an expiry). In the TypeScript and Swift implementations, ack and risk frames are read by a separate, smaller decoder that does not subtract echo or combine laps, so control frames are somewhat less robust than data in heavy noise; the Kotlin and C modem receivers decode them directly. Receipts are played on `high`, so a sender whose speaker cannot play above about 17 kHz cannot deliver them, and its receiver keeps acking for the full 30 s.
 
 ## 8. Trade-offs
 
@@ -304,8 +305,8 @@ The table collects the comparison in one place. Every row refers to the evidence
 | Audibility | `top` at 18–19.5 kHz, `high` at 17.25–19.5 kHz; an audible channel | Ultrasound at 15–19.4 kHz; audible, DT and MT protocols | Section 3. No listening test |
 | CPU while idle | 371–463× real time | 18,993× | ggwave 41–51× lighter. Section 6.6 |
 | CPU while decoding | 426–533× real time | 660–5,903× | ggwave 1.2–14× lighter. Section 6.6 |
-| Code and memory | C: no `malloc`; ≈ 35 KB object code on the host; ESP32-S3 image 252 KB, ≈ 70 KB static RAM (build only) | ≈ 60 KB object code on the host; microcontroller footprint not measured here | Section 5 |
-| Acks, clash detection, alerts, adaptation | Specified; TypeScript reference; simulated tests | Not provided | Section 7, not measured in the benchmark |
+| Code and memory | C: no `malloc`; ≈ 35 KB object code on the host (+ ≈ 19 KB session layer); ESP32-S3 image 287 KB, ≈ 161 KB static RAM with the session layer (build only) | ≈ 60 KB object code on the host; microcontroller footprint not measured here | Section 5 |
+| Acks, clash detection, alerts, adaptation | Specified; implemented in all four languages; simulated tests | Not provided | Section 7, not measured in the benchmark |
 | Implementations and platforms | Four native implementations (TypeScript, Swift, Kotlin, C99) sharing test vectors, covering the browser, iOS, Android, desktop and ESP32-S3 | One C++ core with ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and examples for Arduino, RP2040 and ESP32 boards | Repositories; not measured |
 | Maturity | New; no over-the-air measurement yet; ESP32 demo not yet run on a board | Years of public use, a larger community, a single self-contained source file | Not measured |
 
@@ -340,7 +341,7 @@ The table collects the comparison in one place. Every row refers to the evidence
 
 ## 10. Conclusion
 
-bysound keeps ggwave's core (MFSK on a 46.875 Hz grid with Reed–Solomon) and changes the framing and the receiver. In this simulation the two detectors are within 0–3 dB of each other at equal in-band SNR. The larger differences come from design choices around the detector: narrow channels and a lower peak-to-average power ratio give more margin against broadband noise for the same speaker level, echo subtraction accounts for a 4 dB smaller echo penalty under one synthetic echo, and RS in blocks with an end-to-end CRC-32 allows longer messages and produced no wrong delivery in 87,380 trials. On top of the modem, a session layer adds acknowledgements, second-sender detection, alerts and automatic channel adaptation; it is specified and implemented in TypeScript but not measured here. The costs are CPU, most visibly while idle, and airtime for very short messages on the narrow channels. Whether these results hold over the air, with real speakers, microphones and rooms, has not been measured and is the next step. The code, test vectors, benchmark and raw results are MIT-licensed.
+bysound keeps ggwave's core (MFSK on a 46.875 Hz grid with Reed–Solomon) and changes the framing and the receiver. In this simulation the two detectors are within 0–3 dB of each other at equal in-band SNR. The larger differences come from design choices around the detector: narrow channels and a lower peak-to-average power ratio give more margin against broadband noise for the same speaker level, echo subtraction accounts for a 4 dB smaller echo penalty under one synthetic echo, and RS in blocks with an end-to-end CRC-32 allows longer messages and produced no wrong delivery in 87,380 trials. On top of the modem, a session layer adds acknowledgements, second-sender detection, alerts and automatic channel adaptation; it is specified and implemented in all four languages but not measured here. The costs are CPU, most visibly while idle, and airtime for very short messages on the narrow channels. Whether these results hold over the air, with real speakers, microphones and rooms, has not been measured and is the next step. The code, test vectors, benchmark and raw results are MIT-licensed.
 
 ## Reproducibility
 

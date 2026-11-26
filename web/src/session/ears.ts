@@ -33,10 +33,7 @@ export interface Platform {
 
 /**
  * Microphone samples in, AirEvents out: the modem receiver for payload and reference frames, plus ControlListener for acks and
- * risk frames.
- *
- * When the modem receiver reports ack and risk frames itself (docs/SESSION.md §11), ControlListener goes away: forward its new
- * event here instead and drop the `control` field.
+ * risk frames (docs/SESSION.md §11 describes how each implementation receives control frames).
  */
 export class Ears {
   private host: ReceiverHost;

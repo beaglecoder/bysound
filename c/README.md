@@ -105,10 +105,10 @@ The receiver is the same shape (`bys_receiver_cfg_default(&rc, text_buf, sizeof 
 plus `bys_receiver_confirmed()` (the confirm gate: call it before acting on the data) and `bys_receiver_cancel()`. Security levels:
 `bys_security_resolve(&cfg.security, BYS_SEC_STANDARD)`, then override single fields. Calibration memory is two callbacks (`cal_load`, `cal_save`).
 
-What the C port does differently or leaves out (the reference is `web/src/session/`):
+What the C port does differently or leaves out (the reference is `web/src/session/`; also in [`docs/SESSION.md`](../docs/SESSION.md) §11.1):
 
 - **Events:** the demodulator already decodes acks, receipts and risk frames (`BYS_EV_FRAME` with `result->kind`). It raises no `BYS_EV_HEADER`
-  and does not count them for clashes (it did before the session layer; `bys_result_t.heard` carries the heard nibble).
+  and does not count them for clashes; `bys_result_t.heard` carries the heard nibble.
 - **Ambient check:** `bys_session_noise_from_demod()` converts the demodulator's running per-tone noise floor to the scale of SESSION.md 9.2. It is not the
   mean of the last 0.25 s of tone energies, so it differs from the reference by a few dB (white noise of sigma 0.003 and 0.01 measure within 1 dB of the
   documented -74 and -64 dB in the tests). The thresholds are as uncalibrated as in the reference. The demodulator must listen to the bands of the ladder.

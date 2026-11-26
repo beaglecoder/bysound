@@ -1,6 +1,6 @@
 # web-wifi-setup
 
-A phone-side page that sends Wi-Fi credentials to a device by sound, plus a simulated device (the right half) so two tabs, or one tab with the **Loopback test (no audio)** button, are enough to try it. The real receiver is the ESP32 planned in `../esp32-wifi-setup`.
+A phone-side page that sends Wi-Fi credentials to a device by sound, plus a simulated device (the right half) so two tabs, or one tab with the **Loopback test (no audio)** button, are enough to try it. The device side for a real board is [`../esp32-wifi-setup`](../esp32-wifi-setup/) (ESP32-S3).
 
 ```sh
 cd examples && npm run dev:web-wifi-setup

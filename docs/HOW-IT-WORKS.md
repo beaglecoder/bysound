@@ -66,7 +66,7 @@ Raw speeds go from 250 bit/s (`top`, 2 tones) to 750 bit/s (`wide`, 6 tones). On
 
 ## 5. Talking back: acknowledgements, alerts and adaptation
 
-On top of the modem, a **session layer** turns "play a text" into a short conversation. It is specified in [SESSION.md](SESSION.md); the TypeScript implementation in [`web/src/session`](../web/src/session) is the reference.
+On top of the modem, a **session layer** turns "play a text" into a short conversation. It is specified in [SESSION.md](SESSION.md) and implemented in TypeScript (the reference, [`web/src/session`](../web/src/session)), Swift, Kotlin and C, which share the same test vectors.
 
 ```mermaid
 sequenceDiagram
@@ -105,7 +105,7 @@ Both libraries use the same idea: MFSK on an orthogonal 46.875 Hz grid with Reed
 | A wrong message is worse than none: 0 wrong in 87,380 trials; ggwave delivered 34 wrong in 67,320, 32 of them 8-byte messages | Messages are a few bytes: at 8 B ggwave fastest (1.00 s) is faster than every bysound channel except `wide` (0.96 s) |
 | Messages are longer than 140 bytes: up to 30 s per transmission (700–2,114 B) | You want a project with years of public use and a larger community |
 | It should be hard to hear: `top` (18–19.5 kHz), `high` (17.25–19.5 kHz); ggwave has no protocol confined above 18 kHz | You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino, RP2040 or ESP32 examples |
-| You want acks, second-sender alerts and channel adaptation (session layer, TypeScript reference) | You want low-frequency modes with fewer tones (DT/MT at 1.1–2.6 kHz) |
+| You want acks, second-sender alerts and channel adaptation (session layer, in all four implementations) | You want low-frequency modes with fewer tones (DT/MT at 1.1–2.6 kHz) |
 | You want native TypeScript, Swift, Kotlin and C (no `malloc`) sharing one format | You need results already proven over the air: bysound has only been measured in simulation |
 
 Both cover the same kinds of platforms (browser, iOS, Android, desktop, ESP32): bysound with four native implementations, ggwave with one C++ core and bindings.

@@ -13,7 +13,7 @@ Richer, complete examples than the minimal demos. All local: no API keys, no bac
 | [music-variants](music-variants/) | Node (TS) | runnable | The music + hidden message demo at several channels and message levels, WAVs and a decode report |
 | [ios-share-link](ios-share-link/) | iOS (SwiftUI) | runnable (builds; try on two iPhones) | Send a URL with the session (band auto); on receive, `confirmed()` then *Open* only for validated http(s) URLs, host shown |
 | [android-share-contact](android-share-contact/) | Android (Kotlin) | runnable (builds; try on two phones) | Send a contact as a vCard 3.0, strict parse on receive, `confirmed()`, then *Add to contacts* via `ACTION_INSERT` (no contacts permission) |
-| [esp32-wifi-setup](esp32-wifi-setup/) | ESP32 (C) | TODO (needs C session layer) | Device side of web-wifi-setup: code on screen, decrypt, join Wi-Fi, ack by sound |
+| [esp32-wifi-setup](esp32-wifi-setup/) | ESP32 (C) | builds (ESP-IDF 5.4, ESP32-S3); not run on a board | Device side of web-wifi-setup: one-time code on the serial log, AES-GCM/PBKDF2 decrypt, join Wi-Fi, store in NVS, ack by sound |
 
 ## Running
 
@@ -31,4 +31,4 @@ cd c-wav-tools && make demo     # needs a C compiler; see c-wav-tools/
 
 The microphone needs `localhost` or HTTPS; to try from a second device, serve over HTTPS (e.g. a tunnel) or use the loopback buttons. Audio can only start from a click, and the speaker should be loud and not Bluetooth/headphones.
 
-Some examples import modules that the public `web/src/index.ts` does not re-export yet (`maxPayloadBytes`, `mix`, `renderMelody`); each says so in a comment.
+CI (`.github/workflows/ci.yml`, job `examples` and the Swift and Android jobs) typechecks and builds the TypeScript examples, runs `make demo` in `c-wav-tools` and builds `ios-share-link` and `android-share-contact`. `esp32-wifi-setup` is built with ESP-IDF by hand (see its README).

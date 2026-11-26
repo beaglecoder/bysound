@@ -72,7 +72,7 @@ Noise measured over the whole audio band (0–24 kHz), 32-byte message, simulate
 - 🎚️ **Security levels:** `basic`, `standard` or `maximum` (the default).
 - 🔓 **Not secret:** anyone nearby can hear the sound, just like anyone can photograph a QR code. Don't send passwords in the clear; sign or encrypt in your app if it matters.
 
-Session layer (acks, alerts, levels, adaptation): specified in **[docs/SESSION.md](docs/SESSION.md)**, with the TypeScript implementation as the reference. What is and isn't protected: **[docs/SECURITY.md](docs/SECURITY.md)**.
+Session layer (acks, alerts, levels, adaptation): specified in **[docs/SESSION.md](docs/SESSION.md)** and implemented in TypeScript (the reference), Swift, Kotlin and C, which share its test vectors. What is and isn't protected: **[docs/SECURITY.md](docs/SECURITY.md)**.
 
 ## Try it in one minute
 
@@ -122,16 +122,27 @@ Step by step, with more pictures: **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)
 | 🤖 Android | [`android/`](android) · Kotlin | `./gradlew :demo:installDebug` |
 | 🔧 Any computer | [`c/`](c) · C99, no `malloc` | `c/build/bysound` (WAV in/out) |
 | 📟 ESP32-S3 | [`esp32/`](esp32) · ESP-IDF | `idf.py build flash monitor` |
+| 🧪 Examples | [`examples/`](examples) · all platforms | see [`examples/README.md`](examples/README.md) |
 | 📊 Benchmark | [`bench/`](bench) · vs ggwave | `./fetch-ggwave.sh && make && make run` |
 
-All of them talk to each other. Each folder's README has its API, tests and details. The ESP32-S3 demo needs an I2S microphone and an I2S amplifier; it builds, but has not been run on a board yet.
+All of them talk to each other. Each folder's README has its API, tests and details. The ESP32-S3 demo runs the session layer (it acks what it hears) and needs an I2S microphone and an I2S amplifier; it builds (image 287 KB, about 161 KB of static RAM, no PSRAM), but has not been run on a board yet.
+
+## Examples
+
+Small complete apps in [`examples/`](examples), all local (no keys, no backend): a [chat](examples/web-chat), a [small file](examples/web-file), [Wi-Fi setup](examples/web-wifi-setup) with its [ESP32 side](examples/esp32-wifi-setup) and the [channel ladder](examples/web-channel-ladder) in the browser; a [Node CLI](examples/node-cli) and [music variants](examples/music-variants); [WAV tools in C](examples/c-wav-tools); [share a link](examples/ios-share-link) on iOS and [share a contact](examples/android-share-contact) on Android.
 
 ## In your code
 
 ```ts
-import { send, listen } from 'bysound';
+import { send, listen, sendSession, receiveSession } from 'bysound';
 await send('hello', { band: 'top' });                       // from a click
 await listen({ onFrame: (msg) => console.log(msg.payload) });
+
+// With the session layer: ack, channel ladder, second-sender alerts
+await (await sendSession('pay 12.50 to shop 7')).delivered; // resolves on the receiver's ack
+const rx = await receiveSession();
+const { text } = await rx.result;
+await rx.confirmed();                                       // right before acting on text
 ```
 
 Swift, Kotlin and C look the same: see [`ios/`](ios), [`android/`](android) and [`c/`](c).

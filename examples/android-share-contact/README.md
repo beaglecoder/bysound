@@ -11,7 +11,7 @@ It is its own Gradle project; `settings.gradle` includes the library from `../..
 
 ```sh
 cd examples/android-share-contact
-echo "sdk.dir=$ANDROID_HOME" > local.properties        # once
+echo "sdk.dir=$ANDROID_HOME" > local.properties        # once, unless ANDROID_HOME is set
 ./gradlew assembleDebug && adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 

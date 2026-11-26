@@ -199,7 +199,7 @@ Real-time factor = seconds of audio processed per second of receiver CPU (higher
 The last column divides the extremes of the two ranges. The all-trials row includes the many trials below the threshold, where ggwave does almost no work, so the first two rows describe the real situations better. bysound's cost is nearly constant because it searches every channel of its profile every 4 ms (8 ms robust), message or not. Decode latency (clean) is airtime minus 0.25–0.35 s for both: bysound returns before its trailing gap ends, and ggwave before its end marker ends. CPU was measured on the host only, not on a phone or a microcontroller.
 
 Code size of the built objects (arm64, `-O2`, `size`; host figures, not microcontroller figures):
-- bysound `../c/src`: 34,984 bytes of `__TEXT` (the seven objects in `build/sbs`), from 1,669 lines of source (`wc -l c/src/*`, comments included; the public header `c/include/bysound.h` adds 367).
+- bysound modem objects (`band`, `demod`, `frame`, `pack`, `rs`, `rx`, `tx` in `../c/src`): about 35 KB of `__TEXT` from 1,699 lines of source (comments included; the public header `c/include/bysound.h` adds 373). The session layer (`session.c`, `sha256.c`) is compiled but not used by the benchmark.
 - ggwave `ggwave.o`: 59,880 bytes of `__TEXT`, from about 4,800 lines including its public header and its Reed–Solomon and FFT headers.
 
 ### False decodes

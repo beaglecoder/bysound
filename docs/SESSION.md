@@ -2,7 +2,7 @@
 
 **Status:** normative for the session layer of bysound v4. The modem (frames, modulation, receiver) is specified in [PROTOCOL.md](PROTOCOL.md); this document builds on it and does not change any frame format that existed there.
 
-**Reference implementation:** TypeScript in [`web/src/session/`](../web/src/session/). Swift, Kotlin and C ports MUST behave as described here. Where this text and the code disagree, report it: one of them is a bug.
+**Implementations:** TypeScript in [`web/src/session/`](../web/src/session/) (the reference), Swift in [`ios/Sources/BySound/Session/`](../ios/Sources/BySound/Session/) and `BySoundSession.swift`, Kotlin in [`android/bysound/src/main/kotlin/io/github/beaglecoder/bysound/session/`](../android/bysound/src/main/kotlin/io/github/beaglecoder/bysound/session/) and `audio/BySoundSession.kt`, and C in [`c/include/bysound_session.h`](../c/include/bysound_session.h) and [`c/src/session.c`](../c/src/session.c). All of them MUST behave as described here; §11.1 lists where they differ in ways this text allows. Where this text and an implementation disagree, report it: one of them is wrong.
 
 **Test vectors:** [`test-vectors/v4-acks.json`](../test-vectors/v4-acks.json), [`v4-risk.json`](../test-vectors/v4-risk.json), [`session-acks.json`](../test-vectors/session-acks.json), [`security-levels.json`](../test-vectors/security-levels.json).
 
@@ -89,6 +89,8 @@ Header `length` = 7. Body = the 7 data bytes followed by their 8 parity bytes (1
 | Receipt | `high` | same |
 
 `mid` (bins 320–367) and `high` (bins 368–415) share no tone, so a receiver acking and a sender answering at the same moment do not mask each other. An ack frame lasts 0.672 s on `mid` and `high` (0.822 s with its gap).
+
+**Known limitation.** The receipt band is always `high` (17.25–19.5 kHz), whatever band the data was read on. A sender whose speaker cannot play above about 17 kHz is read on `mid` and hears the ack, but its receipts do not reach the receiver, which keeps acking until `ACK_TOTAL_SECONDS` (30 s) and resolves `receipt` as `false`. Delivery and the confirm gate are not affected; a half-duplex receiver cannot hear a new text until that ack loop ends (§6.4).
 
 ### 3.2 Risk signal (`0x58`)
 
@@ -481,16 +483,33 @@ For the 19-character text `pay 12.50 to shop 7`, `L` (top, robust, with gap) is 
 
 ## 11. Integration with the modem receiver
 
-The modem receiver (`web/src/modem/receiver.ts` and its ports) already lists the ack and risk headers among its header candidates but **skips their bodies**. Until it reports them, the reference reads them with a separate, smaller decoder, `ControlListener` (`web/src/session/controlListener.ts`): the same preamble search with a per-tone noise floor, the most likely of the two valid headers (≥ 6 of 8 nibbles), Reed–Solomon with 0, 2 and 4 erasures, then the CRC-16. It does not remove echo or combine repetitions, so control frames are somewhat less robust than data in heavy noise. It also produces the `noise` reports of §9.2.
+The session reacts to the events of §4. Payload and reference frames, headers and clashes come from the modem receiver (PROTOCOL.md §14–15). Ack, receipt and risk frames are read as follows:
 
-The change that makes it unnecessary, for each modem receiver:
+| Implementation | Who reads ack and risk frames | Noise reports (§9.2) |
+|---|---|---|
+| TypeScript | The modem receiver (`web/src/modem/receiver.ts`) lists their headers among its candidates and skips their bodies. A separate, smaller decoder, `ControlListener` (`web/src/session/controlListener.ts`), reads them: the same preamble search with a per-tone noise floor, the most likely of the two valid headers (≥ 6 of 8 nibbles), Reed–Solomon with 0, 2 and 4 erasures, then the CRC-16. It does not remove echo or combine repetitions, so control frames are somewhat less robust than data in heavy noise. `Ears` merges both into `AirEvent`s. | `ControlListener` |
+| Swift | As in TypeScript: `ChannelReader` skips the bodies and `Session/ControlListener.swift`, a port of `controlListener.ts`, reads them; `Ears` (`Session/Platform.swift`) merges both. | `ControlListener` |
+| Kotlin | The modem's `ChannelReader` reads the bodies itself, with the same soft symbols as data (echo removed): Reed–Solomon with 0, 2 and 4 erasures on the least confident bytes, then the CRC-16. It reports them through `ReceiverEvents.onControl(magic, data, band)`, forwarded by `ReceiverHost`; `session/Ears.kt` turns them into `ack` / `risk` events. | the normal-profile receiver's tone bank (`onNoise`) |
+| C | The demodulator decodes acks, receipts and risk frames like data frames (Reed–Solomon errors only, as for every C frame) and delivers them as `BYS_EV_FRAME` with `result->kind`; `bys_result_t.heard` carries the heard nibble. | `bys_session_noise_from_demod()` (§11.1) |
 
-1. Where the header decision chooses `MAGIC_ACK` or `MAGIC_RISK` (in the TypeScript receiver, the branch commented "The web does not handle risk signals or acks"), read the body instead of skipping it: `ACK_BODY` (15) or `RISK_BODY` (18) bytes, as soft symbols like a payload block.
-2. Decode it with RS parity 8, trying 0, 2 and 4 erasures on the least confident bytes; check the CRC-16 of §3.
-3. Report it: a new event `onControl(magic, data, band)` (or new `Heard` kinds `ack` / `risk`), forwarded by `ReceiverHost` and the Worker like the others. Keep calling `searchFrom` past the frame, and keep not counting it in clash detection.
-4. Optionally include the band(s) in `onClash`, so a receiver's overlap alert can avoid them (§3.2).
+Whatever reads them, every implementation MUST:
 
-Ports that do this feed the session's `ack` / `risk` events from it; the noise reports can then come from the receiver's tone bank as well.
+1. include the ack and risk headers among the header candidates, so they are never misread as payload frames;
+2. decode the body with RS parity 8 (§3) and check the CRC-16; trying erasures on the least confident bytes is optional;
+3. keep searching past the frame, raise no `header` event for it and not count it in clash detection (§4: control frames are never "another transmission").
+
+### 11.1 Implementation notes
+
+Differences allowed by this text, beyond the receiver integration above.
+
+**C** (`c/src/session.c`; details in [`c/README.md`](../c/README.md)):
+
+- **Ambient check:** the noise reports come from the demodulator's running per-tone noise floor, converted to the scale of §9.2 by `bys_session_noise_from_demod()`, not from the mean tone energy of the last 0.25 s. They differ from the reference by a few dB (white noise of σ = 0.003 and 0.01 measures within 1 dB of the −74 and −64 dB of §9.2 in the tests). Without reports there is no ambient decision (plain ladder).
+- **Reference mode:** the receiver's resolver is synchronous (`bys_resolve_fn`), so there is no resolver timeout (`RESOLVE_TIMEOUT_SECONDS` does not apply).
+- **One speaker:** one frame plays at a time, so a risk loop and an ack loop never mix. A half-duplex device that does not feed the microphone while it plays relies on the listen windows (§5.3) and receipt listens (§6.4).
+- **Output level:** always maximum; there is no `level` option and no loud-place level change (§9.2).
+- **Other texts:** the short id of another text (risk frames) needs a `scratch` buffer to unpack into; without one it is `000000`.
+- **Errors:** two extra codes, `BYS_SERR_PLAY` (playback failed) and `BYS_SERR_NO_SPACE` (the receiver's text buffer is too small).
 
 ## 12. More sequences
 
@@ -543,10 +562,10 @@ A port is conformant when:
 
 - ack and risk frames reproduce `v4-acks.json`, `v4-risk.json` and `session-acks.json` exactly (header, body, symbols, frame seconds), and decode back;
 - its security table equals `security-levels.json`, with field-by-field overrides;
-- it passes scenarios equivalent to `web/src/session/session.test.ts` and `adapt.test.ts` on simulated air: ack stops the sender and the receipt reaches the receiver; a second sender makes the receiver fail and warn, and the real sender stop and relay; a sender hearing another text stops and warns; overlap on one band is a clash; a copy on another band is a clone; pre-listen refusals; the confirm gate per level (off / clean / expired, and closed by a later text); quarantine never blocks the next session; relays stop at 2 hops; `honor: false` only reports; reference mode with a local resolver (and its failures); the channel ladder with a speaker that only plays `mid`, the calibration learned and used; noisy channels skipped; robust start and the explicit profile; calibration expiry.
+- it passes scenarios equivalent to `web/src/session/session.test.ts` and `adapt.test.ts` on simulated air (the Swift, Kotlin and C ports run them in `ios/Tests/BySoundTests/SessionTests.swift` with `SessionAir.swift`, `android/.../session/SessionTest.kt` and `AdaptTest.kt` with `SimAir.kt`, and `c/test/test_session.c`): ack stops the sender and the receipt reaches the receiver; a second sender makes the receiver fail and warn, and the real sender stop and relay; a sender hearing another text stops and warns; overlap on one band is a clash; a copy on another band is a clone; pre-listen refusals; the confirm gate per level (off / clean / expired, and closed by a later text); quarantine never blocks the next session; relays stop at 2 hops; `honor: false` only reports; reference mode with a local resolver (and its failures); the channel ladder with a speaker that only plays `mid`, the calibration learned and used; noisy channels skipped; robust start and the explicit profile; calibration expiry.
 
 The simulated air of the reference (`testAir.ts`) sums every device's sound into every microphone with a gain per pair and white noise, on one sample clock, and can filter a device's speaker.
 
 ## 14. Not included
 
-Compared with the original library this layer comes from, the public release leaves out: any backend (publish / fetch / mark received), the energy-based second-emitter detector and short listens (and their fields in the level table), the per-microphone noise floor, the "can it be heard" level guard, the audible cue, emission self-tests and calibration of the output level. The level table keeps the values of the fields it does have.
+This layer does not include: any backend (publish / fetch / mark received), an energy-based second-emitter detector or short listens, a per-microphone noise floor, a "can it be heard" level guard, an audible cue, emission self-tests or calibration of the output level.

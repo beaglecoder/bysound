@@ -34,6 +34,23 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  examples:
+    name: Examples (TypeScript, C)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y clang
+      - run: npm ci
+        working-directory: web
+      - run: npm run typecheck && npm run build:web && npm run build:node
+        working-directory: examples
+      - run: make -C examples/c-wav-tools demo CC=clang
+
   swift:
     name: Swift (iOS/macOS)
     runs-on: macos-15
@@ -43,6 +60,7 @@ jobs:
         working-directory: ios
       - run: swift build
       - run: xcodebuild -project ios/Demo/BySoundDemo.xcodeproj -scheme BySoundDemo -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
+      - run: xcodebuild -project examples/ios-share-link/ShareLink.xcodeproj -scheme ShareLink -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO
 
   android:
     name: Kotlin (Android)
@@ -56,6 +74,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :bysound:testDebugUnitTest :demo:assembleDebug
         working-directory: android
+      - run: ./gradlew assembleDebug
+        working-directory: examples/android-share-contact
 
   esp32:
     name: ESP32 demo (ESP-IDF)

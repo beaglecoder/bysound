@@ -60,7 +60,7 @@ and `c/build/bysound ack "hello from esp32" -o ack.wav --heard top` makes the ac
 
 ## Footprint (default configuration, ESP-IDF 5.4.2, esp32s3)
 
-From `idf.py size`: image 286.7 KB (the previous one-band demo, without the session layer: 252.6 KB); internal RAM static data 150.1 KB `.bss` + 10.8 KB `.data` of 342 KB (before: 59.7 KB + 10.6 KB);
-no PSRAM needed. Delta: about +34 KB of flash (session 10 KB, SHA-256 1 KB, NVS 13.6 KB, the rest is the new `audio.c`) and +90 KB of `.bss`, of which two robust-capable demodulators
-are 132 KB (instead of 45.5 KB for one normal-profile demodulator on one band) and the sessions about 2 KB. Without the robust receiver (`BYSOUND_DEMO_ROBUST_RX` off) the demodulator state is 45.5 KB again.
+From `idf.py size`: image 286.7 KB; internal RAM static data 150.1 KB `.bss` + 10.8 KB `.data` of 342 KB; no PSRAM needed. Of the flash, the session layer is about
+10 KB, SHA-256 1 KB and NVS 13.6 KB. Of the `.bss`, the two robust-capable demodulators on the four ladder bands take 132 KB and the two sessions about 2 KB.
+Without the robust receiver (`BYSOUND_DEMO_ROBUST_RX` off) a single normal-profile demodulator takes 45.5 KB, about 85 KB less.
 CPU on the device was not measured (no board was used); on an Apple-silicon host the FFT engine runs a single-band demodulator at roughly 740x real time.
