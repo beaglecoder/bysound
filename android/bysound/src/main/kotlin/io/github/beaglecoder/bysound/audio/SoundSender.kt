@@ -26,16 +26,58 @@ class SoundSender(context: Context) {
     /** True while a frame is looping. */
     val isSending: Boolean get() = track != null
 
+    private var held = false
+    private val once = HashSet<AudioTrack>()
+
+    private fun newTrack(samples: FloatArray, sampleRate: Int): AudioTrack = AudioTrack.Builder()
+        .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+        .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_FLOAT).setSampleRate(sampleRate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+        .setTransferMode(AudioTrack.MODE_STATIC)
+        .setBufferSizeInBytes(samples.size * 4)
+        .build()
+
+    /**
+     * Session use: keeps the music volume at the maximum (and the previous one saved) across several [playOnce] calls, so it does not
+     * jump between repetitions. Only when the sound really leaves through the built-in speaker. Undo with [releaseVolume].
+     */
+    @Synchronized
+    fun holdVolume() {
+        held = true
+        if (builtInSpeaker() != null) raiseVolume()
+    }
+
+    /** Restores the volume saved by [holdVolume]. Safe to call when idle. */
+    @Synchronized
+    fun releaseVolume() {
+        held = false
+        restoreVolume()
+    }
+
+    /**
+     * Plays [samples] once (no loop) on the built-in loudspeaker, even with headphones. Returns a function that stops it and frees the
+     * track; call it also after the sound ended on its own (the caller knows the duration). With [holdVolume] active the volume is
+     * already at the maximum.
+     */
+    @Synchronized
+    fun playOnce(samples: FloatArray, sampleRate: Int = SAMPLE_RATE): () -> Unit {
+        val t = newTrack(samples, sampleRate)
+        try {
+            builtInSpeaker()?.let { t.setPreferredDevice(it) }
+            check(t.write(samples, 0, samples.size, AudioTrack.WRITE_BLOCKING) == samples.size) { "AudioTrack.write failed" }
+            t.play()
+        } catch (e: Exception) {
+            t.release()
+            throw e
+        }
+        once.add(t)
+        return { synchronized(this) { if (once.remove(t)) { runCatching { t.stop() }; t.release() } } }
+    }
+
     /** Starts looping [text] on [band]. Replaces a previous send. */
     fun send(text: String, band: Band = Band.TOP, profile: Profile = Profile.NORMAL, sampleRate: Int = SAMPLE_RATE) {
         stop()
         val samples = Modem.encode(text, band, profile, sampleRate)
-        val t = AudioTrack.Builder()
-            .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
-            .setAudioFormat(AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_FLOAT).setSampleRate(sampleRate).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
-            .setTransferMode(AudioTrack.MODE_STATIC)
-            .setBufferSizeInBytes(samples.size * 4)
-            .build()
+        val t = newTrack(samples, sampleRate)
         try {
             // Only touch the volume when the sound really leaves through the built-in speaker.
             val speaker = builtInSpeaker()
@@ -58,7 +100,7 @@ class SoundSender(context: Context) {
     fun stop() {
         track?.let { runCatching { it.stop() }; it.release() }
         track = null
-        restoreVolume()
+        if (!held) restoreVolume()
     }
 
     private fun builtInSpeaker(): AudioDeviceInfo? =

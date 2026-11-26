@@ -449,10 +449,11 @@ if air:
 if runs["snr"]:
     w("\n## 3. Decode latency and receiver CPU cost (32 B, AWGN plan, 1 transmission)\n")
     w("Latency = time from the first sample of the transmission to the moment the decoder returned the payload (1024-sample chunk granularity, median over the noiseless trials). "
-      "Real-time factor = audio duration / receiver thread CPU time, median over all trials of the configuration (receiver init included). "
+      "Real-time factor = audio duration / receiver thread CPU time (receiver init included). It is given twice: as the median over all trials of the configuration "
+      "(every SNR, so most trials are below the threshold and nothing is decoded) and as the median over the trials that decoded the payload. "
       "bysound listens to all channels of its profile at once (7 normal / 4 robust); ggwave listens to all its protocols (library default).\n")
-    w("| configuration | median latency clean (s) | airtime (s) | median real-time factor | median CPU per trial (ms) |")
-    w("|---|---:|---:|---:|---:|")
+    w("| configuration | median latency clean (s) | airtime (s) | real-time factor, all trials | CPU per trial, all trials (ms) | real-time factor, decoded trials | CPU per trial, decoded trials (ms) | decoded trials |")
+    w("|---|---:|---:|---:|---:|---:|---:|---:|")
     for cfg in ALL_ORDER:
         rr = [r for r in runs["snr"] if r["config"] == cfg and r["reps"] == "1"]
         if not rr:
@@ -460,9 +461,22 @@ if runs["snr"]:
         lat = median([float(r["latency_s"]) for r in rr if r["clean"] == "1" and float(r["latency_s"]) >= 0])
         rtf = median([float(r["audio_s"]) / float(r["cpu_s"]) for r in rr if float(r["cpu_s"]) > 0])
         cpu = median([1000 * float(r["cpu_s"]) for r in rr])
+        dd = [r for r in rr if r["success"] == "1" and float(r["cpu_s"]) > 0]
+        rtf_d = median([float(r["audio_s"]) / float(r["cpu_s"]) for r in dd])
+        cpu_d = median([1000 * float(r["cpu_s"]) for r in dd])
         a = airof(cfg, "32")
-        w("| %s | %s | %s | %s | %s |" % (name(cfg), "%.2f" % lat if lat is not None else "—", "%.2f" % float(a["air_s"]) if a else "—", "%.0f×" % rtf if rtf else "—",
-                                         "%.1f" % cpu if cpu is not None else "—"))
+        w("| %s | %s | %s | %s | %s | %s | %s | %d |" % (name(cfg), "%.2f" % lat if lat is not None else "—", "%.2f" % float(a["air_s"]) if a else "—", "%.0f×" % rtf if rtf else "—",
+                                                       "%.1f" % cpu if cpu is not None else "—", "%.0f×" % rtf_d if rtf_d else "—", "%.1f" % cpu_d if cpu_d is not None else "—", len(dd)))
+    if idle:
+        w("\nIdle listening (no transmission; 60 s segments of noise at −20 dBFS RMS, `idle.csv`), median over the segments of each receiver:\n")
+        w("| receiver | segments | median CPU per 60 s of audio (ms) | real-time factor |")
+        w("|---|---:|---:|---:|")
+        by_rx = defaultdict(list)
+        for r in idle:
+            by_rx[r["receiver"]].append(float(r["cpu_s"]) / float(r["seconds"]))
+        for rx in sorted(by_rx):
+            m = median(by_rx[rx])
+            w("| %s | %d | %.1f | %.0f× |" % (rx, len(by_rx[rx]), 60000 * m, 1 / m))
 
 # payload size
 size_agg = cells(runs["size"])
@@ -481,7 +495,7 @@ if size_agg:
             row.append(fmt_thr(threshold(c)) if c else (statusof(cfg, s) or "—"))
         w("| %s | %s |" % (name(cfg), " | ".join(row)))
     w("\n(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: %s.\n" % ", ".join(
-        "%s B: %d" % (s, ntrials(size_agg, "bysound top/normal", size=s)) for s in szs if s != "32"))
+        "%s: %d" % ("48 B UTF-8" if s == "utf8" else s + " B", max(ntrials(size_agg, c, size=s) for c in BYS_ORDER)) for s in szs if s != "32"))
     w("\nSuccess at the noiseless point (%):\n")
     w("| configuration | " + " | ".join(("48 B UTF-8" if s == "utf8" else s + " B") for s in szs if s != "32") + " |")
     w("|---|" + "---:|" * (len(szs) - 1))
@@ -541,20 +555,27 @@ if mt:
 
 # false decodes
 w("\n## 8. False decodes\n")
-tot = defaultdict(lambda: [0, 0])
+tot = defaultdict(lambda: [0, 0, 0])
 for p, rows in runs.items():
     for r in rows:
         if r["success"] == "-1":
             continue
         k = r["system"]
+        if p == "mtfixed":
+            k += ", mono-tone protocols in fixed-length mode (section 7)"
+        elif k == "ggwave":
+            k += ", default variable-length protocols"
         tot[k][0] += int(r["n_wrong"])
         tot[k][1] += 1
+        tot[k][2] += 1 if int(r["n_wrong"]) else 0
 w("Wrong payloads accepted during the transmission trials (any decoded payload that differs from the one sent, any channel/protocol; for bysound, acknowledgement, "
   "reference or risk frames decoded out of noise also count):\n")
-w("| system | trials | wrong payloads accepted |")
-w("|---|---:|---:|")
+w("| system | trials | wrong payloads accepted | trials with at least one |")
+w("|---|---:|---:|---:|")
 for k in sorted(tot):
-    w("| %s | %d | %d |" % (k, tot[k][1], tot[k][0]))
+    w("| %s | %d | %d | %d |" % (k, tot[k][1], tot[k][0], tot[k][2]))
+w("\nA trial can deliver more than one wrong payload, so the first count can exceed the second. "
+  "Total trials: %d." % sum(v[1] for v in tot.values()))
 if idle:
     w("\nNoise only, no transmission (60 s segments at −20 dBFS RMS):\n")
     w("| receiver | noise | minutes | detections | ggwave “could not decode” events |")
@@ -605,7 +626,8 @@ if scan:
 cpath = os.path.join(RES, "bysound_codec_scan.txt")
 if os.path.exists(cpath):
     w("\nbysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). "
-      "Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are the ones bug 1 used to lose (see README, bugs found by this benchmark):\n")
+      "Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are counted separately: the block without that byte is also a valid codeword, "
+      "so the receiver closes the last block at the first length whose assembled payload passes the CRC-32 (`docs/PROTOCOL.md`, section 14.7):\n")
     w("| size | payloads failing / tried (same for all 11 channel/profile combinations) | payloads with last parity byte = 0x00 | of those, failing |")
     w("|---|---:|---:|---:|")
     seen = set()

@@ -1,0 +1,22 @@
+{
+  "extends": "../web/tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "node"
+    ],
+    "typeRoots": [
+      "../web/node_modules/@types"
+    ]
+  },
+  "include": [
+    "**/*.ts",
+    "../web/src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist-node",
+    "**/dist",
+    "vite.config.ts",
+    "vite.node.config.ts"
+  ]
+}

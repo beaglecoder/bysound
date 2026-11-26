@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound channel ladder</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>The automatic channel ladder</h1>
+  <p class="lead">With <code>band: 'auto'</code> (the default of <code>sendSession</code>) the sender starts on the least audible channel and steps down <b>top → high → upper → mid</b>, three repetitions per channel, until the receiver acknowledges. After six normal repetitions it goes robust. The ack says where it was read, and that is remembered for the next send.</p>
+
+  <h2>1. Simulation (no microphone needed)</h2>
+  <p class="note">Every repetition is rendered with <code>encode</code>, passed through a filter and some microphone noise, and read with offline <code>decode</code>. Turn on the broken tweeter and watch the ladder converge on <b>mid</b>, the lowest channel. A model, not a measurement of a real speaker.</p>
+  <label><input type="checkbox" id="broken" style="width:auto" checked> broken tweeter (low-pass)</label>
+  <label for="cutoff">Cutoff: <span id="cutoffv"></span> Hz (48 dB/octave)</label><input type="range" id="cutoff" min="12000" max="19000" step="250" value="14000">
+  <label for="noise">Microphone noise: <span id="noisev"></span> dBFS</label><input type="range" id="noise" min="-60" max="-25" step="1" value="-35">
+  <div class="row"><button id="sim">Run simulation</button></div>
+  <table id="simtable"><thead><tr><th>#</th><th>sent on</th><th>profile</th><th>read on</th></tr></thead><tbody></tbody></table>
+  <p id="simresult"></p>
+
+  <h2>2. Live, between two devices</h2>
+  <p class="note">Open this page on a second device, press Listen there, then Send here. The log shows each repetition's channel; "delivered" comes from the ack and says where the other side read it.</p>
+  <label for="text">Text</label><input id="text" value="hello ladder">
+  <div class="row"><button id="send">Send (auto)</button><button id="listen" class="secondary">Listen</button><button id="forget" class="secondary">Forget calibration</button></div>
+  <ul id="live" class="log"></ul>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

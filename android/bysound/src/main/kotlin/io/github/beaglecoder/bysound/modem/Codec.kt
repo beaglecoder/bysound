@@ -76,6 +76,46 @@ internal object Codec {
         return Frame(header, body, symbols, symbols.size * ch.sym, ch)
     }
 
+    /**
+     * Reference frame: the 12-byte [fingerprint] + CRC-16 + the 16 parity bytes of set [set] (0 = A, 1 = B) of the mother code.
+     * Robust (bands that have it) lasts twice as long; the body is the same.
+     */
+    fun referenceFrame(fingerprint: IntArray, band: Band, set: Int, requested: Profile): Frame {
+        require(fingerprint.size == Protocol.REF_BYTES) { "The fingerprint must be 12 bytes" }
+        val c = Checksums.crc16(fingerprint)
+        val data = fingerprint + intArrayOf(c shr 8, c and 255)
+        val mother = ReedSolomon.encode(data, Protocol.MOTHER_PARITY)
+        val s = set and 1
+        val parity = mother.copyOfRange(Protocol.REF_DATA + s * Protocol.REF_PARITY, Protocol.REF_DATA + (s + 1) * Protocol.REF_PARITY)
+        val ch = Channel.of(band, requested)
+        val header = Protocol.headerBytes(Protocol.MAGIC_REFERENCE, Protocol.REF_DATA, band, s, ch.profile)
+        val body = data + parity
+        val symbols = Array(Protocol.PREAMBLE.size) { ch.preambleSymbol(it) } + toSymbols(header, ch.groups) + toSymbols(body, ch.groups)
+        return Frame(header, body, symbols, symbols.size * ch.sym, ch)
+    }
+
+    private fun parityFrom(set: Int) = Protocol.REF_DATA + (set and 1) * Protocol.REF_PARITY
+    fun parityRange(set: Int): IntRange = parityFrom(set) until parityFrom(set) + Protocol.REF_PARITY
+
+    class Mother(val fingerprint: IntArray, val corrected: Int)
+
+    /** The mother code with whatever parity is available: what is missing and [erasures] count as erasures. Checks the CRC-16. */
+    fun decodeMother(data: IntArray, parity: Array<IntArray?>, erasures: List<Int> = emptyList()): Mother? {
+        if (data.size != Protocol.REF_DATA) return null
+        val word = data + IntArray(Protocol.MOTHER_PARITY)
+        val erased = java.util.TreeSet(erasures)
+        for (set in 0..1) {
+            val p = parity[set]
+            if (p != null && p.size == Protocol.REF_PARITY) p.forEachIndexed { i, v -> word[parityFrom(set) + i] = v }
+            else erased.addAll(parityRange(set))
+        }
+        if (erased.size > Protocol.MOTHER_PARITY) return null
+        val r = ReedSolomon.decode(word, Protocol.MOTHER_PARITY, erased.toIntArray()) ?: return null
+        val content = r.data.copyOf(Protocol.REF_BYTES)
+        if (Checksums.crc16(content) != ((r.data[Protocol.REF_BYTES] shl 8) or r.data[Protocol.REF_BYTES + 1])) return null
+        return Mother(content, r.corrected)
+    }
+
     fun decodeBlock(bytes: IntArray, erasures: IntArray = IntArray(0)): DecodedBlock? {
         if (bytes.size <= BLOCK_HEADER + BLOCK_PARITY || bytes.size > BLOCK_BYTES) return null
         val r = ReedSolomon.decode(bytes, BLOCK_PARITY, erasures) ?: return null

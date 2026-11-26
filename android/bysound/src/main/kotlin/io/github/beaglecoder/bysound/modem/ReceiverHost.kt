@@ -9,12 +9,16 @@ data class Level(val rms: Float, val progress: Double, val failures: Int)
  */
 class ReceiverHost(
     sampleRate: Int,
+    events: ReceiverEvents,
     private val onLevel: ((Level) -> Unit)? = null,
     robust: Boolean = true,
-    onFrame: (Heard) -> Unit,
 ) {
-    private val normal = Receiver(sampleRate, Profile.NORMAL, onFrame)
-    private val robustReceiver = if (robust) Receiver(sampleRate, Profile.ROBUST, onFrame) else null
+    /** Only payload frames. */
+    constructor(sampleRate: Int, onLevel: ((Level) -> Unit)? = null, robust: Boolean = true, onFrame: (Heard) -> Unit) :
+        this(sampleRate, object : ReceiverEvents { override fun onFrame(heard: Heard) = onFrame(heard) }, onLevel, robust)
+
+    private val normal = Receiver(sampleRate, Profile.NORMAL, events)
+    private val robustReceiver = if (robust) Receiver(sampleRate, Profile.ROBUST, events) else null
     private val every = Math.round(0.06 * sampleRate).toInt()
     private var count = 0
     private var energy = 0.0

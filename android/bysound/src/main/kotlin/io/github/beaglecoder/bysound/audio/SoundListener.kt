@@ -9,6 +9,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import io.github.beaglecoder.bysound.modem.Heard
 import io.github.beaglecoder.bysound.modem.Level
+import io.github.beaglecoder.bysound.modem.ReceiverEvents
 import io.github.beaglecoder.bysound.modem.ReceiverHost
 
 /**
@@ -20,11 +21,20 @@ import io.github.beaglecoder.bysound.modem.ReceiverHost
  */
 class SoundListener(
     context: Context,
-    private val onFrame: (Heard) -> Unit,
+    /** Everything the receiver reports (payload and reference frames, headers, clashes, acks, risk frames, noise). */
+    private val events: ReceiverEvents,
     private val onLevel: ((Level) -> Unit)? = null,
     /** Called on the listening thread when reading from the microphone fails and listening stops by itself. */
     private val onError: ((String) -> Unit)? = null,
 ) {
+    /** Payload frames only. */
+    constructor(
+        context: Context,
+        onFrame: (Heard) -> Unit,
+        onLevel: ((Level) -> Unit)? = null,
+        onError: ((String) -> Unit)? = null,
+    ) : this(context, object : ReceiverEvents { override fun onFrame(heard: Heard) = onFrame(heard) }, onLevel, onError)
+
     private val audio = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
     /** One listening session: its own run flag, so a late-exiting old thread cannot stop a newer session. */
@@ -91,7 +101,7 @@ class SoundListener(
     }
 
     private fun loop(s: Session) {
-        val host = ReceiverHost(s.rate, onLevel) { onFrame(it) }
+        val host = ReceiverHost(s.rate, events, onLevel)
         val pcm = ShortArray(s.rate / 50)
         val chunk = FloatArray(pcm.size)
         try {

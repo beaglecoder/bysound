@@ -1,5 +1,8 @@
 // Public API of bysound (bysound v4). See README.md.
 export { encode, decode, send, listen, SoundError } from './audio';
+export { maxPayloadBytes, TooLongError } from './modem/codec';
+export { mix } from './audio';
+export { renderMelody } from './music';
 export type { EncodeOptions, SendOptions, Sending, ListenOptions, Listening } from './audio';
 export { BANDS, BAND_IDS, ROBUST_BANDS, hasRobust, SPACING_HZ, TONES, VERSION, GAP_SECONDS, toneHz } from './modem/protocol';
 export type { Band, BandId, Profile } from './modem/protocol';

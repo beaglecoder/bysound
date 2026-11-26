@@ -55,9 +55,14 @@ internal object Protocol {
     const val MAGIC_RISK = 0x58
     const val MAGIC_ACK = 0x41
 
-    /** Header lengths and body sizes of the frame types this library does not decode (they are recognised and skipped). */
+    /** Header lengths and body sizes of the reference, risk and ack frames (decoded by the receiver; see [ReceiverEvents.onReference] and [ReceiverEvents.onControl]). */
+    const val REF_BYTES = 12
     const val REF_DATA = 14
+    const val REF_PARITY = 16
     const val REF_BODY = 30
+    /** Reference frames are a view of an RS(46, 14) mother code; each set (A = 0, B = 1) carries 16 of its 32 parity bytes. */
+    const val MOTHER_PARITY = 32
+    const val MOTHER_BYTES = REF_DATA + MOTHER_PARITY
     const val RISK_LENGTH = 10
     const val RISK_BODY = 18
     const val ACK_LENGTH = 7

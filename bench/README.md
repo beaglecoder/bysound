@@ -7,6 +7,8 @@ This folder compares two data-over-sound modems on the same simulated channel, w
 
 Every number in `results/` was measured by the code here. Nothing is extrapolated. The full tables are in [`results/summary.md`](results/summary.md).
 
+The bysound receiver measured here is the C one: hard decisions per symbol, echo subtraction, a per-tone noise floor, maximum-likelihood header selection and errors-only Reed–Solomon. It does not compute soft symbols, does not mark erasures and decodes each lap on its own (see the header comment of [`../c/src/demod.c`](../c/src/demod.c)). Those features exist in the TypeScript, Swift and Kotlin receivers and are not in these numbers. The session layer ([`../docs/SESSION.md`](../docs/SESSION.md): acknowledgements, second-sender alerts, adaptation) is not part of this benchmark either.
+
 ## Reproduce
 
 ```sh
@@ -15,9 +17,9 @@ make                # builds build/bench (Apple clang, -O2): harness + ../c/src/
 make run            # every plan sharded over all CPUs, then the scans, then results/summary.md and results/charts/*.svg
 ```
 
-On the machine below, `make run` took 7 min 46 s of wall time (4310 s of CPU time on 12 processes), plus about 1 min for the scans; the rerun after the receiver fixes took 7 min 13 s for the plans. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` re-runs only the noiseless scans.
+On the machine below, the plans of `make run` take about 7–8 min of wall time (about 4,300 s of CPU time on 12 processes), plus about 1 min for the scans. Other targets: `make report` rebuilds the summary and charts from the CSV files, `make quick` runs a smoke test, and `make scans` re-runs only the noiseless scans.
 
-Results are deterministic. Re-running reproduces every CSV column except `cpu_s` and the `audio_s / cpu_s` ratios; this was checked by re-running 110 `snr` trials with the final binary and comparing them row by row. Single trials can be replayed verbosely (same seed as in the CSV): `build/bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial>`, for example `build/bench trial snr "bysound top/robust" 32 awgn 4 1 4`.
+Results are deterministic. Re-running reproduces every CSV column except `cpu_s` and the `audio_s / cpu_s` ratios; this was checked by re-running 110 `snr` trials and comparing them row by row. Single trials can be replayed verbosely (same seed as in the CSV): `build/bench trial <plan> "<config>" <size> <condition> <snr|clean> <reps> <trial>`, for example `build/bench trial snr "bysound top/robust" 32 awgn 4 1 4`.
 
 **Machine:** Apple M4 Pro (12 logical CPUs), macOS 27.2.1, Apple clang 21.0.0 (clang-2100.1.1.101), Python 3.15.2 (standard library only, for the report).
 
@@ -34,10 +36,10 @@ The exact frequency band of each mode (the band holding 99 % of its signal power
 
 ### Receivers
 
-Both receivers listen to everything they can decode, because neither knows in advance what the sender is using:
+The two receivers are not given the same prior information:
 
-- bysound: one demodulator per profile, as the library is built. For the normal profile it listens to all 7 channels (`band_mask = 0x7f`). For the robust profile it listens to `top`, `high`, `upper` and `mid` (`0x0f`). The receiver is told which profile to use. It is not told the channel.
-- ggwave: `ggwave_getDefaultParameters()` (48 kHz, 1024 samples per frame, variable-length payloads, every protocol enabled for reception). The only change is the input format: int16 samples, because the channel produces int16 for both systems.
+- bysound: one demodulator per profile, as the library is built. **The receiver is told which profile to use** (normal or robust), not the channel. For the normal profile it listens to all 7 channels (`band_mask = 0x7f`); for the robust profile to `top`, `high`, `upper` and `mid` (`0x0f`).
+- ggwave: `ggwave_getDefaultParameters()` (48 kHz, 1024 samples per frame, variable-length payloads, every protocol enabled for reception), so it searches all its protocols at once. The only change is the input format: int16 samples, because the channel produces int16 for both systems.
 
 Audio is fed in chunks of 1024 samples to both. The TX side also uses library defaults: bysound at full level with its 350 ms trailing gap, and ggwave at `volume = 10` (`GGWave::kDefaultVolume`) with float output. Volume does not matter here because the channel normalises the level.
 
@@ -52,19 +54,22 @@ Audio is fed in chunks of 1024 samples to both. The TX side also uses library de
 
 1. **Lead silence**: uniform 0.25–1.25 s before the first message, and 1 s after the last.
 2. **Repeats**: either 1 transmission, or 2. For 2, ggwave gets its message twice with a 350 ms silence between them. bysound gets two laps; each lap already ends in its own 350 ms gap.
-3. **Echo** (optional): direct path + 0.5 × (8 ms delay) + 0.25 × (23 ms delay).
+3. **Echo** (optional): direct path + 0.5 × (8 ms delay) + 0.25 × (23 ms delay). This is one synthetic profile, not a measured room response.
 4. **Clock drift** (optional): ±100 ppm, using a 64-tap Blackman-windowed sinc interpolator with 2048 phases. Linear interpolation would attenuate the 15–20 kHz modes. The interpolator was checked: a sine at 1, 15 and 19.5 kHz changes level by at most 0.0026 dB (`results/resampler_check.txt`).
 5. **Gain**: the received signal is scaled so that its RMS **over the sound-on samples only** is −40 dBFS. Lead, tail, gaps and bysound's trailing gap are excluded from this measurement.
 6. **Noise**, one of three kinds:
    - white Gaussian;
    - pink (Paul Kellett's filter);
    - "babble-like": 6 independent sources, each white noise high-passed at 100 Hz, low-passed twice at 800 Hz, and multiplied by a random ~4 Hz envelope. This is a crude proxy for speech, not recorded speech.
-7. **Quantisation** to int16 with clipping. Clipping (`clip_frac`) is 0 from −22 dB SNR upward, at most 0.4 % of samples at −24 to −28 dB, and up to 11.5 % at −36 dB. No configuration decodes anything below −18 dB, so clipping does not affect any success figure above 0 %.
+7. **Quantisation** to int16 with clipping (`clip_frac` = fraction of samples clipped):
+   - From −22 dB SNR upward, no sample is clipped in any plan.
+   - White, pink, echo, drift and combined noise: clipping starts below −24 dB and reaches 1.4 % of samples at −32 dB and, on the 2 dB grid of the white-noise plan, 4.7 % at −34 dB and 11.5 % at −36 dB. No configuration decodes anything at those SNRs (the lowest SNR with any success is −24 dB, under pink and combined noise), so clipping does not affect these results.
+   - Babble-like noise, which is concentrated at low frequency: 0.016 % at −24 dB, 0.36 % at −28 dB and 2.4 % at −32 dB. The near-ultrasonic modes of both systems still decode there, so the babble results at the bottom of the grid include those clipped samples.
 
 The RNG is xoshiro256\*\*. Its seed comes from (plan, rate, size, condition, SNR, repeats, trial) **without the system or configuration**, so both systems get the same lead silence and the same noise realisation.
 
 **SNR definition.**
-- **Full-band SNR** = sound-on signal power / noise power over 0–24 kHz. The charts and tables use this.
+- **Full-band SNR** = sound-on signal power / noise power over 0–24 kHz. The charts and tables use this. By construction it favours modes that use a narrower band.
 - **In-band SNR** = full-band SNR + a per-mode offset. The offset is computed from the measured PSDs (Welch, 4096-point) as `10·log10(P_sig,in-band / P_sig) − 10·log10(P_noise,in-band / P_noise)` over the band holding 99 % of the mode's power (`results/bands.csv`).
 - **Peak-referenced SNR** = full-band SNR + the mode's peak-to-average power ratio (PAPR, `results/airtime.csv`). It answers "which mode survives more noise when both are played at the same peak amplitude", which is how a speaker at maximum volume behaves. The `*_peak_1x.svg` charts show the same trials on this axis.
 - "Clean" means no noise at all: the signal at −40 dBFS plus int16 quantisation.
@@ -93,9 +98,9 @@ The RNG is xoshiro256\*\*. Its seed comes from (plan, rate, size, condition, SNR
 | `idle` | no transmission: 10 × 60 s of each noise type at −20 dBFS, into each receiver | — |
 | scans | noiseless delivery of 300–500 different payloads per configuration, and the bysound symbol-level codec round trip | — |
 
-In total: 158,510 transmission trials.
+In total: **157,670 transmission trials**: 87,380 for bysound and 70,290 for ggwave (67,320 in its default variable-length protocols and 2,970 in the fixed-length mono-tone runs).
 
-**SNR90** in the tables is the lowest grid SNR from which every higher grid point, the clean point included, reached at least 90 % success. "—" means even the clean point stayed below 90 %.
+**SNR90** in the tables is the lowest grid SNR from which every higher grid point, the clean point included, reached at least 90 % success. "—" means even the clean point stayed below 90 %. No confidence intervals are given; with 30–50 trials per cell, one trial moves a cell by 2–3 percentage points.
 
 ## Results
 
@@ -108,11 +113,11 @@ Percentage of trials that decoded the exact payload:
 
 | configuration | −16 dB | −14 dB | −12 dB | −10 dB | −8 dB | −4 dB | 0 dB | clean | SNR90 full-band | SNR90 in-band | SNR90 peak-ref. | airtime 32 B |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | 4 | 98 | 100 | 100 | 100 | exceeds 30 s cap | 100 | 100 | −14 | −2 | −7 | 2.33 s |
+| bysound top/normal | 4 | 98 | 100 | 100 | 100 | 100 | 100 | 100 | −14 | −2 | −7 | 2.33 s |
 | bysound high/normal | 0 | 10 | 96 | 100 | 100 | 100 | 100 | 100 | −12 | −2 | −4 | 1.79 s |
 | bysound wide/normal | 0 | 0 | 0 | 76 | 100 | 100 | 100 | 100 | −8 | −1 | +3 | 1.21 s |
-| bysound audible/normal | 0 | 0 | 38 | 100 | 100 | exceeds 30 s cap | 100 | 100 | −10 | −1 | −1 | 1.75 s |
-| bysound top/robust | 100 | 100 | 100 | 100 | exceeds 30 s cap | exceeds 30 s cap | 100 | 100 | −16 | −4 | −10 | 4.32 s |
+| bysound audible/normal | 0 | 0 | 38 | 100 | 100 | 100 | 100 | 100 | −10 | −1 | −1 | 1.75 s |
+| bysound top/robust | 100 | 100 | 100 | 100 | 100 | 100 | 100 | 100 | −16 | −4 | −10 | 4.32 s |
 | ggwave ultrasound-fast | 0 | 0 | 12 | 64 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
 | ggwave ultrasound-fastest | 0 | 0 | 24 | 78 | 98 | 100 | 100 | 100 | −8 | −1 | +5 | 1.71 s |
 | ggwave audible-fast | 0 | 0 | 14 | 52 | 94 | 100 | 100 | 100 | −8 | −1 | +4 | 2.73 s |
@@ -120,23 +125,27 @@ Percentage of trials that decoded the exact payload:
 
 All 20 configurations, and the 2-transmission results, are in `results/summary.md` section 1.
 
-- At equal average power, the bysound normal-profile channels need 0–6 dB less SNR than ggwave's ultrasound and audible protocols (SNR90 of −8 to −14 dB against −8 dB). The robust profile needs 6–8 dB less.
-- Measured **in band**, most of that gap disappears: bysound −1 to −4 dB against ggwave −1 dB. Most of bysound's full-band advantage comes from concentrating the same power into a narrower band (1.5–3 kHz against ggwave's 4.4 kHz), not from a better detector at equal in-band SNR.
-- At **equal peak level**, the gap grows: bysound's waveforms have a lower PAPR (6.3–11.4 dB against ggwave's 12.1–12.9 dB), so peak-referenced SNR90 is −10 to +3 dB for bysound against +4 to +5 dB for ggwave.
+- At equal average power, the bysound normal-profile channels need 0–6 dB less SNR than ggwave's ultrasound and audible protocols (SNR90 of −8 to −14 dB against −8 dB; `wide`, on the same span as ggwave ultrasound, is equal). The robust profile needs 6–8 dB less.
+- Measured **in band**, most of that gap disappears: bysound −1 to −4 dB against ggwave −1 dB. Most of bysound's full-band advantage comes from concentrating the same power into a narrower band (1.5–3 kHz for the 2- to 4-tone channels, against ggwave's 4.4 kHz), not from a better detector at equal in-band SNR.
+- At **equal peak level**, the gap grows: bysound's waveforms have a lower PAPR (6.3–11.4 dB against 12.1–12.9 dB for ggwave's 6-tone protocols), so peak-referenced SNR90 is −10 to +3 dB for bysound against +4 to +5 dB for ggwave. `wide` (+3 dB) is 1–2 dB better than ggwave ultrasound (+4/+5 dB). ggwave's DT protocols have a lower PAPR (7.3–7.8 dB) and its MT protocols 4.0 dB.
+- The modes do not take the same time to send 32 bytes, so equal power is not equal energy. Corrected for sound-on time, the full-band advantage over ggwave ultrasound fastest is about 3–5 dB in energy per message (PAPER.md, section 6.2).
+- ggwave `dt-normal` and `dt-fast` have no SNR90 because they decoded 86 % of the clean trials while decoding 100 % at 0 dB; in the full-scale noiseless scan (section 10 of the summary) they missed 0 of 500 payloads. This points to the exact digital silence of the clean point, which the SNR90 definition then penalises.
 
-### Impairments (32 B, SNR90 in full-band dB, grid step 4, 1 transmission)
+### Impairments (32 B, SNR90 in full-band dB, grid step 4, 1 transmission, 30 trials per cell)
 
 | configuration | AWGN | echo | pink | babble | drift +100 ppm | drift −100 ppm | combo |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| bysound top/normal | −12 | −8 | −20 | −32 | −12 | −12 | −16 |
-| bysound high/normal | −12 | −8 | −20 | −32 | −12 | −12 | −16 |
+| bysound top/normal | −12 | −8 | −20 | ≤ −32 | −12 | −12 | −16 |
+| bysound high/normal | −12 | −8 | −20 | ≤ −32 | −12 | −12 | −16 |
 | bysound audible/normal | −8 | −4 | −8 | −12 | −8 | −8 | −4 |
-| bysound top/robust | −16 | −12 | −24 | −32 | −16 | −16 | −20 |
-| ggwave ultrasound-fast | −8 | +0 | −16 | −32 | −8 | −8 | −8 |
+| bysound top/robust | −16 | −12 | −24 | ≤ −32 | −16 | −16 | −20 |
+| ggwave ultrasound-fast | −8 | +0 | −16 | ≤ −32 | −8 | −8 | −8 |
 | ggwave audible-fast | −8 | +0 | −8 | −8 | −8 | −8 | +0 |
 | ggwave dt-fastest | −4 | +4 | +0 | +0 | +0 | +0 | clean only |
 
-The "babble" column hits the bottom of the grid (−32 dB) for every near-ultrasonic mode of both systems. That is the expected result: the babble-like noise has almost no energy above 15 kHz (the in-band offset is about +40 dB).
+The AWGN column is the `snr` plan (50 trials) read on the same 4 dB grid. "≤ −32" means the bottom of the grid: the babble-like noise has almost no energy above 15 kHz (the in-band offset is about +40 dB), so every near-ultrasonic mode of both systems decodes there and the test does not separate them.
+
+**Echo.** With one transmission, bysound needs 4–12 dB less SNR than ggwave under this echo: 8 dB for the 2- and 3-tone channels (−8 against +0 dB), 12 dB for `top/robust`, 4 dB for `xhigh`, `wide` and `audible`. With two transmissions ggwave's ultrasound protocols reach −4 dB, which leaves 4–8 dB (none for `wide`). Relative to AWGN alone the echo costs the bysound configurations above 4 dB and ggwave 8 dB; that 4 dB difference is the part attributable to bysound's echo subtraction.
 
 ![echo](results/charts/cond_echo_1x.svg)
 
@@ -147,7 +156,7 @@ The "babble" column hits the bottom of the grid (−32 dB) for every near-ultras
 | bysound top/normal | 1.57 s | 2.33 s | 3.81 s | 6.30 s | 22.17 s | exceeds 30 s cap | 13.7 | 20.3 |
 | bysound high/normal (= upper, mid) | 1.28 s | 1.79 s | 2.75 s | 4.41 s | 15.01 s | exceeds 30 s cap | 17.9 | 29.0 |
 | bysound xhigh/normal | 1.09 s | 1.47 s | 2.21 s | 3.45 s | 11.39 s | exceeds 30 s cap | 21.8 | 37.1 |
-| bysound wide/normal | 0.96 s | 1.21 s | 1.69 s | 2.53 s | 7.84 s | 28.99 s | 26.4 | 50.7 |
+| bysound wide/normal | **0.96 s** | **1.21 s** | **1.69 s** | **2.53 s** | **7.84 s** | **28.99 s** | **26.4** | **50.7** |
 | bysound audible/normal | 1.27 s | 1.75 s | 2.67 s | 4.23 s | 14.15 s | exceeds 30 s cap | 18.3 | 30.3 |
 | bysound top/robust | 2.78 s | 4.32 s | 7.26 s | 12.25 s | exceeds 30 s cap | exceeds 30 s cap | 7.4 | 10.4 |
 | ggwave normal (audible = ultrasound) | 1.64 s | 3.75 s | 6.63 s | 12.39 s | — | — | 8.5 | 10.3 |
@@ -155,7 +164,7 @@ The "babble" column hits the bottom of the grid (−32 dB) for every near-ultras
 | ggwave fastest | 1.00 s | 1.71 s | 2.67 s | 4.59 s | — | — | 18.8 | 27.9 |
 | ggwave dt-fastest | 1.64 s | 3.69 s | 6.51 s | 12.27 s | — | — | 8.7 | 10.4 |
 
-Sizes that would last more than 30 s on a configuration are not sent by bysound; the 512 B and 2048 B columns of `results/summary.md` show "exceeds 30 s cap" there (`wide`: 28.99 s at 2048 B is the only 2048 B that fits; `high/robust`, `upper/robust` and `mid/robust` fit 512 B in 29.66 s).
+The fastest configuration in each column is in bold. Sizes that would last more than 30 s on a configuration are not sent by bysound; the 512 B and 2048 B columns of `results/summary.md` show "exceeds 30 s cap" there (`wide`: 28.99 s at 2048 B is the only 2048 B that fits; `high/robust`, `upper/robust` and `mid/robust` fit 512 B in 29.66 s). `airtime.csv` also lists 140 B (ggwave's maximum: 2.65 s on `wide`, 4.67 s on `high`, 6.69 s on `top`, 13.02 s on `top/robust`, 4.97 s on ggwave fastest) and 1024 B (14.94 s on `wide`); these are encoder lengths and were not passed through the channel.
 
 **Max payload in one transmission** (ASCII bytes the encoder accepts; bysound is capped at 30 s of airtime, 350 ms gap included):
 
@@ -171,131 +180,80 @@ Sizes that would last more than 30 s on a configuration are not sent by bysound;
 | ggwave, variable-length mode | 140 | 5.0 s (fastest) to 38.9 s (dt-normal) |
 | ggwave, fixed-length mode | 64 | 11.3 s to 33.8 s |
 
-The figures are packed bytes: letters pack 1:1, digit pairs 2:1.
+The figures are packed bytes: letters pack 1:1, digit pairs 2:1. The code rate differs between the two systems (bysound adds 14 bytes per 48-byte block plus a 4-byte CRC; ggwave adds 3 bytes plus Reed–Solomon parity that grows with length), so equal airtime does not mean equal redundancy.
 
 ![throughput](results/charts/throughput_vs_size.svg)
 ![airtime](results/charts/airtime_vs_size.svg)
 ![max payload in one transmission](results/charts/max_payload.svg)
 
-### Receiver CPU and latency (32 B, median over the `snr` plan)
+### Receiver CPU and latency
 
-- bysound: 436–534× real time, 7–12 ms of CPU per 3–7 s trial, while listening to 7 channels (4 for robust).
-- ggwave: 7,585–18,319× real time, 0.3–0.6 ms per trial.
-- **ggwave's receiver used 14–42× less CPU** in this setup (by median real-time factor).
-- Decode latency (clean) is airtime minus 0.25–0.35 s for both: bysound returns before its trailing gap ends, and ggwave before its end marker ends.
+Real-time factor = seconds of audio processed per second of receiver CPU (higher is cheaper), receiver init included. Medians, from `results/summary.md` section 3:
 
-Code size of the built objects (arm64, -O2, `size`; one host measurement, not a microcontroller figure):
-- bysound `../c/src`: 34,648 bytes of `__TEXT`, from 2,000 lines of source.
-- ggwave `ggwave.o`: 59,880 bytes of `__TEXT`, from about 4,800 lines including its Reed-Solomon and FFT headers.
+| situation | bysound | ggwave | ggwave is lighter by |
+|---|---:|---:|---:|
+| Idle listening (`idle.csv`, 30 segments of 60 s per receiver) | 371× (normal, 7 channels), 463× (robust, 4 channels) | 18,993× | 41–51× |
+| 32 B trials that decoded the payload (`snr` plan, 1 transmission, median per configuration) | 426–533× (6.8–12.4 ms per trial) | 660–5,903× (0.9–8.2 ms per trial) | 1.2–14× |
+| All 32 B trials, decoded or not (same plan) | 436–534× (6.7–12.1 ms per trial) | 7,585–18,319× (0.3–0.6 ms per trial) | 14–42× |
+
+The last column divides the extremes of the two ranges. The all-trials row includes the many trials below the threshold, where ggwave does almost no work, so the first two rows describe the real situations better. bysound's cost is nearly constant because it searches every channel of its profile every 4 ms (8 ms robust), message or not. Decode latency (clean) is airtime minus 0.25–0.35 s for both: bysound returns before its trailing gap ends, and ggwave before its end marker ends. CPU was measured on the host only, not on a phone or a microcontroller.
+
+Code size of the built objects (arm64, `-O2`, `size`; host figures, not microcontroller figures):
+- bysound `../c/src`: 34,984 bytes of `__TEXT` (the seven objects in `build/sbs`), from 1,669 lines of source (`wc -l c/src/*`, comments included; the public header `c/include/bysound.h` adds 367).
+- ggwave `ggwave.o`: 59,880 bytes of `__TEXT`, from about 4,800 lines including its public header and its Reed–Solomon and FFT headers.
 
 ### False decodes
 
-**bysound accepted 0 wrong payloads** in 88,220 transmission trials and in 60 minutes of noise-only input.
+| system | trials | wrong payloads delivered |
+|---|---:|---:|
+| bysound | 87,380 | 0 |
+| ggwave, default variable-length protocols | 67,320 | 34 |
 
-**ggwave accepted 349 wrong payloads**:
-- 315 were from the fixed-length `mt-*` runs, which are not the default mode.
-- 32 were from **8-byte payloads in the default variable-length mode**, at every SNR including the clean point. ggwave protects 8 bytes with only 4 Reed-Solomon bytes and has no CRC, so a miscorrection is delivered as data. The noiseless scan confirms this: with no channel at all, 11–21 of 500 different 8-byte payloads decoded to a wrong payload on `*-fast` and `*-fastest`.
-- 2 were 32-byte, 2-transmission trials where one repeat came out wrong.
+- **bysound** delivered no wrong payload in 87,380 transmission trials; a CRC-32 over the whole text guards delivery.
+- **ggwave**, default protocols:
+  - 32 were **8-byte payloads**, 31 of them on the `*-fast` and `*-fastest` speeds of the audible and ultrasound protocols and 1 on `ultrasound-normal`, at SNRs from −12 to +4 dB and at the clean point. In each of those trials the correct payload was not delivered. The noiseless scan shows the same: with no channel at all, 11–21 of 500 different 8-byte payloads decoded to a wrong payload on `*-fast` and `*-fastest`.
+  - 2 were **32-byte payloads** in two-transmission trials (`ultrasound-fastest`, pink and babble-like noise), in which the correct payload was also delivered.
+  - ggwave's Reed–Solomon parity grows with length (4 bytes at 8 B, 12 at 32 B, 56 at 140 B) and there is no checksum after the decode. The pattern is consistent with Reed–Solomon mis-correction of short payloads; the cause was not traced in ggwave's code.
+- **Noise only** (30 minutes per receiver: 10 each of white, pink and babble-like): 0 detections for bysound's normal receiver, 0 for its robust receiver and 0 for ggwave.
 
-ggwave produced 0 detections in the 30 minutes of pure noise.
+The fixed-length mono-tone runs are reported separately (summary section 8): 315 wrong payloads in 148 of 2,970 trials, repeats within a trial counted, all at 8 B. 74 of them were at the clean point, so part of this is probably an artefact of the exact digital silence around the signal.
 
 ## Discussion
 
-**Where bysound is better in this simulation:**
-- **Noise:** SNR90 is 0–6 dB lower than ggwave's ultrasound and audible protocols at equal average power (normal profile; 6–8 dB lower for robust). At equal peak level it is 1–15 dB lower (for example, −7 dB for top/normal against +4 dB for ggwave ultrasound-fast). Most of the full-band advantage comes from using a narrower band; at equal in-band SNR the detectors are within about 0–3 dB.
-- **Echo:** −8 dB against +0 dB for the near-ultrasonic modes.
+**Where bysound does better in this simulation:**
+- **Broadband noise:** SNR90 is 0–6 dB lower than ggwave's ultrasound and audible protocols at equal average power (normal profile; 6–8 dB lower for robust), and 1–15 dB lower at equal peak level (for example, −7 dB for top/normal against +4 dB for ggwave ultrasound-fast). Most of the full-band advantage comes from using a narrower band; at equal in-band SNR the detectors are within 0–3 dB.
+- **Echo:** −8 dB against +0 dB for the 2- and 3-tone channels, with one synthetic echo profile.
 - **Payload size:** up to 2,114 bytes in one 30 s transmission (`wide`; 700 on `top`, 335 on `top/robust`) against 140 for ggwave, whose longest transmission (dt-normal) takes 38.9 s.
 - **Throughput above about 32 bytes:** `wide` reaches 50.7 B/s at 128 B and 70.6 B/s at 2048 B. The best ggwave figure is 27.9 B/s at 128 B.
-- **No false decodes:** CRC-32 over the payload plus RS per block. ggwave delivered wrong 8-byte payloads.
+- **Wrong payloads:** none delivered, with a CRC-32 over the payload plus Reed–Solomon per block. ggwave delivered wrong 8-byte payloads.
 
-**Where ggwave is better:**
-- **CPU:** its receiver costs 14–42× less in this configuration, partly because bysound evaluates 7 channels with a 4 ms search step.
-- **Short messages:** for 8–32 byte payloads, ggwave `fastest` (1.00 s at 8 B, 1.71 s at 32 B) is faster than every bysound channel except `wide` and `xhigh`. bysound's mandatory 350 ms trailing gap is a large share of a short message.
-- **Maturity and reach:** years of public use, bindings for many languages and platforms (JS/WASM, Python, Arduino, ESP32, iOS/Android examples), and a single self-contained C++ file. bysound v4 is new, and this benchmark found two receiver bugs in it (described below, now fixed).
-- **Low audible band:** the DT/MT protocols sit at 1.1–2.6 kHz. In fixed-length mode, MT reaches SNR90 = −16 to −20 dB, but its receiver must know the payload length and it is very slow (1.9–5.7 B/s).
+**Where ggwave does better:**
+- **CPU:** its receiver costs 41–51× less while idle and 1.2–14× less in trials that decode a payload, partly because bysound evaluates every channel of its profile with a 4 ms search step.
+- **Short messages:** for 8–32 byte payloads, ggwave `fastest` (1.00 s at 8 B, 1.71 s at 32 B) is faster than every bysound channel except `wide` (and `xhigh` at 32 B). bysound's 350 ms trailing gap is a large share of a short message.
+- **Maturity and ecosystem:** years of public use, a larger community, a single self-contained C++ file, and ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) with examples for Arduino, RP2040 and ESP32 boards. bysound covers the same kinds of platforms with four native implementations (TypeScript, Swift, Kotlin, C), but it is new and has not been measured over the air.
+- **Low-frequency, few-tone modes:** the DT/MT protocols sit at 1.1–2.6 kHz. In fixed-length mode, MT reaches SNR90 = −16 to −20 dB (the lowest figure measured), but its receiver must know the payload length and it is slow (1.9–5.7 B/s).
 
-**Two transmissions** help both systems only a little (section 1 and 5 of the summary).
-- The C streaming demodulator in `../c` **does not combine laps**. `src/demod.c` says so: memory is bounded. Each lap is decided on its own, so the 2-lap gain is just "two independent chances".
-- The lap combining described in the protocol exists in the TypeScript receiver (`../web/src/modem`), which this benchmark does not exercise.
-
-## bysound bugs found by this benchmark (now fixed)
-
-The first run of this benchmark found two receiver bugs in bysound. Both are fixed in all four receivers (C, TypeScript, Swift, Kotlin), each with regression tests, and every result in `results/` was regenerated with the fixed library. The on-air format did not change: the test vectors and the C golden audio are identical. This section keeps the history.
-
-**What the first run showed.** The `bysound top/robust` row was 96 % at −4 dB, 0 dB and clean, but 100 % from −16 to −8 dB. This was **not a harness artefact**:
-- Same seeds as every other configuration.
-- No clipping (`clip_frac` = 0).
-- It failed identically with 20 different lead offsets.
-- It failed with 480- or 1024-sample chunks.
-- It failed with the FFT and the Goertzel engine.
-
-Without any channel (`bench scan 32 500`), bugs 1 and 2 together lost 15/500 payloads on top/robust, 8/500 on top/normal, 5/500 on high/normal and mid/robust, 3/500 on mid/normal and 1–2/500 on the other channels. They also caused every other bysound clean-point figure below 100 % (for example, 90 % at 2048 B was the single trial-5 payload, which hit bug 1). The first run reported these as measured; nothing was filtered out or re-run.
-
-**1. The last block closed one byte short when its final Reed–Solomon parity byte was 0x00 (codec bug; no audio involved).**
-- The last block's length is not transmitted, so the receiver tries lengths from shortest to longest. It used to accept the first one RS accepted (`bys_rx_finish` in `../c/src/rx.c`, and the per-symbol probe in `../c/src/demod.c`).
-- If the codeword's last parity byte is 0x00, then c(x) = x·c′(x), and c′ (the block without that byte) is also a valid codeword with zero corrections.
-- So the block closed one byte short. The CRC-32 check then failed with `BYS_E_CRC`, and the receiver did not go on to try the true length. The message was lost, never delivered wrong.
-- This affected about 1/256 of all payloads, on every channel and profile.
-- `bench codec <size> <n>` showed it for 8, 32, 128, 512 and 2048 B: the prediction "last parity byte = 0x00" matched the failing set in 300 of 300 payloads at each size.
-- Repro: `build/bench repro 0 0 32 268` (band 0 = top, profile 0 = normal, 32 B, payload of trial 268). It used to print `symbol-level decode (no audio): status -7, payload MISMATCH`.
-- **Fix.** Among the lengths RS accepts with the expected index and total, the receiver now takes the first one for which the whole assembled payload passes the CRC-32. On a CRC failure it goes on to the next length, so no candidate that the CRC rejects is ever delivered.
-  - C: `close_last` in `rx.c` is used by `bys_rx_finish` and by a last block that reaches full length. The demodulator's probe calls the new `bys_rx_last_fits`, which checks RS and the CRC-32, before it closes the frame.
-  - TypeScript, Swift and Kotlin: `tryBlocks` (each length as it arrives) and `closeLast` (laps combined) call `lastBlockCheck`. These receivers combine laps, so another block may still be missing when the last one closes. Then the CRC cannot be checked yet. The first length RS accepts is kept, but marked as unchecked. If the assembled payload then fails the CRC, only that last block is forgotten, and a later lap closes it again with the check.
-
-**2. A body that looks like the preamble cut off the read, only at high SNR (demodulator bug; codec OK).**
-- Example: payload `q(qs@TgOXJfdn<NXK<f,h?<StQ*yJq)b` (32 B, trial 4) on top/robust; trial 37 is a second one. The symbol-level round trip succeeded, but the audio decode failed without noise and at SNR ≥ −6 dB, while it succeeded between −16 and −8 dB. The header was read (`BYS_EV_HEADER`); then the demodulator reported 2 failures and no frame.
-- Repro: `build/bench repro 0 1 32 4 [lead] [chunk]` (top, robust, 32 B, trial 4). It used to print `audio decode ...: correct 0 ... headers 1 failures 2`.
-- The TypeScript receiver failed the same payload the same way (clean and up to moderate noise), so the cause is in the shared algorithm, not in the C port.
-- **Root cause.** The receiver also searches for the preamble inside a body. A preamble found after the frame's earliest possible end is taken as the next repetition, and the read of the current frame stops there. That is needed because the last block's length is unknown, so the read cannot otherwise tell where the frame ends.
-- In this payload, body symbols 50–57 match the top/robust preamble in 6 of its 16 nibbles (top has 2 groups per symbol, so the preamble has 16 nibbles).
-- In a clean channel, each matching nibble carries almost all of its symbol's energy, so the preamble score is about 6/16 = 0.375, over the 0.32 threshold. With noise, each nibble's share of the energy drops and the score falls below the threshold. That is why the failure appeared only at high SNR.
-- The false "next repetition" started after the frame's minimum length. So the read stopped after 46 of the 50 body symbols, the last block could not close (failure 1), and the false frame's header was unreadable (failure 2).
-- It was not the noise floor, the echo estimate or a header tie: the floor and echo of the real frame were normal, and the header was read correctly.
-- top/robust was hit most because its preamble has the fewest nibbles, so chance matches reach the threshold most often.
-- **Fix.** A preamble inside a body cuts off the read only if it scores at least 0.7 of the current frame's own preamble score (`REPEAT_SCORE_SHARE`). A real next repetition comes from the same sender, so it scores about the same; a look-alike in the data scores only its share of matching nibbles.
-  - At low SNR the frame's score is near the threshold, so the condition does not change anything there.
-  - The candidate's score also no longer overwrites the score reported for the frame being read.
-  - The change is the same in `demod.c` (`search_in_body`) and in `searchInBody` of the TypeScript, Swift and Kotlin receivers.
-
-**Tests added.**
-- C: `test_zero_parity` in `../c/test/test_all.c` (symbol level) and `test_regressions` in `../c/test/test_demod.c` (audio, both engines).
-- TypeScript: `../web/src/modem/regressions.test.ts`.
-- Swift: `../ios/Tests/BySoundTests/RegressionTests.swift`.
-- Kotlin: `../android/bysound/src/test/kotlin/io/github/beaglecoder/bysound/modem/RegressionTest.kt`.
-- Each one covers:
-  - one- and two-block payloads whose last parity byte is 0x00, found by counting up a number in the text, in the normal and robust profiles;
-  - the bug 2 payload on top/robust in a clean channel at 48 kHz and 44.1 kHz, and in 2 repetitions.
-- All of them fail without the fixes.
-
-**Effect on the results (rerun with the same seeds).**
-- 160 trials changed from failure to success:
-  - 28 in `snr`;
-  - 43 in `size`;
-  - 85 in `cond`;
-  - 4 in `rate44`.
-- No trial changed from success to failure, and no false-decode count changed. ggwave's rows are unchanged except for the CPU columns.
-- Noiseless scans: bysound now delivers every payload on every channel, 0 of 500 lost at 8 B and 32 B and 0 of 300 at 128 B (`results/noiseless_scan_*B.txt`).
-- Codec scan: 0 of 300 payloads fail at every size, including the 1–2 per size whose last parity byte is 0x00 (`results/bysound_codec_scan.txt`).
-- top/robust is now 100 % from −16 dB to clean. Its 2048 B SNR90 moved from −12 to −16 dB. Its clean-point success under every impairment (summary section 5) and at 44.1 kHz went from 97 % to 100 %, as did high/normal's under babble and drift +100 ppm. Every bysound clean-point figure in the summary is now 100 %.
+**Two transmissions** help both systems only a little (sections 1 and 5 of the summary). The C demodulator does not combine laps (memory is bounded), so for bysound the 2-lap gain is just "two independent chances". Lap combining exists in the TypeScript, Swift and Kotlin receivers, which this benchmark does not exercise.
 
 ## Threats to validity
 
 - **Simulation, not air.** No speaker or microphone frequency response, no automatic gain control or noise suppression, no room impulse response beyond two taps, no Doppler, no moving sources.
-  - Phone speakers and microphones often lose 10–30 dB between 15 and 20 kHz, and the loss varies by device. That would hurt every near-ultrasonic mode, bysound `top` (18–19.5 kHz) more than `mid` or ggwave ultrasound (15–19.4 kHz).
+  - Many phone speakers and microphones lose sensitivity above about 17 kHz, and the loss varies by device. That would hurt every near-ultrasonic mode, bysound `top` (18–19.5 kHz) more than `mid` or ggwave ultrasound (15–19.4 kHz).
   - Real-air results can rank the modes differently.
-- **SNR is a modelling choice.** The full-band, in-band and peak-referenced views lead to different conclusions; all three are reported. Peak-referenced assumes the speaker's limit is digital full scale.
-- **Noise models are synthetic.** The pink filter is designed for 44.1 kHz (it was used at 48 kHz). "Babble" is a modulated, speech-shaped noise, not real speech. White noise is the main condition.
-- **Clean ≠ realistic.** Exact digital silence around the signal triggers behaviour that never occurs with a real microphone. ggwave `dt-normal` and `dt-fast` fail 14 % at the clean point but 0 % at 0 dB, and 0/500 in the full-scale noiseless scan. We did not investigate this. The +4 dB point is the realistic upper end.
+- **SNR is a modelling choice.** The full-band, in-band and peak-referenced views lead to different conclusions; all three are reported. Full-band SNR favours narrowband modes by construction. Peak-referenced assumes the speaker's limit is digital full scale.
+- **Noise models are synthetic.** The pink filter is designed for 44.1 kHz (it was used at 48 kHz). "Babble" is a modulated, speech-shaped noise, not real speech. White noise is the main condition. The echo is one synthetic profile.
+- **Clean ≠ realistic.** Exact digital silence around the signal triggers behaviour that does not occur with a real microphone. ggwave `dt-normal` and `dt-fast` fail 14 % at the clean point but 0 % at 0 dB, and 0/500 in the full-scale noiseless scan; the cause was not investigated. The +4 dB point is the realistic upper end.
 - **Receiver setup.** bysound was told the profile and listened to all channels of that profile. ggwave listened to all protocols. A deployment that listens to fewer channels would use less CPU and could have a different false-decode exposure.
+- **Only the C receiver.** Soft symbols, erasure decoding and lap combining (TypeScript, Swift and Kotlin receivers) are not measured, nor is the session layer.
 - **Payload statistics.** Random ASCII without digits. Real payloads (URLs, JSON, numbers) favour bysound's digit packing, which is not reflected here.
-- **Grid resolution.** SNR90 is quantised to the grid: 2 dB for section 1, 4 dB elsewhere. Trial counts are 50, 30, 20 or 10 per cell, so one failure moves a cell by 2–10 %.
+- **Grid resolution and statistics.** SNR90 is quantised to the grid: 2 dB for section 1, 4 dB elsewhere. Trial counts are 50, 30, 20 or 10 per cell, so one failure moves a cell by 2–10 %. No confidence intervals.
 - **Not covered:**
   - ggwave's direct-sequence spread (`GGWAVE_OPERATING_MODE_USE_DSS`), which is not a default.
   - ggwave at 44.1 kHz.
-  - bysound's other frame types (acknowledgement, reference, risk).
-  - The TypeScript receiver.
+  - bysound's other frame types (acknowledgement, reference, risk) and the session layer.
+  - The TypeScript, Swift and Kotlin receivers.
   - Microcontroller timing.
-- **Author bias.** The benchmark was written by the bysound side. Every setting given to ggwave is its library default (listed above), and the code is here to check.
+- **Author bias.** The benchmark was written by the author of bysound. Every setting given to ggwave is its library default (listed above), and the code is here to check.
 
 ## Files
 

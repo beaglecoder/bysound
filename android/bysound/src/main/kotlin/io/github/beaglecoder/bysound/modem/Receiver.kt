@@ -1,12 +1,16 @@
 package io.github.beaglecoder.bysound.modem
 
 private const val RING_SECONDS = 12
+/** Interval of the noise reports ([ReceiverEvents.onNoise]). */
+internal const val NOISE_REPORT_SECONDS = 0.25
+/** Bands whose noise is reported: every one that lives in the high tone bank (all but AUDIBLE). */
+internal val NOISE_BANDS = listOf(Band.TOP, Band.HIGH, Band.UPPER, Band.MID, Band.XHIGH, Band.WIDE)
 /** Spare room in the ring for the block being processed. */
 private const val RING_SLACK = 4096
 
 /**
- * Streaming receiver of bysound v4 payload frames on all seven bands at once. Feed it mono audio in -1..1 at [rate] Hz in chunks
- * of any size; verified frames come out through [events]. Not thread-safe: use one thread.
+ * Streaming receiver of bysound v4 frames (payload, reference, ack and risk) on all seven bands at once. Feed it mono audio in
+ * -1..1 at [rate] Hz in chunks of any size; verified frames come out through [events]. Not thread-safe: use one thread.
  *
  * [profile] ROBUST listens only to robust frames (bands TOP, HIGH, UPPER and MID) with a window and hop twice as long. To hear
  * both profiles run two receivers on the same audio, as [ReceiverHost] does.
@@ -38,6 +42,11 @@ class Receiver(val rate: Int, val profile: Profile, private val events: Receiver
     private val lowBank: ToneBank?
     private val readers: List<ChannelReader>
     private val pool: Pool
+    private val noiseSum = DoubleArray(6 * TONES)
+    private var noiseHops = 0
+    private var noiseEvery = 0
+    /** Energy of a full-scale tone of the grid in this window: (sum of the window / 2)^2. */
+    private var fullScale = 1.0
 
     init {
         val scale = if (profile == Profile.ROBUST) 2 else 1
@@ -48,6 +57,8 @@ class Receiver(val rate: Int, val profile: Profile, private val events: Receiver
         ring = FloatArray(ringSize + RING_SLACK)
         windowed = DoubleArray(winSize)
         taper = SymbolWindow.of(winSize)
+        fullScale = Math.pow(taper.sum() / 2, 2.0)
+        noiseEvery = roundHalfUp(NOISE_REPORT_SECONDS / hopSeconds)
         val stride = winSize * SPACING_HZ / rate
         val aligned = Fft.isPowerOfTwo(winSize) && Math.abs(stride - Math.round(stride)) < 1e-9 && Math.round(stride) >= 1
         binStride = if (aligned) Math.round(stride).toInt() else 0
@@ -109,8 +120,26 @@ class Receiver(val rate: Int, val profile: Profile, private val events: Receiver
         fft?.analyze(windowed)
         highBank.compute(this, index, fft != null)
         lowBank?.compute(this, index, fft != null)
+        if (profile == Profile.NORMAL) noteNoise(highBank.at(index))
         for (r in readers) r.onHop(index)
         pool.flushHeaderFails(total)
+    }
+
+    /** Adds the energy of every high tone; every [NOISE_REPORT_SECONDS] reports the mean per band, in dB relative to a full-scale tone. */
+    private fun noteNoise(e: DoubleArray) {
+        for (t in noiseSum.indices) noiseSum[t] += e[t]
+        if (++noiseHops < noiseEvery) return
+        val out = java.util.EnumMap<Band, Double>(Band::class.java)
+        for (band in NOISE_BANDS) {
+            val from = band.bin - Band.MID.bin
+            val n = band.groups * TONES
+            var sum = 0.0
+            for (t in from until from + n) sum += noiseSum[t]
+            out[band] = 10 * Math.log10(sum / n / noiseHops / fullScale + 1e-30)
+        }
+        noiseSum.fill(0.0)
+        noiseHops = 0
+        events.onNoise(out)
     }
 
     /** Frames that were heard but could not be completed (a diagnostic counter). */

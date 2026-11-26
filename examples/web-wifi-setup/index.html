@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>bysound Wi-Fi setup</title>
+  <link rel="stylesheet" href="../shared/style.css">
+</head>
+<body>
+<main>
+  <h1>Wi-Fi setup by sound</h1>
+  <p class="lead">A phone tells a device which Wi-Fi to join, by sound. The right half of this page plays the device, so you can test with two tabs (or with the loopback button, no audio). The real device is the ESP32 in <code>../esp32-wifi-setup</code> (planned).</p>
+  <div class="warn"><b>Sound is not secret.</b> Anyone within earshot of the speaker (and anything that records it) can decode the message. Sending a password in the clear means everyone nearby learns it. Use the protected mode below, or only send to a device that is not a stranger's.</div>
+
+  <h2>Sender (the phone)</h2>
+  <label for="ssid">SSID</label><input id="ssid" value="MyNetwork">
+  <label for="pass">Password</label><input id="pass" value="correct horse; battery">
+  <label for="code">Code shown on the device screen (leave empty for plain, unprotected mode)</label><input id="code" placeholder="e.g. K7M2QX9P" autocomplete="off">
+  <p id="preview" class="note"></p>
+  <div class="row"><button id="send">Send by sound</button><button id="loop" class="secondary">Loopback test (no audio)</button></div>
+  <p id="txstatus" class="note"></p>
+
+  <h2>Device (simulated)</h2>
+  <div class="row"><button id="newcode" class="secondary">Show a new code</button><button id="listen">Listen</button><button id="stop" class="secondary" disabled>Stop</button></div>
+  <p>Screen: <b id="screen" style="font-size:1.4rem;letter-spacing:.15em">–</b> <span id="left" class="muted"></span></p>
+  <ul id="got" class="log"></ul>
+
+  <h2>What the protection does, honestly</h2>
+  <ul class="note">
+    <li>The credentials are encrypted (AES-GCM) with a key derived from an 8-character code (about 40 bits) that only the device screen shows. Someone who hears the sound but cannot see the screen sees ciphertext.</li>
+    <li>The code is one-time and valid for 2 minutes: after one successful use, or when it expires, the device refuses further messages with it.</li>
+    <li>It does <b>not</b> stop a determined attacker who recorded the sound: 40 bits can be guessed offline given enough hardware (PBKDF2 only slows it down). It also does not authenticate the device to the phone. For anything valuable use a longer code or a real pairing protocol.</li>
+    <li>Needs a secure context for <code>crypto.subtle</code> (https or localhost).</li>
+  </ul>
+</main>
+<script type="module" src="./main.ts"></script>
+</body>
+</html>

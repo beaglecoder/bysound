@@ -6,7 +6,7 @@ bysound sends a short text from one device to another **through sound**. The sen
 
 ## 1. Picking a slice of the spectrum
 
-Most of the bands sit between **15 and 19.5 kHz**. That range is high enough that most adults hardly notice it, yet it is still low enough for ordinary phone speakers and microphones to handle. One band (`audible`, about 1.9–4.9 kHz) is meant to be heard, and it works with almost any speaker.
+Most of the bands sit between **15 and 19.5 kHz**. That range is above what most adults hear well (and `top`, at 18–19.5 kHz, is inaudible to most adults), yet it is still low enough for ordinary phone speakers and microphones to handle, although many of them lose sensitivity above about 17 kHz. One band (`audible`, about 1.9–4.9 kHz) is meant to be heard, and it works with almost any speaker.
 
 ![The seven bands on the frequency axis](assets/bands.svg)
 
@@ -29,7 +29,7 @@ Here is a real frame as a spectrogram (time to the right, pitch upward). You can
 
 ## Music + hidden message
 
-Music lives well below 5 kHz; the `top` band lives above 18 kHz. They do not overlap, so you can play a song and the message in the same speaker at the same time: you hear only the song, and a receiver that listens still decodes the text.
+Music lives mostly below 5 kHz; the `top` band lives above 18 kHz. They hardly overlap, so you can play a song and the message in the same speaker at the same time: you hear the song, and a receiver that listens still decodes the text.
 
 ![Music in the low band, data tones above 18 kHz](assets/music.svg)
 
@@ -51,65 +51,97 @@ Download and decode it: `c/build/bysound decode docs/assets/music-demo.wav` ([mu
 
 1. **Listen continuously.** Every 4 ms, measure the energy of every slot on the grid.
 2. **Learn the noise.** Each slot gets its own background level. A constant hum or whine is then divided out before the receiver looks for tones.
-3. **Find the preamble.** Score how well the last 8 chords match each band's pattern. The frame starts where the score is highest. Noise alone scores about 0.06; a frame must reach 0.32.
+3. **Find the preamble.** Score how well the last 8 chords match each band's pattern. The frame starts where the score is highest. Noise alone scores about 0.06; a frame must reach 0.32. A preamble that seems to appear in the middle of a frame counts as the next repetition only if it scores at least 0.7 of the frame's own preamble, so data that happens to look a little like a preamble does not cut the read short.
 4. **Read the header.** Instead of decoding the header bit by bit, pick the closest of the 259 valid headers. This works even when a couple of nibbles are wrong.
-5. **Read the symbols softly.** For each group, keep how likely each of the 16 tones is, not just the loudest one. Remove the echo of the previous chord, which the preamble already measured.
+5. **Read the symbols.** Remove the echo of the previous chord, which the preamble already measured. The TypeScript, Swift and Kotlin receivers also keep how likely each of the 16 tones is, not just the loudest one.
 6. **Correct errors.** Run Reed–Solomon. If it fails, mark the least certain bytes as "unknown" and try again: known gaps are twice as cheap to fix as hidden errors.
-7. **Combine repetitions.** If a block was damaged by a door slam in one repetition and by a cough in the next, add the repetitions together, or take the most confident reading of each piece. Up to 6 repetitions are combined.
-8. **Check and deliver.** The CRC-32 must match, or nothing is delivered. You get the exact text or nothing.
+7. **Combine repetitions.** If a block was damaged by a door slam in one repetition and by a cough in the next, combine the repetitions. Up to 6 repetitions are combined.
+8. **Check and deliver.** The last block does not say how long it is, so the receiver closes it at the first length that both Reed–Solomon and the CRC-32 accept. The CRC-32 must match, or nothing is delivered. You get the exact text or nothing.
+
+Steps 6 (the retry with unknown bytes) and 7 are in the TypeScript, Swift and Kotlin receivers. The C receiver, written for the bounded memory of microcontrollers, reads each repetition on its own with plain error correction.
 
 ## 4. How fast is it?
 
-Raw speeds go from 250 bit/s (`top`, 2 tones) to 750 bit/s (`wide`, 6 tones). A 166-character test string takes **3.7 s** on the 3-tone bands and **2.8 s** on `xhigh`. In very noisy places, the **robust** profile makes every chord twice as long. That doubles the airtime and makes the tones easier to pick out of the noise.
+Raw speeds go from 250 bit/s (`top`, 2 tones) to 750 bit/s (`wide`, 6 tones). One frame of a 166-character test string lasts **3.7 s** on the 3-tone bands and **2.8 s** on `xhigh`. In very noisy places, the **robust** profile makes every chord twice as long. That doubles the airtime and makes the tones easier to pick out of the noise.
 
-## 5. When two devices talk at once
+## 5. Talking back: acknowledgements, alerts and adaptation
 
-If two senders play at the same time, the receiver could pick up the wrong one. The receiver watches for frames that overlap, or a preamble that appears in the middle of another frame. When it sees either, it reports a **clash** instead of delivering anything. It cannot catch a sender it cannot hear, and bysound does not encrypt or sign anything. Anyone nearby can listen, so applications should not send secrets in the clear, and should validate what they receive.
+On top of the modem, a **session layer** turns "play a text" into a short conversation. It is specified in [SESSION.md](SESSION.md); the TypeScript implementation in [`web/src/session`](../web/src/session) is the reference.
 
-## 6. bysound vs ggwave, feature by feature
+```mermaid
+sequenceDiagram
+  participant S as Sender
+  participant R as Receiver
+  Note over S: listens first<br/>anyone else playing? how noisy is each channel?
+  loop until an ack arrives (top → high → upper → mid)
+    S-)R: the text, one repetition
+    Note over S: 2 s pause to listen
+  end
+  Note over R: keeps listening 1.5 s for a second sender
+  R-)S: ack (got it, read on this channel)
+  Note over S: stops, remembers the channel
+  S-)R: receipt (I heard you)
+  Note over R: app calls confirmed() before acting
+```
 
-| | What you get with bysound | Compared with ggwave |
-|---|---|---|
-| ✅ **It never lies** | You get the exact message or nothing. A checksum over the whole text rejects anything doubtful. | ggwave delivered **349 wrong messages** in our tests, some with no noise at all. bysound delivered **0** in 88,220. |
-| 🏠 **Works in echoey rooms** | It measures the room's echo and subtracts it before reading each tone. | Handles **8–12 dB more noise** when there is echo, the normal case in a real room. |
-| 🔇 **Can be truly inaudible** | Channels at 17.25–19.5 kHz and 18–19.5 kHz that almost nobody hears; `top` is also the most noise-tolerant. | ggwave's "ultrasound" starts at 15 kHz, which many young people hear. |
-| ⚡ **More data in the same time** | 2× the bytes in 5 s on the same frequencies; messages beyond 140 bytes, up to 30 s per transmission. | ggwave stops at **140 bytes**. |
-| 🧩 **Rebuilds damaged data** | Doubtful bytes are marked and repaired (Reed–Solomon with erasures), block by block. | Corrects errors only, in a single codeword. |
-| 🔊 **More signal from the same speaker** | Fewer tones at once, so a speaker can play them louder before it distorts. | More useful power in the air at the same volume. |
-| 🔁 **Repetitions add up** | If a noise burst ruins part of one repetition, the next one fills the gap (TypeScript, Swift and Kotlin receivers). | ggwave reads each repetition on its own. |
-| 👥 **Two senders at once** | If another device transmits at the same time, the receiver reports a *clash* instead of mixing them. | Not detected. |
-| 🎵 **Rides on music** | The message can play above a song and still decode ([try it](../README.md#music--hidden-message)). | Not measured for ggwave. |
+- **"Got it" by sound.** The receiver plays a short acknowledgement, so the sender stops; the sender answers with a receipt, so the receiver stops too.
+- **Confirm before acting.** The app calls `confirmed()` right before it pays, unlocks or saves. If another text or an alert was heard in the meantime, it fails.
+- **Two devices at once.** If the receiver hears two different texts, or two frames on top of each other (a *clash*), it delivers nothing. A sender that hears someone else, or hears its own text played by another device, stops.
+- **Alerts.** Whoever notices another sender plays a short alert frame so the others stop too. A sender relays it once, at most two hops away. The app gets a callback with a suggested pause (quarantine); bysound itself never blocks anything because of it.
+- **Security levels.** `basic` (integrity only), `standard`, or `maximum` (the default: listens longer before sending and keeps alerts going longer). Details and limits: [SECURITY.md](SECURITY.md).
+- **Adapts itself.** The sender skips channels that are much noisier than the rest, steps down from `top` towards `mid` until it gets an acknowledgement, switches to the robust profile after 6 unanswered repetitions, and remembers where it was read. A phone whose speaker cannot play above about 17 kHz therefore ends up starting on `mid` and being read on the first try.
+
+None of this hides the text: anyone nearby can hear it, and anyone can play a valid frame. Apps that need privacy or proof of who sent something add it inside the text (encryption, a signature, an expiry). The session layer is tested on simulated sound, not in the benchmark below.
+
+## 6. bysound vs ggwave
+
+Both libraries use the same idea: MFSK on an orthogonal 46.875 Hz grid with Reed–Solomon. The numbers below come from a simulated channel ([`bench/`](../bench), 157,670 trials, reproducible). The bysound side of the benchmark is the **C receiver**: plain decisions per symbol, echo subtraction, a per-tone noise floor, the best-matching header and error-only Reed–Solomon. It does not mark unknown bytes or combine repetitions, so those features are not in these numbers. The bysound receiver was told the profile (normal or robust); ggwave listened to all its protocols.
+
+### When to choose which
+
+| Choose bysound when… | Choose ggwave when… |
+|---|---|
+| The room is noisy or has echo: more margin against broadband noise and echo (tables below) | CPU or battery is tight: ggwave's receiver is 41–51× lighter while idle and 1.2–14× while decoding |
+| A wrong message is worse than none: 0 wrong in 87,380 trials; ggwave delivered 34 wrong in 67,320, 32 of them 8-byte messages | Messages are a few bytes: at 8 B ggwave fastest (1.00 s) is faster than every bysound channel except `wide` (0.96 s) |
+| Messages are longer than 140 bytes: up to 30 s per transmission (700–2,114 B) | You want a project with years of public use and a larger community |
+| It should be hard to hear: `top` (18–19.5 kHz), `high` (17.25–19.5 kHz); ggwave has no protocol confined above 18 kHz | You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino, RP2040 or ESP32 examples |
+| You want acks, second-sender alerts and channel adaptation (session layer, TypeScript reference) | You want low-frequency modes with fewer tones (DT/MT at 1.1–2.6 kHz) |
+| You want native TypeScript, Swift, Kotlin and C (no `malloc`) sharing one format | You need results already proven over the air: bysound has only been measured in simulation |
+
+Both cover the same kinds of platforms (browser, iOS, Android, desktop, ESP32): bysound with four native implementations, ggwave with one C++ core and bindings.
 
 ### From lab noise to real places
 
-The README describes the noise results with everyday places. This is how they map to what the benchmark actually simulated (32-byte message, success ≥ 90 %, full-band SNR; `×N` = noise power N times the message's power, i.e. 10^(−SNR/10)):
+The README describes the noise results with everyday places. This is how they map to what the benchmark actually simulated (32-byte message, success ≥ 90 %, noise measured over the whole 0–24 kHz band; `×N` = noise power N times the message's power, i.e. 10^(−SNR/10)):
 
 | Place in the README | Simulated noise | bysound `top` | ggwave ultrasound fastest |
 |---|---|---|---|
 | Fan, hiss, static | white Gaussian noise | −14 dB (×25) | −8 dB (×6) |
-| Room with echo | two echo taps + white noise | −8 dB (×6); robust −12 dB (×16) | 0 dB (×1) |
+| Room with echo | one synthetic two-tap echo + white noise | −8 dB (×6); robust −12 dB (×16) | 0 dB (×1) |
 | Street, air conditioning | pink (1/f) noise | −20 dB (×100) | −16 dB (×40) |
-| Bar, people talking | babble-like noise (speech-shaped, synthetic) | −32 dB | −32 dB |
+| Bar, people talking | babble-like noise (speech-shaped, synthetic) | ≤ −32 dB (grid floor) | ≤ −32 dB (grid floor) |
 
-These are analogies, not field measurements: real places also bring speaker and microphone limits, distance and reflections that the simulation does not model. See the paper's limitations section.
+Measured inside each mode's own band instead, the two are within 0–3 dB of each other: most of bysound's margin comes from concentrating the same power in narrower bands. These are analogies, not field measurements: real places also bring speaker and microphone limits, distance and reflections that the simulation does not model. See the paper's limitations section.
 
 ### The numbers
-
-Both libraries, unmodified, on the same simulated channel with the same seeds (158,510 trials, reproducible in [`bench/`](../bench)). They share the same idea: MFSK on an orthogonal 46.875 Hz grid.
 
 <img src="../bench/results/charts/snr_ultrasonic_1x.svg" alt="Success rate vs SNR, near-ultrasonic modes" width="100%">
 
 | 32-byte message, 48 kHz | bysound `top` | bysound `top` robust | bysound `wide` | ggwave ultrasound fastest |
 |---|---|---|---|---|
 | Lowest SNR with ≥ 90 % success (full band) | −14 dB | −16 dB | −8 dB | −8 dB |
-| Same, with echo | −8 dB | −12 dB | −4 dB | 0 dB |
-| Airtime for 128 bytes | 6.3 s | 12.3 s | 2.5 s | 4.6 s |
-| Time for 140 bytes (ggwave's maximum) | 6.9 s | 13.2 s | **2.9 s** | 5.0 s |
+| Same, with echo (4 dB grid) | −8 dB | −12 dB | −4 dB | 0 dB |
+| Airtime for 128 bytes | 6.30 s | 12.25 s | 2.53 s | 4.59 s |
+| Airtime for 140 bytes (ggwave's maximum) | 6.69 s | 13.02 s | **2.65 s** | 4.97 s |
 | Messages longer than 140 bytes | yes, up to 30 s | yes, up to 30 s | yes, up to 30 s | no |
-| Wrong texts delivered | 0 | 0 | 0 | 349 across all ggwave modes |
 
-ggwave is still the better pick when you need the smallest and fastest receiver (14–42× less CPU) or many language bindings. The [paper](../PAPER.md) explains each improvement and where the advantage comes from (narrower bands concentrate power, so in-band the two are within 0–3 dB). It also covers the limits: this is a simulation, and real speakers and microphones lose a lot above 17 kHz.
+| | bysound | ggwave |
+|---|---|---|
+| Wrong texts delivered | 0 in 87,380 trials | 34 in 67,320 trials of its default protocols |
+| What else it does | Echo subtraction, per-tone noise floor, blocks with a CRC-32 over the text, acks, clash detection, alerts, adaptation | Start and end markers, one Reed–Solomon codeword of up to 140 B, DT/MT low-frequency modes |
+
+With echo, bysound tolerates 4–12 dB more noise in one transmission (4–8 dB when ggwave gets two). The [paper](../PAPER.md) explains each change, where the advantage comes from and where ggwave is better, and lists the limits: this is a simulation, the echo is one synthetic profile, and many phone speakers and microphones lose sensitivity above about 17 kHz.
 
 ---
 
-For the precise, implementer-grade definition (every constant, formula and byte), see **[PROTOCOL.md](PROTOCOL.md)**.
+For the precise, implementer-grade definition (every constant, formula and byte), see **[PROTOCOL.md](PROTOCOL.md)** and **[SESSION.md](SESSION.md)**.

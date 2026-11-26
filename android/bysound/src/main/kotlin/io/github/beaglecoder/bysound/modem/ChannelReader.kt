@@ -10,6 +10,9 @@ import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_ACK
 import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_PAYLOAD
 import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_REFERENCE
 import io.github.beaglecoder.bysound.modem.Protocol.MAGIC_RISK
+import io.github.beaglecoder.bysound.modem.Protocol.MOTHER_BYTES
+import io.github.beaglecoder.bysound.modem.Protocol.MOTHER_PARITY
+import io.github.beaglecoder.bysound.modem.Protocol.REF_PARITY
 import io.github.beaglecoder.bysound.modem.Protocol.MAX_BLOCKS
 import io.github.beaglecoder.bysound.modem.Protocol.PREAMBLE
 import io.github.beaglecoder.bysound.modem.Protocol.PREAMBLE_THRESHOLD
@@ -34,16 +37,21 @@ private const val OVERLAP_MIN_SCORE = 0.45
 /** A preamble past the frame's minimum length is taken as the next lap only if it scores at least this share of the frame's. */
 private const val REPEAT_SCORE_SHARE = 0.7
 private val BLOCK_ERASURE_TRIES = intArrayOf(0, 2, 4)
+private val CONTROL_ERASURE_TRIES = intArrayOf(0, 2, 4)
+private val REFERENCE_ERASURE_TRIES = intArrayOf(0, 4, 8, 12)
+private const val CONTROL_PARITY = 8
+private const val REBUILD_TRIES_MAX = 300
 
-internal enum class State { SEARCH, HEADER, BODY }
+/** SMALL: the body of a reference, ack or risk frame (a few bytes, read in one go). */
+internal enum class State { SEARCH, HEADER, BODY, SMALL }
 
-private class HeaderCandidate(val magic: Int, val length: Int, val nibbles: IntArray)
+private class HeaderCandidate(val magic: Int, val length: Int, val set: Int, val nibbles: IntArray)
 
 private fun nibblesOf(bytes: IntArray) = IntArray(bytes.size * 2) { if (it % 2 == 0) bytes[it / 2] shr 4 else bytes[it / 2] and 15 }
 
-/** Every header a channel can see in a profile (the CRC covers the profile). Non-payload types are recognised only to be skipped. */
+/** Every header a channel can see in a profile (the CRC covers the profile). */
 private fun headerCandidates(ch: Channel): List<HeaderCandidate> {
-    fun head(magic: Int, n: Int, set: Int = 0) = HeaderCandidate(magic, n, nibblesOf(Protocol.headerBytes(magic, n, ch.band, set, ch.profile)))
+    fun head(magic: Int, n: Int, set: Int = 0) = HeaderCandidate(magic, n, set, nibblesOf(Protocol.headerBytes(magic, n, ch.band, set, ch.profile)))
     val out = arrayListOf(head(MAGIC_REFERENCE, REF_DATA, 0), head(MAGIC_REFERENCE, REF_DATA, 1), head(MAGIC_RISK, RISK_LENGTH), head(MAGIC_ACK, ACK_LENGTH))
     for (t in 1..MAX_BLOCKS) out.add(head(MAGIC_PAYLOAD, t))
     return out
@@ -51,7 +59,8 @@ private fun headerCandidates(ch: Channel): List<HeaderCandidate> {
 
 /**
  * Reads one band: searches the preamble, reads the header and the blocks of the body and combines repeated laps. Payload frames
- * only; reference, risk and ack frames are recognised from their header and skipped.
+ * deliver text; reference frames deliver a fingerprint (several repetitions and both parity sets are combined); ack and risk frames
+ * are Reed-Solomon decoded, their CRC-16 checked, and reported as bytes through [ReceiverEvents.onControl].
  */
 internal class ChannelReader(
     private val r: Receiver,
@@ -81,6 +90,7 @@ internal class ChannelReader(
     private var frameStart = 0L
     private var searchFrom = 0L
     private var magic = 0
+    private var set = 0
     /** The header matched entirely. With corrected errors the length may be false (see [tryBlocks]). */
     private var headerSure = true
     private var dataLength = 0
@@ -97,6 +107,8 @@ internal class ChannelReader(
     private val isBlocks get() = magic == MAGIC_PAYLOAD
     private val bodyBytes get() = (dataLength - 1) * BLOCK_BYTES + BLOCK_HEADER + 1 + BLOCK_PARITY
     private val bodyBytesMax get() = dataLength * BLOCK_BYTES
+    /** Body bytes of a reference, ack or risk frame. Acks and risk frames are not counted in clash detection. */
+    private val smallBody get() = when (magic) { MAGIC_ACK -> ACK_BODY; MAGIC_RISK -> RISK_BODY; else -> REF_BODY }
     private fun symbolsFor(bytes: Int) = (bytes * 2 + ch.groups - 1) / ch.groups
     private fun start(k: Int) = ch.symbolStart(k, r.rate)
     private fun symbolEnd(k: Int): Long = frameStart + start(k) + samples(endOffset, r.rate)
@@ -116,6 +128,7 @@ internal class ChannelReader(
             }
             State.HEADER -> tryHeader()
             State.BODY -> if (!searchInBody(index)) tryBody()
+            State.SMALL -> trySmall()
         }
         progress = currentProgress()
     }
@@ -310,13 +323,16 @@ internal class ChannelReader(
         if (agree < HEADER_MIN_AGREEMENT) return unreadableHeader()
         magic = choice.magic
         dataLength = choice.length
+        set = choice.set
         headerSure = agree == n
         bodyReset()
         if (magic != MAGIC_PAYLOAD) {
-            // Reference, risk and ack frames are not text: skip their body.
-            val body = when (magic) { MAGIC_ACK -> ACK_BODY; MAGIC_RISK -> RISK_BODY; else -> REF_BODY }
-            resetSearch()
-            searchFrom = frameStart + start(firstBody + symbolsFor(body))
+            if (magic == MAGIC_REFERENCE && agree >= HEADER_SURE_AGREEMENT) {
+                events.onHeader(ch.band)
+                pool.noteStart(ch.band, frameStart, start(firstBody + symbolsFor(smallBody)).toLong())
+            }
+            state = State.SMALL
+            trySmall()
             return
         }
         if (agree >= HEADER_SURE_AGREEMENT) {
@@ -339,7 +355,17 @@ internal class ChannelReader(
     private fun unreadableHeader() {
         val horizon = frameStart - COMBINE_SECONDS.toLong() * r.rate
         val blocks = pool.blocks
-        if (blocks.total > 0 && blocks.channel == ch.band && blocks.lastAt >= horizon) {
+        val last = pool.readings.lastOrNull()
+        if (last != null && last.band == ch.band && last.at >= horizon) {
+            magic = last.magic
+            dataLength = last.length
+            set = last.set xor 1
+            headerSure = true
+            bodyReset()
+            state = State.SMALL
+            trySmall()
+            return
+        } else if (blocks.total > 0 && blocks.channel == ch.band && blocks.lastAt >= horizon) {
             magic = MAGIC_PAYLOAD
             dataLength = blocks.total
         } else {
@@ -354,6 +380,126 @@ internal class ChannelReader(
     }
 
     private fun tryBody() = tryBlocks()
+
+    /** Reads the whole body of a reference, ack or risk frame, then decodes it. */
+    private fun trySmall() {
+        val first = firstBody
+        val count = symbolsFor(smallBody)
+        while (bodyRead < count && r.total >= symbolEnd(first + bodyRead)) {
+            bodySoft.addAll(softSymbol(first + bodyRead))
+            bodyRead++
+        }
+        if (bodyRead < count) return
+        val end = frameStart + start(first + count)
+        val reading: Soft = bodySoft.clip(0, smallBody * 2).toList()
+        resetSearch()
+        searchFrom = end
+        if (magic == MAGIC_REFERENCE) readReference(reading, end) else readControl(reading)
+    }
+
+    /** Ack or risk: Reed-Solomon with 0, 2 and 4 erasures on the least sure bytes, then the CRC-16. */
+    private fun readControl(reading: Soft) {
+        val bytes = hardBytes(reading)
+        val doubtful = leastSureBytes(reading, bytes.size)
+        for (n in CONTROL_ERASURE_TRIES) {
+            val d = ReedSolomon.decode(bytes, CONTROL_PARITY, doubtful.take(n).sorted().toIntArray()) ?: continue
+            val data = d.data
+            if (data.size != dataLength || data.size < 3) continue
+            if (Checksums.crc16(data.copyOf(data.size - 2)) != ((data[data.size - 2] shl 8) or data[data.size - 1])) continue
+            events.onControl(magic, data, ch.band)
+            return
+        }
+    }
+
+    private class Decoded(val fingerprint: IntArray, val corrected: Int)
+
+    /** Positions of a reference body (data + the parity of its set) in the 46 bytes of the mother code. */
+    private fun motherLayout(set: Int, soft: Soft): Soft {
+        val out = ArrayList<DoubleArray>(MOTHER_BYTES * 2)
+        repeat(MOTHER_BYTES * 2) { out.add(UNIFORM) }
+        val dataNibbles = REF_DATA * 2
+        for (i in 0 until minOf(soft.size, dataNibbles + REF_PARITY * 2)) out[if (i < dataNibbles) i else i + (set and 1) * REF_PARITY * 2] = soft[i]
+        return out
+    }
+
+    private fun disagreement(layouts: List<Soft>): List<Int> {
+        if (layouts.size < 2) return emptyList()
+        val bytes = layouts.map { hardBytes(it.clip(0, 2 * REF_DATA)) }
+        return (0 until REF_DATA).filter { i -> bytes.map { it[i] }.toSet().size > 1 }
+    }
+
+    private fun decodeMotherSoft(soft: Soft, have: BooleanArray, disagree: List<Int>): Decoded? {
+        val bytes = hardBytes(soft)
+        val m = soft.map(::margin)
+        fun sure(i: Int) = minOf(m[2 * i], m[2 * i + 1])
+        val data = bytes.copyOfRange(0, REF_DATA)
+        val parity = Array<IntArray?>(2) { set -> if (have[set]) IntArray(REF_PARITY) { bytes[Codec.parityRange(set).first + it] } else null }
+        val dataPositions = (0 until REF_DATA).toList()
+        class Variant(val parity: Array<IntArray?>, val base: List<Int>, val known: List<Int>)
+        val variants = ArrayList<Variant>()
+        for (set in 0..1) {
+            if (!have[set]) continue
+            val only = arrayOfNulls<IntArray>(2)
+            only[set] = parity[set]
+            variants.add(Variant(only, emptyList(), dataPositions + Codec.parityRange(set).toList()))
+        }
+        if (have[0] && have[1]) variants.add(Variant(parity, disagree, (0 until MOTHER_BYTES).toList()))
+        for (v in variants) {
+            val leastSure = v.known.filter { it !in v.base }.sortedBy { sure(it) }
+            for (f in REFERENCE_ERASURE_TRIES) {
+                val d = Codec.decodeMother(data, v.parity, v.base + leastSure.take(f)) ?: continue
+                return Decoded(d.fingerprint, d.corrected)
+            }
+        }
+        return null
+    }
+
+    private fun decodeReference(readings: List<Pair<Int, Soft>>): Decoded? {
+        val layouts = readings.map { motherLayout(it.first, it.second) }
+        val have = booleanArrayOf(readings.any { it.first and 1 == 0 }, readings.any { it.first and 1 == 1 })
+        return decodeMotherSoft(if (layouts.size == 1) layouts[0] else summed(layouts), have, disagreement(layouts))
+    }
+
+    /** Current reading plus subsets of the earlier ones (the most readings first), summed or taking the surest digit. */
+    private fun rebuildReference(current: Pair<Int, Soft>, earlier: List<Pair<Int, Soft>>): Pair<Decoded, Int>? {
+        if (earlier.isEmpty()) return null
+        val masks = (1 until (1 shl earlier.size)).sortedByDescending { Integer.bitCount(it) }
+        var tries = 0
+        for (mask in masks) {
+            val readings = listOf(current) + earlier.filterIndexed { i, _ -> (mask shr i) and 1 == 1 }
+            val layouts = readings.map { motherLayout(it.first, it.second) }
+            val have = booleanArrayOf(readings.any { it.first and 1 == 0 }, readings.any { it.first and 1 == 1 })
+            val disagree = disagreement(layouts)
+            for (candidate in listOf(summed(layouts), surest(layouts))) {
+                if (tries + REFERENCE_ERASURE_TRIES.size > REBUILD_TRIES_MAX) return null
+                tries += REFERENCE_ERASURE_TRIES.size
+                val d = decodeMotherSoft(candidate, have, disagree)
+                if (d != null) return Pair(d, readings.size)
+            }
+        }
+        return null
+    }
+
+    private fun readReference(reading: Soft, end: Long) {
+        val single = decodeReference(listOf(Pair(set, reading)))
+        if (single != null) return finishReference(single, 1, end)
+        val horizon = frameStart - COMBINE_SECONDS.toLong() * r.rate
+        pool.readings.removeAll { it.at < horizon }
+        val same = pool.readings.filter { it.magic == magic && it.length == dataLength }
+        pool.readings.add(Pool.Reading(magic, dataLength, set, frameStart, ch.band, reading))
+        if (pool.readings.size > COMBINE_MAX * 3) pool.readings.removeAt(0)
+        val earlier = same.takeLast(COMBINE_MAX - 1).map { Pair(it.set, it.soft) }
+        val rebuilt = rebuildReference(Pair(set, reading), earlier)
+        if (rebuilt != null) return finishReference(rebuilt.first, rebuilt.second, end)
+        pool.failures++
+    }
+
+    private fun finishReference(d: Decoded, combined: Int, end: Long) {
+        searchFrom = end
+        pool.readings.clear()
+        val fp = d.fingerprint.joinToString("") { "%02x".format(it) }
+        deliver(end) { events.onReference(HeardReference(fp, ch.band, ch.profile, d.corrected, combined, frameScore)) }
+    }
 
     private fun tryBlocks() {
         val first = firstBody
@@ -502,7 +648,7 @@ internal class ChannelReader(
                 return
             }
             a.reset()
-            if (text != null) return deliver(Heard(text, ch.band, ch.profile, corrected, loops), end)
+            if (text != null) return deliver(end) { events.onFrame(Heard(text, ch.band, ch.profile, corrected, loops, frameScore)) }
             pool.failures++
             return
         }
@@ -510,15 +656,14 @@ internal class ChannelReader(
     }
 
     /** Not delivered if a frame of another channel started while this one was sounding. */
-    private fun deliver(h: Heard, end: Long) {
+    private fun deliver(end: Long, emit: () -> Unit) {
         val preambleLen = start(PREAMBLE.size)
         val begin = frameStart
-        if (pool.starts.any { it.band != ch.band && it.at > begin && it.at + preambleLen < end }) pool.clash()
-        else events.onFrame(h.copy(score = frameScore))
+        if (pool.starts.any { it.band != ch.band && it.at > begin && it.at + preambleLen < end }) pool.clash() else emit()
     }
 
     private fun currentProgress(): Double {
-        if (state == State.SEARCH) return -1.0
+        if (state == State.SEARCH || state == State.SMALL) return -1.0
         fun clamp(x: Double) = minOf(maxOf(x, 0.0), 1.0)
         val headerEnd = symbolEnd(firstBody - 1)
         val total = r.total

@@ -16,6 +16,16 @@ data class Heard(
     val score: Double = 0.0,
 )
 
+/** A reference frame received and verified: the 12-byte fingerprint (24 lowercase hex characters) of a text the receiver already has. */
+data class HeardReference(
+    val fingerprint: String,
+    val band: Band,
+    val profile: Profile,
+    val correctedBytes: Int,
+    val combined: Int,
+    val score: Double = 0.0,
+)
+
 /** What a [Receiver] reports besides frames. All callbacks run on the thread that calls [Receiver.feed]. */
 interface ReceiverEvents {
     /** A frame was received and verified. */
@@ -29,4 +39,16 @@ interface ReceiverEvents {
 
     /** Two transmissions overlap. */
     fun onClash() {}
+
+    /** A reference frame (12-byte fingerprint) was received and verified. */
+    fun onReference(heard: HeardReference) {}
+
+    /**
+     * An ack (magic 0x41) or risk (0x58) frame was received: [data] are its data bytes with the CRC-16 (7 and 10 bytes), already
+     * corrected by Reed-Solomon and with the CRC-16 checked. [band] is where it was heard. The session layer parses them.
+     */
+    fun onControl(magic: Int, data: IntArray, band: Band) {}
+
+    /** Every 0.25 s (normal profile receiver only): the noise measured on each high band, in dB relative to a full-scale grid tone. */
+    fun onNoise(noise: Map<Band, Double>) {}
 }

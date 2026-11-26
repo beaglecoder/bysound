@@ -146,9 +146,12 @@ private const val HEADER_FAIL_NEAR_SECONDS = 0.15
 /** State shared by the channel readers of one receiver: frame starts (for clash detection), header failures and blocks. */
 internal class Pool(private val rate: Int, private val events: ReceiverEvents) {
     class Start(val band: Band, val at: Long, val span: Long)
+    /** A reference frame body read in a recent repetition (set 0 = A, 1 = B), kept to combine with the next ones. */
+    class Reading(val magic: Int, val length: Int, val set: Int, val at: Long, val band: Band, val soft: Soft)
     class HeaderFail(val at: Long, val noted: Long)
 
     val starts = ArrayList<Start>()
+    val readings = ArrayList<Reading>()
     val blocks = BlockAssembly()
     var headerFails = ArrayList<HeaderFail>()
     var failures = 0

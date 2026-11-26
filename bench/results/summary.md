@@ -123,30 +123,38 @@ bysound's limit is the 30 s cap on one transmission (preamble + header + body + 
 
 ## 3. Decode latency and receiver CPU cost (32 B, AWGN plan, 1 transmission)
 
-Latency = time from the first sample of the transmission to the moment the decoder returned the payload (1024-sample chunk granularity, median over the noiseless trials). Real-time factor = audio duration / receiver thread CPU time, median over all trials of the configuration (receiver init included). bysound listens to all channels of its profile at once (7 normal / 4 robust); ggwave listens to all its protocols (library default).
+Latency = time from the first sample of the transmission to the moment the decoder returned the payload (1024-sample chunk granularity, median over the noiseless trials). Real-time factor = audio duration / receiver thread CPU time (receiver init included). It is given twice: as the median over all trials of the configuration (every SNR, so most trials are below the threshold and nothing is decoded) and as the median over the trials that decoded the payload. bysound listens to all channels of its profile at once (7 normal / 4 robust); ggwave listens to all its protocols (library default).
 
-| configuration | median latency clean (s) | airtime (s) | median real-time factor | median CPU per trial (ms) |
-|---|---:|---:|---:|---:|
-| bysound top/normal | 1.99 | 2.33 | 436× | 9.7 |
-| bysound high/normal | 1.45 | 1.79 | 467× | 8.1 |
-| bysound upper/normal | 1.45 | 1.79 | 467× | 8.1 |
-| bysound mid/normal | 1.45 | 1.79 | 467× | 8.0 |
-| bysound xhigh/normal | 1.13 | 1.47 | 468× | 7.3 |
-| bysound wide/normal | 0.87 | 1.21 | 460× | 6.7 |
-| bysound audible/normal | 1.40 | 1.75 | 468× | 8.0 |
-| bysound top/robust | 3.97 | 4.32 | 506× | 12.1 |
-| bysound high/robust | 2.88 | 3.23 | 534× | 9.5 |
-| bysound upper/robust | 2.88 | 3.23 | 532× | 9.6 |
-| bysound mid/robust | 2.88 | 3.23 | 524× | 9.8 |
-| ggwave ultrasound-normal | 3.50 | 3.75 | 10024× | 0.6 |
-| ggwave ultrasound-fast | 2.48 | 2.73 | 9129× | 0.5 |
-| ggwave ultrasound-fastest | 1.46 | 1.71 | 7625× | 0.4 |
-| ggwave audible-normal | 3.50 | 3.75 | 10016× | 0.6 |
-| ggwave audible-fast | 2.48 | 2.73 | 12719× | 0.4 |
-| ggwave audible-fastest | 1.46 | 1.71 | 7585× | 0.4 |
-| ggwave dt-normal | 9.46 | 9.71 | 18319× | 0.6 |
-| ggwave dt-fast | 6.46 | 6.70 | 17843× | 0.5 |
-| ggwave dt-fastest | 3.45 | 3.69 | 16868× | 0.3 |
+| configuration | median latency clean (s) | airtime (s) | real-time factor, all trials | CPU per trial, all trials (ms) | real-time factor, decoded trials | CPU per trial, decoded trials (ms) | decoded trials |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| bysound top/normal | 1.99 | 2.33 | 436× | 9.7 | 426× | 9.8 | 551 |
+| bysound high/normal | 1.45 | 1.79 | 467× | 8.1 | 467× | 8.3 | 503 |
+| bysound upper/normal | 1.45 | 1.79 | 467× | 8.1 | 467× | 8.2 | 503 |
+| bysound mid/normal | 1.45 | 1.79 | 467× | 8.0 | 467× | 8.1 | 502 |
+| bysound xhigh/normal | 1.13 | 1.47 | 468× | 7.3 | 466× | 7.4 | 481 |
+| bysound wide/normal | 0.87 | 1.21 | 460× | 6.7 | 455× | 6.8 | 438 |
+| bysound audible/normal | 1.40 | 1.75 | 468× | 8.0 | 466× | 8.2 | 469 |
+| bysound top/robust | 3.97 | 4.32 | 506× | 12.1 | 486× | 12.4 | 608 |
+| bysound high/robust | 2.88 | 3.23 | 534× | 9.5 | 533× | 9.8 | 570 |
+| bysound upper/robust | 2.88 | 3.23 | 532× | 9.6 | 529× | 9.9 | 575 |
+| bysound mid/robust | 2.88 | 3.23 | 524× | 9.8 | 521× | 10.0 | 567 |
+| ggwave ultrasound-normal | 3.50 | 3.75 | 10024× | 0.6 | 5830× | 0.9 | 432 |
+| ggwave ultrasound-fast | 2.48 | 2.73 | 9129× | 0.5 | 1600× | 2.8 | 435 |
+| ggwave ultrasound-fastest | 1.46 | 1.71 | 7625× | 0.4 | 780× | 4.3 | 450 |
+| ggwave audible-normal | 3.50 | 3.75 | 10016× | 0.6 | 5903× | 0.9 | 427 |
+| ggwave audible-fast | 2.48 | 2.73 | 12719× | 0.4 | 1641× | 2.7 | 430 |
+| ggwave audible-fastest | 1.46 | 1.71 | 7585× | 0.4 | 781× | 4.3 | 443 |
+| ggwave dt-normal | 9.46 | 9.71 | 18319× | 0.6 | 5157× | 2.2 | 299 |
+| ggwave dt-fast | 6.46 | 6.70 | 17843× | 0.5 | 1583× | 5.3 | 302 |
+| ggwave dt-fastest | 3.45 | 3.69 | 16868× | 0.3 | 660× | 8.2 | 315 |
+
+Idle listening (no transmission; 60 s segments of noise at −20 dBFS RMS, `idle.csv`), median over the segments of each receiver:
+
+| receiver | segments | median CPU per 60 s of audio (ms) | real-time factor |
+|---|---:|---:|---:|
+| bysound normal (7 channels) | 30 | 161.6 | 371× |
+| bysound robust (4 channels) | 30 | 129.5 | 463× |
+| ggwave (all protocols; variable length) | 30 | 3.2 | 18993× |
 
 ## 4. Payload size vs robustness — SNR90 (full-band dB, grid step 4; 512/2048 B grid −24…−8 step 4 and 0)
 
@@ -173,7 +181,7 @@ Latency = time from the first sample of the transmission to the moment the decod
 | ggwave dt-fast | -4 | — | — | — | — | cannot send | cannot send |
 | ggwave dt-fastest | -4 | -4 | +0 | +0 | -4 | cannot send | cannot send |
 
-(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: 8 B: 30, 64 B: 30, 128 B: 30, utf8 B: 30, 512 B: 20, 2048 B: 0.
+(32 B column taken from section 1, restricted to the same 4 dB grid.) Trials per cell: 8 B: 30, 64 B: 30, 128 B: 30, 48 B UTF-8: 30, 512 B: 20, 2048 B: 10.
 
 
 Success at the noiseless point (%):
@@ -311,10 +319,13 @@ ggwave refuses MT protocols in variable-length mode (`Mono-tone protocols with v
 
 Wrong payloads accepted during the transmission trials (any decoded payload that differs from the one sent, any channel/protocol; for bysound, acknowledgement, reference or risk frames decoded out of noise also count):
 
-| system | trials | wrong payloads accepted |
-|---|---:|---:|
-| bysound | 87380 | 0 |
-| ggwave | 70290 | 349 |
+| system | trials | wrong payloads accepted | trials with at least one |
+|---|---:|---:|---:|
+| bysound | 87380 | 0 | 0 |
+| ggwave, default variable-length protocols | 67320 | 34 | 34 |
+| ggwave, mono-tone protocols in fixed-length mode (section 7) | 2970 | 315 | 148 |
+
+A trial can deliver more than one wrong payload, so the first count can exceed the second. Total trials: 157670.
 
 Noise only, no transmission (60 s segments at −20 dBFS RMS):
 
@@ -385,7 +396,7 @@ Each library's encoder output at full scale, 12345 zero samples before and 1 s a
 | ggwave dt-fast | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
 | ggwave dt-fastest | 0 / 500 | 0 | 0 / 500 | 0 | 0 / 300 | 0 |
 
-bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are the ones bug 1 used to lose (see README, bugs found by this benchmark):
+bysound symbol-level round trip (encoder symbols straight into `bys_rx_push`/`bys_rx_finish`, no audio; `bench codec <size> <n>`, output in `bysound_codec_scan.txt`). Payloads whose last block ends in a 0x00 Reed-Solomon parity byte are counted separately: the block without that byte is also a valid codeword, so the receiver closes the last block at the first length whose assembled payload passes the CRC-32 (`docs/PROTOCOL.md`, section 14.7):
 
 | size | payloads failing / tried (same for all 11 channel/profile combinations) | payloads with last parity byte = 0x00 | of those, failing |
 |---|---:|---:|---:|
