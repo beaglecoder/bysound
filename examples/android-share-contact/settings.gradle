@@ -1,0 +1,10 @@
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+rootProject.name = 'share-contact'
+include ':app', ':bysound'
+// the library, straight from this repo (no publishing needed)
+project(':bysound').projectDir = file('../../android/bysound')

@@ -11,8 +11,8 @@ Richer, complete examples than the minimal demos. All local: no API keys, no bac
 | [c-wav-tools](c-wav-tools/) | host (C) | runnable | `batch-decode` (table for a folder of recordings) and `noise-test` (decode under added noise, SNR sweep) on `../c` |
 | [node-cli](node-cli/) | Node (TS) | runnable | `encode` text to WAV and `decode` WAV with the TS library, no hardware |
 | [music-variants](music-variants/) | Node (TS) | runnable | The music + hidden message demo at several channels and message levels, WAVs and a decode report |
-| [ios-share-link](ios-share-link/) | iOS (Swift) | TODO (needs iOS session layer) | Send/receive a URL and open it after the confirm gate |
-| [android-share-contact](android-share-contact/) | Android (Kotlin) | TODO (needs Android session layer) | Send/receive a vCard, add to contacts after confirmation |
+| [ios-share-link](ios-share-link/) | iOS (SwiftUI) | runnable (builds; try on two iPhones) | Send a URL with the session (band auto); on receive, `confirmed()` then *Open* only for validated http(s) URLs, host shown |
+| [android-share-contact](android-share-contact/) | Android (Kotlin) | runnable (builds; try on two phones) | Send a contact as a vCard 3.0, strict parse on receive, `confirmed()`, then *Add to contacts* via `ACTION_INSERT` (no contacts permission) |
 | [esp32-wifi-setup](esp32-wifi-setup/) | ESP32 (C) | TODO (needs C session layer) | Device side of web-wifi-setup: code on screen, decrypt, join Wi-Fi, ack by sound |
 
 ## Running
