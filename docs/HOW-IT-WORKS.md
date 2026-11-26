@@ -123,6 +123,25 @@ The README describes the noise results with everyday places. This is how they ma
 
 Measured inside each mode's own band instead, the two are within 0–3 dB of each other: most of bysound's margin comes from concentrating the same power in narrower bands. These are analogies, not field measurements: real places also bring speaker and microphone limits, distance and reflections that the simulation does not model. See the paper's limitations section.
 
+### Over the air
+
+A Galaxy A50 and an iPad 44–65 cm apart, with recorded noise played by a laptop usually closer to the listening device than the sender ([field/](../field/README.md)):
+
+<img src="../field/charts/noise-by-scenario.svg" alt="Over-the-air reads by noise scenario" width="100%">
+
+- **Same threshold as in simulation:** the weakest real reads were at 7.8 dB (`top`) and 10.3 dB (`mid`) of measured SNR; the simulation predicts 9.9 and 10.1 dB. Real failures came from noise too close to the microphone, not from the decoder.
+- **By place:** bar, traffic, an audible alarm and a loud whistle at 18–19.5 kHz were read every time; music 23 of 30; hair dryer 14 of 28 and vacuum 7 of 28, with the appliance closer to the microphone than the sender.
+- **Latency:** about 1.1 s from the first tones to the decoded message.
+
+### Distance
+
+The figures compare the message and the noise where they reach the microphone; over the air only 44–65 cm has been measured.
+
+- **Twice as far, 4× weaker:** in open space, doubling the distance makes the message 4× weaker (−6 dB), so it tolerates 4× less noise. On `top` next to a fan: ×25 at one distance, ×6 at twice that distance, ×1.5 at four times.
+- **Where the noise is matters too:** a fan twice as close to the receiver as the sender counts 4× louder. Keep the listening device away from the noise.
+- **Short range by design:** arm's length, or across a counter. Many phones lose volume above 17 kHz, so `top` carries less far than `mid` or `audible`.
+- **Rooms aren't open space:** walls reflect sound back, so far from the sender it fades more slowly than the rule says; the echo they add is the "room with echo" case above.
+
 ### The numbers
 
 <img src="../bench/results/charts/snr_ultrasonic_1x.svg" alt="Success rate vs SNR, near-ultrasonic modes" width="100%">

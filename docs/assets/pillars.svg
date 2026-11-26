@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 210" width="760" height="210" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>The five pillars of bysound, with one measured number each</title>
+  <style>
+    .k { font-size: 13px; font-weight: 700; }
+    .n { font-size: 34px; font-weight: 800; }
+    .c { fill: #8b949e; font-size: 11.5px; }
+    .g { fill: #8b949e; font-size: 10.5px; font-style: italic; }
+    .card { fill: none; stroke: #8b949e; stroke-opacity: .35; }
+  </style>
+  <defs><linearGradient id="shine" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+
+  <!-- 1 Inaudible -->
+  <g transform="translate(10,10)">
+    <rect class="card" width="140" height="190" rx="10"/>
+    <rect width="140" height="6" rx="3" fill="#14b8a6"/>
+    <text class="k" x="12" y="30" fill="#14b8a6">INAUDIBLE</text>
+    <text class="n" x="12" y="76" fill="#14b8a6">10×</text>
+    <text class="c" x="12" y="100">more noise tolerated</text>
+    <text class="c" x="12" y="115">above 18 kHz</text>
+    <text class="g" x="12" y="150">vs ggwave's 2-tone</text>
+    <text class="g" x="12" y="164">mode moved to 18 kHz</text>
+  </g>
+
+  <!-- 2 Speed -->
+  <g transform="translate(160,10)">
+    <rect class="card" width="140" height="190" rx="10"/>
+    <rect width="140" height="6" rx="3" fill="#3b82f6"/>
+    <text class="k" x="12" y="30" fill="#3b82f6">SPEED</text>
+    <text class="n" x="12" y="76" fill="#3b82f6">2×</text>
+    <text class="c" x="12" y="100">data in the same 5 s</text>
+    <text class="c" x="12" y="115">on the same band</text>
+    <text class="g" x="12" y="150">284 B vs ggwave's 140 B</text>
+    <text class="g" x="12" y="164">at 15–19.5 kHz</text>
+  </g>
+
+  <!-- 3 Noise -->
+  <g transform="translate(310,10)">
+    <rect class="card" width="140" height="190" rx="10"/>
+    <rect width="140" height="6" rx="3" fill="#f59e0b"/>
+    <text class="k" x="12" y="30" fill="#f59e0b">NOISY PLACES</text>
+    <text class="n" x="12" y="76" fill="#f59e0b">×25</text>
+    <text class="c" x="12" y="100">noise louder than the</text>
+    <text class="c" x="12" y="115">message, still read</text>
+    <text class="g" x="12" y="150">ggwave: ×6 (fan, hiss)</text>
+    <text class="g" x="12" y="164">same in the air ±2 dB</text>
+  </g>
+
+  <!-- 4 Quality -->
+  <g transform="translate(460,10)">
+    <rect class="card" width="140" height="190" rx="10"/>
+    <rect width="140" height="6" rx="3" fill="#10b981"/>
+    <text class="k" x="12" y="30" fill="#10b981">EXACT DATA</text>
+    <text class="n" x="12" y="76" fill="#10b981">0</text>
+    <text class="c" x="12" y="100">wrong messages in</text>
+    <text class="c" x="12" y="115">87,380 trials</text>
+    <text class="g" x="12" y="150">ggwave: 34 in 67,320</text>
+    <text class="g" x="12" y="164">0 in 172 over the air</text>
+  </g>
+
+  <!-- 5 Security -->
+  <g transform="translate(610,10)">
+    <rect class="card" width="140" height="190" rx="10"/>
+    <rect width="140" height="6" rx="3" fill="#8b5cf6"/>
+    <text class="k" x="12" y="30" fill="#8b5cf6">SECURITY</text>
+    <text class="n" x="12" y="76" fill="#8b5cf6">52/52</text>
+    <text class="c" x="12" y="100">rival senders noticed</text>
+    <text class="c" x="12" y="115">over the air</text>
+    <text class="g" x="12" y="150">+ acks, alerts, levels,</text>
+    <text class="g" x="12" y="164">backend mode built in</text>
+  </g>
+
+  <rect x="10" y="204" width="740" height="2" fill="#8b949e" fill-opacity=".2"/>
+  <clipPath id="cl"><rect x="10" y="204" width="740" height="2"/></clipPath>
+  <rect clip-path="url(#cl)" x="-60" y="204" width="120" height="2" fill="url(#shine)"><animate attributeName="x" from="-60" to="760" dur="3s" repeatCount="indefinite"/></rect>
+</svg>
