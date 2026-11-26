@@ -1,29 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 330" width="720" height="330" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" width="720" height="340" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
 <title>How much noise each library tolerates</title>
 <style>.t{fill:#8b949e;font-size:13px}.s{fill:#8b949e;font-size:11px}.h{fill:#8b949e;font-size:15px;font-weight:600}.v{font-size:12px;font-weight:700}</style>
 <defs><linearGradient id="shine" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
 <text class="h" x="20" y="28">How much louder than the message can the noise be?</text>
 <rect x="250" y="40" width="10" height="10" rx="2" fill="#14b8a6"/><text class="s" x="266" y="49">bysound (top channel)</text>
 <rect x="420" y="40" width="10" height="10" rx="2" fill="#8b949e"/><text class="s" x="436" y="49">ggwave (ultrasound, fastest)</text>
-<text class="t" x="20" y="84">🌬️ Fan, hiss, static</text><text class="s" x="20" y="100">white noise</text>
-<rect x="250" y="70" width="210" height="18" rx="4" fill="#14b8a6"/>
-<clipPath id="c1"><rect x="250" y="70" width="210" height="18" rx="4"/></clipPath><rect clip-path="url(#c1)" x="190" y="70" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="460" dur="2.4s" begin="0.3s" repeatCount="indefinite"/></rect>
-<text class="v" x="468" y="83" fill="#14b8a6">×25 noise</text>
-<rect x="250" y="92" width="120" height="18" rx="4" fill="#8b949e"/>
-<text class="v" x="378" y="105" fill="#8b949e">×6 noise</text>
-<text class="t" x="20" y="146">🏠 Echoey room</text><text class="s" x="20" y="162">reverb + noise</text>
-<rect x="250" y="132" width="120" height="18" rx="4" fill="#14b8a6"/>
-<clipPath id="c3"><rect x="250" y="132" width="120" height="18" rx="4"/></clipPath><rect clip-path="url(#c3)" x="190" y="132" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="370" dur="2.4s" begin="0.8999999999999999s" repeatCount="indefinite"/></rect>
-<text class="v" x="378" y="145" fill="#14b8a6">×6 noise</text>
-<rect x="250" y="154" width="6" height="18" rx="4" fill="#8b949e"/>
-<text class="v" x="264" y="167" fill="#8b949e">×1 (only as loud as the message)</text>
-<text class="t" x="20" y="208">🚗 Street, A/C hum</text><text class="s" x="20" y="224">pink noise</text>
-<rect x="250" y="194" width="300" height="18" rx="4" fill="#14b8a6"/>
-<clipPath id="c5"><rect x="250" y="194" width="300" height="18" rx="4"/></clipPath><rect clip-path="url(#c5)" x="190" y="194" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="550" dur="2.4s" begin="1.5s" repeatCount="indefinite"/></rect>
-<text class="v" x="558" y="207" fill="#14b8a6">×100 noise</text>
-<rect x="250" y="216" width="240" height="18" rx="4" fill="#8b949e"/>
-<text class="v" x="498" y="229" fill="#8b949e">×40 noise</text>
-<text class="t" x="20" y="270">🍻 Bar, people talking</text><text class="s" x="20" y="286">crowd-like noise</text>
-<text class="v" x="250" y="276" fill="#8b949e">Both fine: voices sit below 5 kHz, the message above 15 kHz</text>
-<text class="s" x="20" y="318">Simulated channel, 32-byte message, ≥ 90 % success. "×25" = noise with 25 times the power of the message.</text>
+<text class="t" x="20" y="86">🌬️ Fan, hiss, static</text><text class="s" x="20" y="102">white noise · <tspan font-weight="700" fill="#14b8a6">4.0× more noise</tspan></text>
+<rect x="250" y="72" width="330" height="18" rx="4" fill="#14b8a6"/>
+<clipPath id="c1"><rect x="250" y="72" width="330" height="18" rx="4"/></clipPath><rect clip-path="url(#c1)" x="190" y="72" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="580" dur="2.4s" begin="0.3s" repeatCount="indefinite"/></rect>
+<text class="v" x="588" y="85" fill="#14b8a6">×25</text>
+<rect x="250" y="94" width="83" height="18" rx="4" fill="#8b949e"/>
+<text class="v" x="341" y="107" fill="#8b949e">×6</text>
+<text class="t" x="20" y="148">🏠 Echoey room</text><text class="s" x="20" y="164">reverb + noise · <tspan font-weight="700" fill="#14b8a6">6.3× more noise</tspan></text>
+<rect x="250" y="134" width="330" height="18" rx="4" fill="#14b8a6"/>
+<clipPath id="c3"><rect x="250" y="134" width="330" height="18" rx="4"/></clipPath><rect clip-path="url(#c3)" x="190" y="134" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="580" dur="2.4s" begin="0.8999999999999999s" repeatCount="indefinite"/></rect>
+<text class="v" x="588" y="147" fill="#14b8a6">×6</text>
+<rect x="250" y="156" width="52" height="18" rx="4" fill="#8b949e"/>
+<text class="v" x="310" y="169" fill="#8b949e">×1 (as loud as the message)</text>
+<text class="t" x="20" y="210">🚗 Street, A/C hum</text><text class="s" x="20" y="226">pink noise · <tspan font-weight="700" fill="#14b8a6">2.5× more noise</tspan></text>
+<rect x="250" y="196" width="330" height="18" rx="4" fill="#14b8a6"/>
+<clipPath id="c5"><rect x="250" y="196" width="330" height="18" rx="4"/></clipPath><rect clip-path="url(#c5)" x="190" y="196" width="60" height="18" fill="url(#shine)"><animate attributeName="x" from="190" to="580" dur="2.4s" begin="1.5s" repeatCount="indefinite"/></rect>
+<text class="v" x="588" y="209" fill="#14b8a6">×100</text>
+<rect x="250" y="218" width="131" height="18" rx="4" fill="#8b949e"/>
+<text class="v" x="389" y="231" fill="#8b949e">×40</text>
+<text class="t" x="20" y="272">🍻 Bar, people talking</text><text class="s" x="20" y="288">crowd-like noise</text>
+<text class="v" x="250" y="278" fill="#8b949e">Both fine: voices sit below 5 kHz, the message above 15 kHz</text>
+<text class="s" x="20" y="322">Bars are linear within each row. Simulated channel, 32-byte message, ≥ 90 % success; "×25" = noise with 25× the message's power.</text>
 </svg>
