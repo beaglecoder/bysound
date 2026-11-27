@@ -1,6 +1,9 @@
 package io.github.beaglecoder.bysound.session
 
 import io.github.beaglecoder.bysound.modem.Band
+import io.github.beaglecoder.bysound.modem.Modem
+import io.github.beaglecoder.bysound.modem.TextPacking
+import io.github.beaglecoder.bysound.modem.TextTooLongException
 import io.github.beaglecoder.bysound.modem.Profile
 import java.util.concurrent.CompletableFuture
 
@@ -61,6 +64,10 @@ class Delivered(
  * Session sender (docs/SESSION.md sections 5 and 9): pre-listen (other emitters + ambient), repetitions with listen windows over an
  * adaptive channel ladder, ack -> receipts, other emitters -> risk frame, heard risk frames -> stop and relay. A plain state machine
  * over [Platform] and [AirEvent]s: not thread-safe, call it from one thread.
+ *
+ * Throws [IllegalArgumentException] for an empty text, and [TextTooLongException] (payload mode) if the text does not fit one
+ * transmission on a band the session may play (the fixed band, or every channel of the ladder) in the normal profile, or in the
+ * fixed profile if given.
  */
 class SenderSession(private val text: String, private val platform: Platform, private val options: SenderOptions = SenderOptions()) {
     @Volatile var state = SenderState.PRE_LISTEN
@@ -89,7 +96,9 @@ class SenderSession(private val text: String, private val platform: Platform, pr
     private var onChannel = 0
     private var sent = 0
     private val played = ArrayList<Band>()
-    private var band: Band = options.band ?: (options.channels ?: DEFAULT_CHANNELS)[0]
+    private var band: Band
+    /** Packed length of the text (payload mode): decides whether a repetition fits the robust profile. */
+    private val packed = if (mode == Mode.PAYLOAD) TextPacking.pack(text).size else 0
     private var profile = Profile.NORMAL
     private var playing = false
     private var lastEnd = Double.NEGATIVE_INFINITY
@@ -99,7 +108,17 @@ class SenderSession(private val text: String, private val platform: Platform, pr
     /** Pre-listen heard a frame start or a clash. */
     private var busy = false
 
-    init { delivered.exceptionally { null } /* the app may only look at `finished` */ }
+    init {
+        require(text.isNotEmpty()) { "Nothing to send: the text is empty" }
+        val bands = options.band?.let { listOf(it) } ?: options.channels?.takeIf { it.isNotEmpty() } ?: DEFAULT_CHANNELS
+        band = bands[0]
+        if (mode == Mode.PAYLOAD) for (b in bands) {
+            val p = if (options.profile == Profile.ROBUST && b.hasRobust) Profile.ROBUST else Profile.NORMAL
+            val max = Modem.maxPayloadBytes(b, p)
+            if (packed > max) throw TextTooLongException(packed, max, "The data is too long for one transmission on ${b.id}/${p.name.lowercase()}: $packed packed bytes, at most $max")
+        }
+        delivered.exceptionally { null } // the app may only look at `finished`
+    }
 
     fun start() {
         val sec = security
@@ -189,7 +208,10 @@ class SenderSession(private val text: String, private val platform: Platform, pr
         }
         onChannel++
         val b = route[hop]
-        return Next(b, ladder.next(b), if (mode == Mode.REFERENCE) sent % 2 else 0)
+        var p = ladder.next(b)
+        // A text that fits the normal profile may not fit the robust one (twice the airtime): the normal profile is played then.
+        if (p == Profile.ROBUST && mode == Mode.PAYLOAD && packed > Modem.maxPayloadBytes(b, Profile.ROBUST)) p = Profile.NORMAL
+        return Next(b, p, if (mode == Mode.REFERENCE) sent % 2 else 0)
     }
 
     private fun render(band: Band, profile: Profile, set: Int): FloatArray =

@@ -1,9 +1,12 @@
 package io.github.beaglecoder.bysound.session
 
 import io.github.beaglecoder.bysound.modem.Band
+import io.github.beaglecoder.bysound.modem.Channel
 import io.github.beaglecoder.bysound.modem.Codec
 import io.github.beaglecoder.bysound.modem.Modem
 import io.github.beaglecoder.bysound.modem.Profile
+import io.github.beaglecoder.bysound.modem.TextPacking
+import io.github.beaglecoder.bysound.modem.TextTooLongException
 
 // Automatic adaptation of the sender (docs/SESSION.md section 9): channel ladder, ambient check, robust ladder, calibration memory.
 
@@ -144,6 +147,11 @@ fun lapped(played: List<Band>, routeLength: Int): Boolean {
  * run and the sender's receipts are timed with it, so they cover a listen window even after a hop or a switch to robust.
  */
 fun longestRepetitionSeconds(text: String?): Double {
-    val f = if (text != null) Codec.payloadFrame(text, Band.TOP, Profile.ROBUST) else Codec.referenceFrame(IntArray(12), Band.TOP, 0, Profile.ROBUST)
-    return f.frameSeconds + Modem.GAP_SECONDS
+    if (text == null) return Codec.referenceFrame(IntArray(12), Band.TOP, 0, Profile.ROBUST).frameSeconds + Modem.GAP_SECONDS
+    // A text that does not fit top/robust still gets a length (over the 30 s cap, so the ack run is clamped to its maximum).
+    return try {
+        Codec.payloadFrame(text, Band.TOP, Profile.ROBUST).frameSeconds + Modem.GAP_SECONDS
+    } catch (e: TextTooLongException) {
+        Codec.transmissionMicros(Channel.of(Band.TOP, Profile.ROBUST), TextPacking.pack(text).size) / 1e6
+    }
 }

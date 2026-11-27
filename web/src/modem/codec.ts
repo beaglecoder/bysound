@@ -22,6 +22,7 @@ function utf8Chunks(text: string): number[][] {
   return chunks;
 }
 
+/** Text packing (protocol/v4-reference.mjs): digit pairs in one byte (0x80 + n), printable ASCII as is, anything else as 0xFF, length, UTF-8. */
 export function pack(text: string): number[] {
   const dig = (c: number) => c >= 0x30 && c <= 0x39;
   const asc = (c: number) => c >= 0x20 && c <= 0x7e;
@@ -45,6 +46,7 @@ export function pack(text: string): number[] {
   return out;
 }
 
+/** Inverse of pack. null if the bytes are not a valid packing (unknown byte, truncated run, invalid UTF-8). */
 export function unpack(data: number[]): string | null {
   let s = '';
   let i = 0;
@@ -133,8 +135,11 @@ function payloadSymbols(groups: number, packed: number): number {
   return PREAMBLE.length + Math.ceil((2 * HEADER_BYTES) / groups) + Math.ceil((2 * body) / groups);
 }
 
-/** Exact duration in microseconds of the transmission (frame + gap) of a payload with `packed` packed bytes. */
-const payloadMicros = (b: Band, packed: number) => payloadSymbols(b.groups, packed) * US(b.sym) + US(GAP_SECONDS);
+/**
+ * Exact duration in microseconds of one transmission (frame + gap) of a payload with `packed` packed bytes on `b` (a band already in
+ * its profile, see inProfile). Pure arithmetic: it never throws, even past MAX_FRAME_SECONDS.
+ */
+export const payloadMicros = (b: Band, packed: number) => payloadSymbols(b.groups, packed) * US(b.sym) + US(GAP_SECONDS);
 
 /**
  * Largest packed payload (bytes after text packing, before the CRC-32) that fits in MAX_FRAME_SECONDS for the band and profile.
@@ -165,7 +170,7 @@ export function payloadFrame(text: string, bandId: BandId, profile: Profile = 'n
     throw new TooLongError(`The data is too long: one transmission cannot last more than ${MAX_FRAME_SECONDS} s (maximum for ${bandId}/${p}: ${maxPayloadBytes(bandId, p)} packed bytes, you have ${content.length})`);
   }
   const body: number[] = [];
-  for (let b = 0; b < total; b++) body.push(...rsEncode([b, total].concat(data.slice(b * BLOCK_DATA, (b + 1) * BLOCK_DATA)), BLOCK_PARITY));
+  for (let i = 0; i < total; i++) body.push(...rsEncode([i, total].concat(data.slice(i * BLOCK_DATA, (i + 1) * BLOCK_DATA)), BLOCK_PARITY));
   return frame(b, headerBytes(MAGIC_PAYLOAD, total, bandId, 0, p), body);
 }
 

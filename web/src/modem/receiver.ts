@@ -8,7 +8,7 @@ import { assemble, decodeBlock, decodeMother, parityRange, type Block } from './
 import { fftOf, isPowerOfTwo, type Fft } from './fft';
 import { symbolWindow } from './symbolWindow';
 import {
-  ACK_BODY, ACK_LENGTH, BANDS, BAND_IDS, BLOCK_BYTES, BLOCK_HEADER, BLOCK_PARITY, GAP_SECONDS, HEADER_BYTES, HOP_SECONDS, MAGIC_ACK, MAGIC_PAYLOAD, MAGIC_REFERENCE,
+  ACK_BODY, ACK_LENGTH, BANDS, BAND_IDS, BLOCK_BYTES, BLOCK_DATA, BLOCK_HEADER, BLOCK_PARITY, GAP_SECONDS, HEADER_BYTES, HOP_SECONDS, MAGIC_ACK, MAGIC_PAYLOAD, MAGIC_REFERENCE,
   MAGIC_RISK, MAX_BLOCKS, MOTHER_BYTES, PREAMBLE, PREAMBLE_THRESHOLD, REF_DATA, REF_PARITY, RISK_BODY, RISK_LENGTH, SPACING_HZ, TONES,
   VERSION, WINDOW_SECONDS, CHANNEL_IDS, ROBUST_BANDS, crc8, headerBytes, inProfile, preambleSymbol, samples, symbolStart, toneHz, type Band, type BandId,
   type Profile,
@@ -482,7 +482,7 @@ class ChannelReader {
     this.headerSure = agree === n;
     this.bodyReset();
     if (this.magic === MAGIC_RISK || this.magic === MAGIC_ACK) {
-      // The web does not handle risk signals or acks: they are not payload, so they are skipped.
+      // Risk frames and acks are not payload: this receiver skips their bodies (the session layer reads them with ControlListener).
       this.resetSearch();
       this.searchFrom = this.frameStart + this.start(this.firstBody + this.symbolsFor(this.magic === MAGIC_ACK ? ACK_BODY : RISK_BODY));
       return;
@@ -495,7 +495,6 @@ class ChannelReader {
     this.tryBody();
   }
 
-  /** Unreadable: if this band had been reading a recent repetition, its header applies to this one. */
   /** The header's CRC-8 checks out with another band: it is another sender, not read as our own. */
   private foreignHeader(soft: Soft): boolean {
     const [magic = 0, length = 0, crc = 0, version = 0] = hardBytes(soft.slice(0, HEADER_BYTES * 2));
@@ -503,6 +502,7 @@ class ChannelReader {
     return crc === crc8([magic, length, version, this.band.profile === 'robust' ? 1 : 0]);
   }
 
+  /** Unreadable: if this band had been reading a recent repetition, its header applies to this one. */
   private unreadableHeader() {
     const horizon = this.frameStart - COMBINE_SECONDS * this.r.rate;
     const last = this.pool.readings[this.pool.readings.length - 1];
@@ -699,7 +699,7 @@ class ChannelReader {
       const leastSure = leastSureBytes(candidate, BLOCK_BYTES);
       for (const f of BLOCK_ERASURE_TRIES) {
         const r = decodeBlock(bytes, leastSure.slice(0, f));
-        if (r && r.block.index === index && r.block.total === this.dataLength && r.block.chunk.length === 48) return r;
+        if (r && r.block.index === index && r.block.total === this.dataLength && r.block.chunk.length === BLOCK_DATA) return r;
       }
     }
     return null;
@@ -827,6 +827,7 @@ class ChannelReader {
 }
 
 /**
+ * Streaming receiver: feed() it audio blocks of any size; it reports frames through `events`.
  * `profile`: robust listens only to robust frames (top, high, upper and mid), with double window and step. To hear both profiles use
  * two receivers on the same audio (see ReceiverHost), like the two banks of the native ports.
  */
@@ -917,7 +918,7 @@ export class Receiver {
 
   private onHop() {
     const index = this.hops++;
-    this.window(this.winSize + index * this.hopSize - this.winSize);
+    this.window(index * this.hopSize); // the window that ends at this step
     // With FFT, a single transform per step feeds both banks.
     if (this.fft) this.fft.analyze(this.windowed);
     this.highBank.compute(this, index, this.fft !== null);

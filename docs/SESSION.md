@@ -32,11 +32,11 @@ The modem moves one text from a speaker to a microphone, intact or not at all. T
 - **Acknowledgement and receipt.** The receiver says "got it" by sound, so the sender stops; the sender answers "I heard you", so the receiver stops saying it.
 - **The confirm gate.** The receiver keeps listening after delivering the data, and the app asks `confirmed()` before acting on it. Another transmission or an alert heard meanwhile closes the gate.
 - **Other emitters.** A second sender nearby (a rogue racing the real one, a replay, an overlap) is detected by whoever hears it, and nothing is delivered from a clash.
-- **Risk signal.** Whoever detects another emitter says so by sound (a risk frame) so the others stop too; a sender relays it at most twice.
+- **Risk signal.** Whoever detects another emitter says so by sound (a risk frame) so the others stop too; a sender that hears one relays it once, and a chain of relays ends after two hops.
 - **Security levels.** One option, `basic` / `standard` / `maximum` (default), sets all of the above.
 - **Quarantine.** A suggested pause after an alert, delivered as a callback. It never blocks anything.
 - **Reference mode.** Only the 12-byte fingerprint travels; the receiver resolves it with a local lookup the app provides. No backend.
-- **Automatic adaptation.** The sender picks a channel by the noise it measures, steps down a channel ladder until it is read, goes robust when nobody reads, and remembers where it was read.
+- **Automatic adaptation.** The sender picks a channel by the noise it measures, steps down a channel ladder until it is read, switches to the robust profile when nobody reads it, and remembers where it was read.
 
 There is no backend, no key and no network anywhere in this layer.
 
@@ -58,7 +58,7 @@ sequenceDiagram
   end
   Note over R: first frame decoded → final listen 1.5 s
   Note over R: delivers the text (result)<br/>confirm watch starts
-  R-)S: ack loop on mid (says where it read: band + profile)
+  R-)S: ack loop on mid (says where it read: channel + profile)
   Note over S: ack heard in a window → stop data<br/>delivered, calibration saved
   S-)R: receipt loop on high
   Note over R: receipt heard → stop acking
@@ -67,9 +67,11 @@ sequenceDiagram
 
 ## 3. Frames
 
-The session layer uses two frame types of v4 besides payload (`0x56`) and reference (`0x52`). Both use the v4 header of PROTOCOL.md §8, the preamble of their band, the **normal** profile only, and a single Reed–Solomon codeword RS(n, k) over GF(2⁸) with 8 parity bytes (PROTOCOL.md §10). The frame is preamble + header symbols + body symbols, packed exactly like the other frames (`toSymbols` of the header, then of the body, each padded with zero nibbles to whole symbols).
+A **channel** is one of the seven channels of [PROTOCOL.md §4](PROTOCOL.md#4-channels) (`top`, `high`, `upper`, `mid`, `audible`, `xhigh`, `wide`), identified by its channel id (`top` 0 … `wide` 6); APIs and options name it `band`. The **ultrasonic channels** are all of them except `audible` (bins 320–415).
 
-CRC-16 below is CRC-16/CCITT-FALSE (poly `0x1021`, init `0xFFFF`) over the bytes before it, big-endian.
+The session layer uses two frame types of v4 besides payload (`0x56`) and reference (`0x52`). Both use the v4 header of [PROTOCOL.md §8](PROTOCOL.md#8-header) (`length` = the number of data bytes, set bit 0, profile flag 0 in the CRC-8), the preamble of their channel, the **normal** profile only, and a single Reed–Solomon codeword with 8 parity bytes (RS(15, 7) for acks, RS(18, 10) for risk frames; code of [PROTOCOL.md §10](PROTOCOL.md#10-reedsolomon-code)). The frame is preamble + header symbols + body symbols, packed exactly like the other frames (`toSymbols` of the header, then of the body, each padded with zero nibbles to whole symbols).
+
+CRC-16 below is CRC-16/CCITT-FALSE (polynomial `0x1021`, initial value `0xFFFF`, not reflected, no final XOR) over the bytes before it, stored high byte first.
 
 ### 3.1 Ack and receipt (`0x41`)
 
@@ -77,20 +79,20 @@ Header `length` = 7. Body = the 7 data bytes followed by their 8 parity bytes (1
 
 | Byte | Content |
 |---|---|
-| 0 | low nibble: **kind**, `2` ack (receiver → sender) or `3` receipt (sender → receiver). High nibble: **heard**, see below |
+| 0 | low nibble: **kind**, `2` ack (receiver → sender) or `3` receipt (sender → receiver); any other kind is invalid. High nibble: **heard**, see below |
 | 1–4 | **ack id**: the first 4 bytes of SHA-256 of the text (UTF-8) |
 | 5–6 | CRC-16 of bytes 0–4 |
 
-**Heard nibble** (high nibble of byte 0): `0` means "not stated". Otherwise `robust << 3 | (channelId + 1)`, where `channelId` is the band id of PROTOCOL.md §8 (`top` 0 … `wide` 6) of the frame the receiver delivered and `robust` is 1 if that frame was robust. A value with `channelId + 1 = 0` and the robust bit set (`0x8`) is invalid. A receipt echoes the heard nibble of the ack it answers. With the nibble at 0 the bytes are exactly those of `v4-acks.json`, so a decoder that ignores the nibble still reads plain acks; a session decoder MUST accept both.
+**Heard nibble** (high nibble of byte 0): `0` means "not stated". Otherwise `robust << 3 | (channelId + 1)`, where `channelId` is the channel id (§3) of the frame the receiver delivered and `robust` is 1 if that frame was in the robust profile; the low three bits are therefore 1–7. The value `0x8` (robust bit set, low bits 0) is invalid. A decoder MUST reject the whole frame when the CRC-16 fails, the kind is not 2 or 3, or the heard nibble is `0x8`. A receipt echoes the heard nibble of the ack it answers. With the nibble at 0 the bytes are exactly those of `v4-acks.json`, so a decoder that ignores the nibble still reads plain acks; a session decoder MUST accept both.
 
-| | Band | Loop |
+| | Channel | Loop |
 |---|---|---|
-| Ack | `mid` | frames back to back, each followed by 0.15 s of silence |
+| Ack | `mid` | frames back to back, each followed by `CONTROL_GAP_SECONDS` = 0.15 s of silence; whole frames only, until the loop has lasted at least its duration |
 | Receipt | `high` | same |
 
 `mid` (bins 320–367) and `high` (bins 368–415) share no tone, so a receiver acking and a sender answering at the same moment do not mask each other. An ack frame lasts 0.672 s on `mid` and `high` (0.822 s with its gap).
 
-**Known limitation.** The receipt band is always `high` (17.25–19.5 kHz), whatever band the data was read on. A sender whose speaker cannot play above about 17 kHz is read on `mid` and hears the ack, but its receipts do not reach the receiver, which keeps acking until `ACK_TOTAL_SECONDS` (30 s) and resolves `receipt` as `false`. Delivery and the confirm gate are not affected; a half-duplex receiver cannot hear a new text until that ack loop ends (§6.4).
+**Known limitation.** The receipt channel is always `high` (17.25–19.5 kHz), whatever channel the data was read on. A sender whose speaker cannot play above about 17 kHz is read on `mid` and hears the ack, but its receipts do not reach the receiver, which keeps acking for `ACK_TOTAL_SECONDS` (30 s, §6.4) and resolves `receipt` as `false`. Delivery and the confirm gate are not affected; a half-duplex receiver cannot hear a new text until that ack loop ends.
 
 ### 3.2 Risk signal (`0x58`)
 
@@ -100,19 +102,19 @@ Header `length` = 10. Body = 10 data bytes + 8 parity bytes (18 bytes).
 |---|---|
 | 0 | **reason**: `1` other (a different transmission was heard), `2` clone (someone else is playing this device's own data), `3` overlap (two frames overlapped, nothing could be separated), `4` cancelled (reserved for an app-initiated alert; the reference never emits it) |
 | 1 | low nibble: **source**, `0` the alert was raised by a sender, `1` by a receiver. High nibble: **hops**, 0 for the original, +1 per relay |
-| 2–4 | **own**: short id (first 3 bytes of SHA-256 of the text) of the data the originator was sending or had received; `000000` if none |
+| 2–4 | **own**: short id (§3.3) of the data the originator was sending or had received; `000000` if none |
 | 5–7 | **intruder**: short id of the other transmission; `000000` if it could not be read |
 | 8–9 | CRC-16 of bytes 0–7 |
 
-A risk frame lasts 0.736 s on `mid` (0.96 s on `top`). The **incident key** of a risk frame is (reason, source, own, intruder): hops are not part of it, so a relay is the same incident.
+A decoder MUST reject the whole frame when the CRC-16 fails, the reason is not 1–4 or the source is not 0 or 1. A risk frame lasts 0.736 s on `mid` (0.96 s on `top`). The **incident key** of a risk frame is (reason, source, own, intruder): hops are not part of it, so a relay is the same incident.
 
-**Risk bands.** A risk frame is looped, alternating bands, each frame followed by 0.15 s of silence. The list of bands, given the emitter's working band `work` and the band `avoid` of what is being reported (or none):
+**Risk channels.** A risk frame is looped, alternating channels, each frame followed by `CONTROL_GAP_SECONDS` = 0.15 s of silence, whole frames only, until the loop has lasted at least its duration. The list of channels, given the emitter's working channel `work` and the channel `avoid` of what is being reported (or none):
 
 1. `base` = `[mid]` if `work` is `mid` or `audible`, otherwise `[mid, work]`.
 2. Without `avoid`, or if `avoid` is `audible`: `base`.
 3. Otherwise the members of `base` that share no tone with `avoid`. If none is left, those of `[mid, top]` that share no tone with `avoid`. If none, `base`.
 
-Risk frames are never sent on `audible`. A receiver that detected an overlap without knowing its band uses `work = top`, `avoid` = none: `[mid, top]`, which do not overlap each other.
+Two channels share a tone when their bin ranges `[bin, bin + 16·G)` (PROTOCOL.md §4) intersect. Risk frames are never sent on `audible`. A receiver that detected an overlap before any frame uses `work = top`, `avoid` = none: `[mid, top]`, which do not overlap each other.
 
 ### 3.3 Identifiers
 
@@ -125,7 +127,7 @@ All are computed from the UTF-8 bytes of the text, as lowercase hex in APIs:
 | ack id | first 4 | acks, receipts |
 | short id | first 3 | risk frames |
 
-None of them is a secret or a proof: anyone who knows the text can compute them.
+The short id of a heard reference frame is the first 3 bytes of its fingerprint, which are those of the text's hash. None of these identifiers is a secret or a proof: anyone who knows the text can compute them.
 
 ## 4. What a device hears
 
@@ -133,17 +135,17 @@ A session reacts to these events from its microphone (in the reference: `AirEven
 
 | Event | Meaning |
 |---|---|
-| `frame` | A payload or reference frame decoded (PROTOCOL.md). Carries text or fingerprint, band and profile. |
-| `header` | A payload or reference header read with near certainty (≥ 7 of 8 nibbles): a frame is starting on that band. |
-| `clash` | The modem receiver saw two overlapping frames and delivered neither (PROTOCOL.md §15.3). |
-| `ack` | An ack or receipt decoded (§3.1). |
-| `risk` | A risk frame decoded (§3.2). |
-| `noise` | Every 0.25 s, the noise measured on each high band (§9.2). |
+| `frame` | A payload or reference frame decoded (PROTOCOL.md). Carries text or fingerprint, channel and profile. |
+| `header` | A payload or reference header read with near certainty (≥ 7 of 8 nibbles): a frame is starting on that channel. |
+| `clash` | The modem receiver saw two overlapping frames and delivered neither ([PROTOCOL.md §15.3](PROTOCOL.md#153-multiple-emitters-clash-detection)). |
+| `ack` | An ack or receipt decoded (§3.1), with the channel it was heard on. |
+| `risk` | A risk frame decoded (§3.2), with the channel it was heard on. |
+| `noise` | Every `NOISE_REPORT_SECONDS` = 0.25 s, the noise measured on each ultrasonic channel (§9.2). |
 
 Rules that apply everywhere:
 
 - Acks, receipts and risk frames are **never** "another transmission": they do not trigger `OTHER_TRANSMISSION`, `OTHER_EMITTER`, `MULTIPLE_TRANSMISSIONS` or a clone.
-- A device ignores a risk frame whose incident key it emitted or relayed itself within the last `quarantineMs` (it hears its own speaker). This memory is per device, shared by its sessions (`RiskMemory`).
+- A device ignores a risk frame whose incident key it emitted or relayed itself less than `quarantineMs` ago (it hears its own speaker); with `quarantineMs` = 0 it ignores none. This memory is per device, shared by its sessions (`RiskMemory`).
 - Within one session, each incident key is reported at most once.
 - Events arrive with the time the device heard them; all times in this document are on one monotonic clock per device.
 
@@ -155,26 +157,29 @@ Rules that apply everywhere:
 stateDiagram-v2
   [*] --> PreListen: start()
   PreListen --> Sending: pre-listen over, nothing heard
-  PreListen --> Done: frame / start / clash heard → OTHER_TRANSMISSION or CLONED_TRANSMISSION
-  PreListen --> Alerting: risk frame (honor) → relay
+  PreListen --> Done: frame / start / clash heard → OTHER_TRANSMISSION or CLONED_TRANSMISSION · risk frame (honor, hops ≥ 2)
+  PreListen --> Alerting: risk frame (honor, hops < 2) → relay
   Sending --> Window: repetition ended
   Window --> Sending: 2 s later, next repetition of the ladder
   Window --> Receipt: ack with our id
   Sending --> Receipt: ack with our id
-  Sending --> Alerting: other emitter / clone (emit auto) or risk frame (relay)
+  Sending --> Alerting: other emitter / clone (emit auto) or risk frame (honor, hops < 2) → relay
   Window --> Alerting: same
-  Sending --> Done: timeout, or detection with emit off
-  Receipt --> Done: receipts played
-  Receipt --> Alerting: risk frame (relay)
+  Sending --> Done: timeout, detection with emit off, or risk frame (honor, hops ≥ 2)
+  Window --> Done: same
+  Receipt --> Done: receipts played, or risk frame (honor, hops ≥ 2)
+  Receipt --> Alerting: risk frame (honor, hops < 2) → relay
   Alerting --> Done: risk loop played
   Done --> [*]
 ```
 
 `stop()` goes to Done from any state and silences everything at once, the risk loop included.
 
+A sender is refused when it is created if the text is empty, or (payload mode) if the text does not fit one transmission ([PROTOCOL.md, Maximum duration](PROTOCOL.md#maximum-duration)) on a channel it may play: the fixed `band`, or every channel of the chain, in the normal profile (in the fixed `profile` if one is given and the channel has it).
+
 ### 5.2 Pre-listen
 
-If `listenBeforeSendingSeconds > 0` and (detection is on or the ambient check is on), the sender listens for `listenBeforeSendingSeconds`, plus, **only when `detectMultipleEmitters` is on**, a uniform random extra in `[0, scanJitterSeconds)`. The jitter keeps two senders that start together from ending their pre-listen together.
+If `listenBeforeSendingSeconds > 0` and (`detectMultipleEmitters` is on or the ambient check is on: option `ambient`, default true), the sender listens for `listenBeforeSendingSeconds`, plus, **only when `detectMultipleEmitters` is on**, a uniform random extra in `[0, scanJitterSeconds)`. The jitter keeps two senders that start together from ending their pre-listen together. Otherwise it starts sending at once.
 
 During the pre-listen, with `detectMultipleEmitters`:
 
@@ -190,16 +195,16 @@ The sender plays one **repetition** (one frame plus the 0.35 s gap of PROTOCOL.m
 
 Windows are what lets a half-duplex device (one that cannot hear well while it plays) hear acks and other emitters. A device that can listen while it plays MAY act on what it hears at any time; the reference does.
 
-The timeout (`timeoutSeconds`, default 60) counts from the first repetition. When it expires before an ack: stop, `TIMEOUT`.
+The timeout (`timeoutSeconds`, default 60) counts from the start of the first repetition. When it expires in Sending or Window: stop, `TIMEOUT`. It does not apply in Receipt or Alerting.
 
 ### 5.4 Other emitters while sending
 
 With `detectMultipleEmitters` **and** `listenWhileSending`, in states Sending and Window:
 
-- a decoded frame with **other** content → reason `other`, intruder = its short id, `avoid` = its band;
-- a decoded frame with the sender's **own** content → reason `clone`, intruder = own short id, `avoid` = its band, if either
+- a decoded frame with **other** content → reason `other`, intruder = its short id, `avoid` = its channel;
+- a decoded frame with the sender's **own** content → reason `clone`, intruder = own short id, `avoid` = its channel, if either
   - the sender is silent and at least `CLONE_GUARD_SECONDS` = 0.5 s have passed since its last repetition ended, or
-  - the sender is playing and the frame's band differs from the band it is playing.
+  - the sender is playing and the frame's channel differs from the channel it is playing.
 
   (A device decodes its own frame right after the frame ends, inside its own gap: within the guard.)
 - `header` and `clash` are ignored while sending: the sender's own frames and the receiver's acks produce them.
@@ -211,19 +216,19 @@ On detection the sender stops the data at once. With `riskSignal.emit = 'auto'` 
 An `ack` event with kind ack (not receipt) and the sender's ack id, in Sending or Window:
 
 1. Stop the data at once.
-2. Resolve `delivered` with the heard band and profile from the ack (if stated), the time from the first repetition, the repetition count, and the calibration it saved (§9.4).
+2. Resolve `delivered` with `{band, profile, stated, seconds, repetitions, calibration}`: the heard channel and profile from the ack (`stated: true`), or, if the ack does not state them, those of the last repetition (`stated: false`); the time from the start of the first repetition; the number of repetitions played; and the calibration it saved, or none (§9.4).
 3. Loop receipts (§3.1, echoing the heard nibble) on `high` for `receiptSeconds = ackRunSeconds(L) + RECEIPT_LISTEN_SECONDS`, where `L` is the longest repetition of this content (§6.4). Then Done.
 
 Acks with another id are ignored. A second ack is ignored.
 
 ### 5.6 Risk frames: emitting, hearing, relaying
 
-**Emitting.** The frame is `{reason, source: sender, hops: 0, own: own short id, intruder}`. It is looped on the risk bands of §3.2 with `work` = the band the sender was playing and `avoid` = the band of the intruding frame, for `riskSignal.detectorDurationMs`. The sender records the incident in its `RiskMemory`.
+**Emitting.** The frame is `{reason, source: sender, hops: 0, own: own short id, intruder}`. It is looped on the risk channels of §3.2 with `work` = the channel of the sender's current or last repetition (before the first one: the fixed `band` or the first channel of the chain) and `avoid` = the channel of the intruding frame, for `riskSignal.detectorDurationMs`. Emitting stops everything else the sender was playing or waiting for (receipts, timers). The sender records the incident in its `RiskMemory`.
 
-**Hearing** (with `riskSignal.listen`; ignored in Alerting, and ignored if it is the sender's own incident, §4). In any other state:
+**Hearing** (with `riskSignal.listen`; ignored in Alerting and Done, if this session already reported the incident, and if it is the device's own incident, §4). In any other state, the pre-listen included:
 
 1. Report a `heard` alert (with `matchesMine` = frame's `own` equals the sender's short id; informative only) and a quarantine notice.
-2. If `riskSignal.honor`: stop the data (and receipts) at once. **Any** honored risk frame stops the sender, whoever raised it and whatever it reports. Then, if `hops < RISK_MAX_HOPS` (2), **relay** it once: the same frame with `hops + 1`, looped as above with `avoid` = the band it was heard on, for `detectorDurationMs`; record the incident. If `hops ≥ 2`, do not relay; go to Done. Before the ack, `delivered` fails with `RISK_SIGNAL`.
+2. If `riskSignal.honor`: stop the data (and receipts) at once. **Any** honored risk frame stops the sender, whoever raised it and whatever it reports. Then, if `hops < RISK_MAX_HOPS` (2), **relay** it once: the same frame with `hops + 1`, looped as above with `avoid` = the channel it was heard on, for `detectorDurationMs`; record the incident; report an `emitted` alert with `relay: true` (and no quarantine notice). If `hops ≥ 2`, do not relay; go to Done. Before the ack, `delivered` fails with `RISK_SIGNAL`.
 3. Without `honor`: only the alert and the notice.
 
 Since a device ignores incidents it already emitted or relayed, two senders cannot pass one incident back and forth, and the chain is at most original → relay (hops 1) → relay (hops 2).
@@ -237,9 +242,9 @@ stateDiagram-v2
   [*] --> Listening: start()
   Listening --> FinalListen: first frame (detection on)
   Listening --> Delivered: first frame (detection off), once resolved
-  Listening --> Failed: timeout · clash · risk frame (honor) · no resolver
+  Listening --> Failed: timeout · clash · risk frame (honor) · no resolver · resolver failed · cancel()
   FinalListen --> Delivered: final listen over, text resolved and verified
-  FinalListen --> Failed: different frame · clash · risk frame (honor) · resolver failed
+  FinalListen --> Failed: different frame · clash · risk frame (honor) · resolver failed · cancel()
   Delivered --> Closed: confirmed() or cancel()
   Failed --> [*]
   Closed --> [*]
@@ -249,48 +254,49 @@ Delivered has two activities that run independently: the **confirm watch** (§6.
 
 ### 6.2 First frame and final listen
 
-The first decoded `frame` (payload or reference) becomes **the** frame. The receiver reports `onHeard(band)`. For a reference, it calls the resolver now (§6.7), in parallel with the final listen.
+The first decoded `frame` (payload or reference) becomes **the** frame. The receiver reports `onHeard` with its channel. For a reference, it fails at once with `NO_RESOLVER` if there is no resolver, and otherwise calls the resolver now (§6.7), in parallel with the final listen.
 
 With `detectMultipleEmitters`, the receiver keeps listening for `FINAL_LISTEN_SECONDS` = 1.5 s after the first frame:
 
-- the same content again (on any band, any profile) is the sender repeating: ignored;
-- different content → fail `MULTIPLE_TRANSMISSIONS`, risk reason `other`, intruder = its short id, `avoid` = its band;
-- `clash` → fail `MULTIPLE_TRANSMISSIONS`, risk reason `overlap`, intruder `000000`, `avoid` = the first frame's band (or none before any frame);
-- a `header` on a band other than the first frame's extends the final listen to `max(current end, now + FINAL_EXTEND_SECONDS)` (2.5 s), never past `FINAL_LISTEN_MAX_SECONDS` (6 s) after the first frame. A frame starting on another band gets the chance to be decoded or to clash.
+- the same content again (on any channel, any profile) is the sender repeating: ignored;
+- different content → fail `MULTIPLE_TRANSMISSIONS`, risk reason `other`, intruder = its short id, `avoid` = its channel;
+- `clash` → fail `MULTIPLE_TRANSMISSIONS`, risk reason `overlap`, intruder `000000`, `avoid` = the first frame's channel (or none before any frame);
+- a `header` on a channel other than the first frame's moves the end of the final listen to `min(max(current end, now + FINAL_EXTEND_SECONDS), first frame + FINAL_LISTEN_MAX_SECONDS)`, that is, at least 2.5 s after the header and never more than 6 s after the first frame. A frame starting on another channel gets the chance to be decoded or to clash.
 
 A `clash` while Listening (before any frame) also fails with `MULTIPLE_TRANSMISSIONS` / overlap. Without `detectMultipleEmitters` there is no final listen and `clash` is ignored.
 
-Every failure of this section emits a risk frame if `riskSignal.emit = 'auto'` (§6.6). The timeout (`timeoutSeconds`, default 60) applies only while Listening, and fails with `TIMEOUT` without a risk frame.
+Every failure of this list emits a risk frame if `riskSignal.emit = 'auto'` (§6.6). The timeout (`timeoutSeconds`, default 60, counted from `start()`) applies only while Listening, and fails with `TIMEOUT` without a risk frame.
 
 ### 6.3 Delivery
 
-When the final listen is over (or at once without detection) **and** the text is known (payload, or resolved and verified), the receiver resolves `result = {text, band, via}` and enters Delivered. It then starts the confirm watch (if `confirmWatch`) and the ack loop (if `ack`, default on).
+When the final listen is over (or at once without detection) **and** the text is known (payload, or resolved and verified), the receiver resolves `result = {text, band, via}` (`band`: the first frame's channel; `via`: `'payload'` or `'reference'`) and enters Delivered. If the resolver is still pending when the final listen ends, delivery waits for it, and the receiver stays in the final listen meanwhile. On delivery the receiver starts the confirm watch (if `confirmWatch`) and the ack loop (if `ack`, default true; with `ack: false`, `receipt` resolves `false` at once).
 
 ### 6.4 Ack loop
 
-Let `L` be the **longest repetition** of this content on the default ladder: the frame on `top` in the robust profile plus the 0.35 s gap (for a reference frame, the reference on `top`, robust). The sender may have hopped or gone robust since the frame the receiver read; `L` covers that. Then
+Let `L` be the **longest repetition** of this content on the default ladder: the frame on `top` in the robust profile plus the 0.35 s gap (for a reference frame, the reference on `top`, robust). The sender may have hopped or switched to the robust profile since the frame the receiver read; `L` covers that. `L` is computed from the packed length of the text (PROTOCOL.md §6, §9.1), not rendered: for a text too long for robust `top` it exceeds the 30 s cap, and the run is then clamped to its maximum. Then
 
 ```
 ackRunSeconds = clamp(L + 2 × LISTEN_WINDOW_SECONDS + ACK_MARGIN_SECONDS, ACK_RUN_MIN_SECONDS, ACK_RUN_MAX_SECONDS)
              = clamp(L + 4.5, 3, 20) seconds
 ```
 
-The receiver repeats, until a receipt is heard or `ACK_TOTAL_SECONDS` = 30 s have passed since delivery:
+The receiver repeats, until a receipt is heard:
 
-1. loop acks (kind ack, the ack id, heard nibble = band and profile of the delivered frame) on `mid` for `ackRunSeconds`;
-2. listen for `RECEIPT_LISTEN_SECONDS` = 3 s.
+1. if `ACK_TOTAL_SECONDS` = 30 s have passed since delivery, stop (a run already started plays to its end; no new run starts);
+2. loop acks (kind ack, the ack id, heard nibble = channel and profile of the delivered frame) on `mid` for `ackRunSeconds` (§3.1: whole frames, at least that long);
+3. listen for `RECEIPT_LISTEN_SECONDS` = 3 s.
 
 Why these numbers: any interval of length `L + W` contains the start of one of the sender's windows, and a window of `W` = 2 s inside a continuous ack loop always contains a whole ack (period 0.822 s, frame 0.672 s). So a half-duplex sender hears the first run. The sender's receipts last `ackRunSeconds + 3`, which covers the end of the run and the receiver's following receipt listen however late in the run the sender heard it.
 
-A receipt (kind 3) with the right ack id stops the loop: `receipt` resolves `true`. Otherwise it resolves `false` when the loop ends, on a failure, a conflict, or `cancel()`. `confirmed()` does **not** stop the ack loop: the acks are the sender's stop signal.
+A receipt (kind 3) with the right ack id, heard during a run or a receipt listen, stops the loop at once: `receipt` resolves `true`. Otherwise it resolves `false` when the loop ends, on a failure, a conflict, or `cancel()`. `confirmed()` does **not** stop the ack loop: the acks are the sender's stop signal.
 
 ### 6.5 Confirm gate
 
 With `confirmWatch`, from delivery until `confirmed()`, `cancel()` or `confirmWatchSeconds` (the **watch**):
 
-- different content decoded → **conflict**: stop watching and acking, emit a risk frame (reason `other`, intruder = its short id, `avoid` = its band) if `emit = 'auto'`. `confirmed()` will fail with `MULTIPLE_TRANSMISSIONS`.
+- different content decoded → **conflict**: stop watching and acking, emit a risk frame (reason `other`, intruder = its short id, `avoid` = its channel) if `emit = 'auto'`. `confirmed()` will fail with `MULTIPLE_TRANSMISSIONS`.
 - a risk frame, if `riskSignal.listen` and `listenUntil = 'confirm'`: alert + quarantine notice; with `honor`, conflict: `confirmed()` will fail with `RISK_SIGNAL`. The receiver never relays.
-- the same content again, `clash`, `header`, acks: ignored. Only a different text read whole closes the gate.
+- the same content again, `clash`, `header`, acks: ignored. Only a different text read whole, or an honored risk frame, closes the gate.
 
 `confirmed()` waits for `result` (and fails like it), then:
 
@@ -299,18 +305,18 @@ With `confirmWatch`, from delivery until `confirmed()`, `cancel()` or `confirmWa
 | `cancel()` was called | fails `CANCELLED` |
 | a conflict happened | fails with it (`MULTIPLE_TRANSMISSIONS` or `RISK_SIGNAL`, with the alert) |
 | no watch at this level | `{watch: 'off', watchedSeconds: 0, uncoveredSeconds: 0}` |
-| the watch hit `confirmWatchSeconds` | `{watch: 'expired', watchedSeconds, uncoveredSeconds}`: the gap between the end of the watch and this call |
-| otherwise | `{watch: 'clean', watchedSeconds, uncoveredSeconds: 0}`, and the watch stops |
+| the watch hit `confirmWatchSeconds` | `{watch: 'expired', watchedSeconds, uncoveredSeconds}`: `watchedSeconds` from delivery to the end of the watch, `uncoveredSeconds` from the end of the watch to this call |
+| otherwise | `{watch: 'clean', watchedSeconds, uncoveredSeconds: 0}`, `watchedSeconds` from delivery to this call, and the watch stops |
 
 A second call returns the same. An expired watch does not fail: the absence of evidence is not a conflict; the app decides what an uncovered gap means.
 
-`cancel()` never throws. Before delivery, `result` fails with `CANCELLED`. After `confirmed()` it does nothing. It stops the watch and the ack loop; a risk loop already playing finishes.
+`cancel()` never throws. Before delivery, `result` fails with `CANCELLED`. After `confirmed()`, or after a second call, it does nothing. It stops the watch and the ack loop; a risk loop already playing finishes.
 
 ### 6.6 Risk frames
 
-**Emitting.** `{reason, source: receiver, hops: 0, own: short id of the first frame or 000000, intruder}` looped on the risk bands of §3.2 with `work` = the first frame's band (or `top`), for `riskSignal.durationMs`. Recorded in `RiskMemory`. An `emitted` alert and a quarantine notice are reported.
+**Emitting.** `{reason, source: receiver, hops: 0, own: short id of the first frame or 000000, intruder}` looped on the risk channels of §3.2 with `work` = the first frame's channel (before any frame: `top`), for `riskSignal.durationMs`. Recorded in `RiskMemory`. An `emitted` alert and a quarantine notice are reported.
 
-**Hearing** (with `riskSignal.listen`): while Listening or in the final listen, or during the watch if `listenUntil = 'confirm'`, a risk frame is reported (`heard` alert, `matchesMine` = its `own` equals the short id of the first frame) with a quarantine notice. With `honor`, before delivery `result` fails with `RISK_SIGNAL`; during the watch it is a conflict (§6.5). A receiver never relays.
+**Hearing** (with `riskSignal.listen`, and not if this session already reported the incident or it is the device's own, §4): while Listening or in the final listen, or during the watch if `listenUntil = 'confirm'`, a risk frame is reported (`heard` alert, `matchesMine` = its `own` equals the short id of the first frame) with a quarantine notice. At any other time it is ignored. With `honor`, before delivery `result` fails with `RISK_SIGNAL`; during the watch it is a conflict (§6.5). A receiver never relays.
 
 ### 6.7 Reference mode
 
@@ -348,7 +354,7 @@ These failures emit no risk frame.
 
 What each level means in practice:
 
-- **basic:** integrity only. The sender pre-listens 1 s for the ambient check but acts on nothing it hears; the receiver delivers the first frame at once; no risk frames, no watch (`confirmed()` answers `off`). For demos and data without consequences: a receiver at this level can act on a rogue's data even with two senders playing.
+- **basic:** integrity only. The sender pre-listens 1 s for the ambient check (unless `ambient` is off) but acts on nothing it hears; the receiver delivers the first frame at once; no risk frames, no watch (`confirmed()` answers `off`). For demos and data without consequences: a receiver at this level can act on a rogue's data even with two senders playing.
 - **standard:** detects other emitters before and while sending and at the receiver, emits and honors risk frames, watches until confirmation.
 - **maximum:** standard with a longer pre-listen (3 s + up to 1.2 s), longer risk loops (6 s receiver, 30 s sender) and a longer suggested quarantine (60 s).
 
@@ -368,7 +374,7 @@ Not levels, always on: integrity (CRC-8, Reed–Solomon, CRC-32), acks, the chan
 | `CANCELLED` | receiver | `cancel()` | no |
 | `NOT_FOUND`, `MISMATCH`, `NO_RESOLVER` | receiver | reference mode, §6.7 | no |
 
-An error caused by a risk frame, emitted or heard, carries the **alert**: `{direction: 'emitted' | 'heard', reason, source, hops, own, intruder, bands, matchesMine, relay}`. The same alert goes to `onAlert` when it happens, also when nothing fails (for example with `honor: false`).
+An error caused by a risk frame, emitted or heard, carries the **alert**: `{direction: 'emitted' | 'heard', reason, source, hops, own, intruder, bands, matchesMine, relay}`. `bands` is the channel it was heard on (`heard`) or the channels it is looped on (`emitted`); `matchesMine` is always true for an emitted alert; `relay` is true only for a sender's relay. The same alert goes to `onAlert` when it happens, also when nothing fails (for example with `honor: false`).
 
 **Quarantine is only a callback.** Each time a device emits or hears a new incident, it calls `onQuarantine({durationMs: riskSignal.quarantineMs, reason, source})` (not for its own relays, nor when `quarantineMs` is 0). bysound never refuses or delays an operation because of it: there is no quarantine error. What to do (show a notice, hold a payment for a minute, log it) is the app's decision. The only state kept across sessions is `RiskMemory`, which exists so a device ignores its own frames and relays an incident only once.
 
@@ -379,25 +385,25 @@ Phones differ: many speakers are weak above 18 kHz, some microphones roll off ea
 ```mermaid
 flowchart TD
   A[pre-listen: noise per channel] --> B{fixed band?}
-  B -- yes --> F[play that band only]
-  B -- no --> C{valid calibration?<br/>uses < 10, band in chain}
-  C -- yes --> D[route = order from the calibrated band<br/>6 repetitions per channel]
+  B -- yes --> F[play that channel only<br/>robust after 6 normal repetitions<br/>unless a profile is given]
+  B -- no --> C{valid calibration?<br/>uses < 10, channel in chain}
+  C -- yes --> D[route = order from the calibrated channel<br/>6 repetitions per channel]
   C -- no --> E[route = order from the top of the chain<br/>3 repetitions per channel]
   D --> G[drop noisy channels<br/>the calibrated one stays]
   E --> G
-  G --> H{noise of the first channel ≥ −68 dB,<br/>or calibration robust?}
+  G --> H{no profile given, and calibration robust<br/>or noise of the first channel ≥ −68 dB?}
   H -- yes --> I[start robust]
   H -- no --> J[start normal; robust after 6 normal<br/>repetitions without an ack]
   I --> K[repeat, hop channels, wait for an ack]
   J --> K
-  K -- ack says band + profile --> L{learn?}
-  L -- yes --> M[save calibration: band, profile, uses 0]
-  L -- no: fixed band, lapped, moved by noise --> N[keep the old one]
+  K -- ack says channel + profile --> L{learn?}
+  L -- yes --> M[save calibration: channel, profile, uses 0]
+  L -- no: not stated, audible, lapped, moved by the ambient --> N[keep the old one]
 ```
 
 ### 9.1 Channel ladder
 
-The **chain** is `channels` (default `DEFAULT_CHANNELS` = `top, high, upper, mid`: from the least audible down; `mid` is the most audible and comes last). From a start band, the **order** is the chain from that band down, then the bands above it, nearest first:
+The **chain** is the option `channels` (default, and when empty, `DEFAULT_CHANNELS` = `top, high, upper, mid`: from the least audible down; `mid` is the most audible and comes last). From a start channel, the **order** is the chain from that channel down, then the channels above it, nearest first:
 
 ```
 order(start) = chain[i..] ++ reverse(chain[..i])      where chain[i] = start
@@ -405,42 +411,42 @@ order(top)   = top, high, upper, mid
 order(mid)   = mid, upper, high, top
 ```
 
-The **route** is the order after the ambient check (§9.2). The sender plays `every` repetitions on a channel, then hops to the next channel of the route, and after the last one starts again from the first. `every` = `HOP_REPETITIONS` = 3, or 6 when starting from a calibration (`CALIBRATED_HOP_FACTOR` = 2). A fixed `band` disables the ladder, the ambient skip and the calibration.
+The **route** is the order after the ambient check (§9.2). The sender plays `every` repetitions on a channel, then hops to the next channel of the route, and after the last one starts again from the first. `every` = `HOP_REPETITIONS` = 3, or 6 when starting from a calibration (`CALIBRATED_HOP_FACTOR` = 2). A fixed `band` disables the ladder, the ambient skip, the robust start for noise and the calibration (it is neither used nor learned); the robust ladder of §9.3 still applies.
 
 ### 9.2 Ambient check
 
-During the pre-listen, the device reports the noise of each high band every `NOISE_REPORT_SECONDS` = 0.25 s: the mean, over the band's tones and the hops of that interval, of the tone energy computed for the preamble search (window `1/Δf` with the Tukey taper of PROTOCOL.md §14.1), in dB relative to the energy of a full-scale grid tone in the same window, `(Σ window / 2)²`. Without a microphone there are no reports and no ambient decision.
+The ambient check runs with the option `ambient` (default true). During the pre-listen, the device reports the noise of each ultrasonic channel every `NOISE_REPORT_SECONDS` = 0.25 s (rounded to whole 4 ms search hops): the mean, over the channel's tones and the hops of that interval, of the raw tone energy computed for the preamble search (window `1/Δf` with the Tukey taper of [PROTOCOL.md §14.1](PROTOCOL.md#141-windows-and-tone-energies); not whitened, signal included), in dB relative to the energy of a full-scale grid tone in the same window, `(Σ window / 2)²`. Without a microphone there are no reports and no ambient decision.
 
-At the end of the pre-listen, per channel of the chain, the **noise** is the median of its reports. With `quietest` the lowest:
+At the end of the pre-listen, per channel of the chain, the **noise** is the median of its reports: the element at index `⌊n/2⌋` of the `n` reports sorted in ascending order. A channel without reports has no noise value. With `quietest` the lowest value:
 
 - a channel is **noisy** if its noise is more than `NOISY_CHANNEL_DB` = 10 dB above `quietest`;
 - the place is **loud** if `quietest ≥ LOUD_PLACE_DB` = −63 dB.
 
-Effects: noisy channels are dropped from the route, except the calibrated one (it is where this speaker works). If nothing is left, the route is the single quietest channel of the chain. In a loud place the level is raised to 1 unless the app set `level`. If the noise of the route's first channel is `≥ ROBUST_NOISE_DB` = −68 dB and no `profile` was given, the sender starts robust. Everything played during the pre-listen counts as noise, including another device's acks.
+Effects: noisy channels are dropped from the route, except the calibrated one (it is where this speaker works). If nothing is left, the route is the single quietest channel of the chain (a channel without a noise value counts as 0 dB). In a loud place the output level is set to 1 (the maximum, which is also the default) unless the app set `level`. If no `profile` was given, there is no robust calibration, and the noise of the route's first channel is `≥ ROBUST_NOISE_DB` = −68 dB, the sender starts robust. Everything played during the pre-listen counts as noise, including another device's acks.
 
 **These two thresholds are not calibrated in the field.** For scale: white noise of standard deviation σ (full scale 1) measures about `20·log10(σ) − 24` dB at 48 kHz, so σ = 0.003 is about −74 dB and σ = 0.01 about −64 dB.
 
 ### 9.3 Robust ladder
 
-Without an explicit `profile`, the sender counts repetitions played in the normal profile. After `ROBUST_AFTER_REPETITIONS` = 6 of them without an ack, every following repetition is robust on the bands that have a robust profile (`top`, `high`, `upper`, `mid`; PROTOCOL.md §5); `xhigh`, `wide` and `audible` stay normal. It also starts robust for noise (§9.2) or from a robust calibration. An explicit `profile` disables all of this. The receiver must listen to both profiles (the reference `ReceiverHost` does).
+Without an explicit `profile`, the sender counts repetitions played in the normal profile. After `ROBUST_AFTER_REPETITIONS` = 6 of them without an ack, every following repetition is robust on the channels that have a robust profile (`top`, `high`, `upper`, `mid`; [PROTOCOL.md §5](PROTOCOL.md#5-profiles-normal-and-robust)); `xhigh`, `wide` and `audible` stay normal. It also starts robust for noise (§9.2) or from a robust calibration. An explicit `profile` disables all of this: every repetition uses that profile where the channel has it. A payload that does not fit one transmission in the robust profile on a channel (robust doubles the airtime) is played there in the normal profile instead. The receiver must listen to both profiles (the reference `ReceiverHost` does).
 
 ### 9.4 Calibration memory
 
-A **calibration** is `{band, profile, uses}`: where the last receiver read this device, and how many sends have started from it since. It lives in a **store** with `load()` and `save()`: in memory by default; the browser API uses `localStorage` (key `bysound.calibration`) because the speaker of a device does not change between page loads. Apps MAY pass their own store, or `null` to disable it.
+A **calibration** is `{band, profile, uses}`: the channel and profile where the last receiver read this device, and how many sends have started from it since. It lives in a **store** with `load()` and `save()`: in memory by default (shared by the sessions of the process); the platform APIs keep it across launches because the speaker of a device does not change (browser: `localStorage`, key `bysound.calibration`; Swift: `UserDefaults`, same key; Kotlin: `SharedPreferences`). A stored value that does not validate is ignored. Apps MAY pass their own store, or `null` to disable it.
 
-**Using it.** A calibration is valid if `uses < CALIBRATION_USES` (10) and its band is in the chain. A valid calibration sets the start of the route, doubles `every`, and gives the start profile. The sender saves it back with `uses + 1` as it starts sending. A calibration that stops being confirmed therefore expires after 10 sends, and the ladder starts from the top again.
+**Using it.** A calibration is valid if `uses < CALIBRATION_USES` (10) and its channel is in the chain. A valid calibration sets the start of the route, doubles `every`, and, if robust, gives the start profile. The sender saves it back with `uses + 1` as it starts sending. A calibration that stops being confirmed therefore expires after 10 sends, and the ladder starts from the top again. An invalid one is ignored and left in the store.
 
-**Learning it.** On an ack, the sender saves `{band: heard band, profile, uses: 0}` from the ack's heard nibble (§3.1), unless:
+**Learning it.** On an ack, the sender saves `{band: heard channel, profile, uses: 0}` from the ack's heard nibble (§3.1), unless:
 
-- the band was fixed by the app;
+- the channel was fixed by the app (`band`);
 - the ack does not state where it was read;
-- the heard band is `audible`;
-- the send **lapped**: counting each change of band in the played sequence as one, there were more changes than channels in the route (it went all the way round and came back; a late read says when the receiver listened, not what the speaker can do);
-- the ambient moved it: there was a calibration, the heard band differs from it, and the calibrated band was noisy here or the place was loud.
+- the heard channel is `audible`;
+- the send **lapped**: the played sequence, split into runs of consecutive repetitions on the same channel, has more runs than the route has channels, and the route has at least 2 channels (it went all the way round and came back; a late read says when the receiver listened, not what the speaker can do);
+- the ambient moved it: there was a valid calibration, the heard channel differs from it, and the calibrated channel was noisy here or the place was loud.
 
-The saved `profile` is the heard one, except that a robust read reached through the robust ladder or the noise start saves `normal`: that robustness belongs to the place, not to the speaker. Any successful read resets `uses` to 0.
+The saved `profile` is the heard one, except that a robust read reached through the robust ladder or the noise start saves `normal`: that robustness belongs to the place, not to the speaker. A robust start from a robust calibration, or a fixed robust `profile`, saves `robust`. Every calibration learned starts at `uses` 0; when nothing is learned, the store keeps what it had (including the `uses + 1` saved at the start).
 
-**Effect.** With a speaker that cannot play above 17.3 kHz, the first send plays top ×3, high ×3, upper ×3 (going robust after 6), then mid, and is read there; the next send starts on mid and is read on its first repetition (`web/src/session/adapt.test.ts`).
+**Effect.** With a speaker that cannot play above 17.3 kHz, the first send plays top ×3, high ×3 (normal), upper ×3 and then mid in the robust profile (after 6 normal repetitions), and is read on mid; it saves `{mid, normal}`, and the next send starts on mid and is read on its first repetition (`web/src/session/adapt.test.ts`).
 
 ## 10. Constants
 
@@ -456,10 +462,12 @@ The saved `profile` is the heard one, except that a robust read reached through 
 | `RECEIPT_LISTEN_SECONDS` | 3 s | 6.4 |
 | `ACK_TOTAL_SECONDS` | 30 s | 6.4 |
 | `RESOLVE_TIMEOUT_SECONDS` | 15 s | 6.7 |
-| `CONTROL_GAP_SECONDS` | 0.15 s | 3 |
+| `CONTROL_GAP_SECONDS` | 0.15 s | 3.1, 3.2 |
+| data repetition gap (`GAP_SECONDS`, PROTOCOL.md) | 0.35 s | 5.3, 6.4 |
 | `RISK_MAX_HOPS` | 2 | 5.6 |
-| ack band, receipt band | `mid`, `high` | 3.1 |
+| ack channel, receipt channel | `mid`, `high` | 3.1 |
 | control parity | 8 bytes | 3 |
+| ack, risk data bytes (header `length`) | 7, 10 | 3.1, 3.2 |
 | sender `timeoutSeconds`, receiver `timeoutSeconds` | 60 s, 60 s | 5.3, 6.2 |
 | `DEFAULT_CHANNELS` | top, high, upper, mid | 9.1 |
 | `HOP_REPETITIONS`, `CALIBRATED_HOP_FACTOR` | 3, 2 | 9.1 |
@@ -472,14 +480,14 @@ The saved `profile` is the heard one, except that a robust read reached through 
 
 Frame durations (normal profile; add 0.15 s gap for control loops, 0.35 s for data repetitions):
 
-| Band | Ack / receipt | Risk | Reference | Data, 19 characters |
+| Channel | Ack / receipt | Risk | Reference | Data, 19 characters |
 |---|---|---|---|---|
 | top | 0.864 s | 0.960 s | 1.344 s | 1.504 s |
 | high, upper, mid | 0.672 s | 0.736 s | 0.992 s | 1.120 s |
 | xhigh | 0.576 s | 0.608 s | 0.800 s | 0.896 s |
 | wide | 0.480 s | 0.512 s | 0.640 s | 0.704 s |
 
-For the 19-character text `pay 12.50 to shop 7`, `L` (top, robust, with gap) is 3.36 s, the ack run 7.86 s and the receipts 10.86 s.
+For the 19-character text `pay 12.50 to shop 7`, `L` (top, robust, with gap) is 3.358 s, `ackRunSeconds` 7.858 s and `receiptSeconds` 10.858 s. For any reference frame, `L` is 3.038 s and `ackRunSeconds` 7.538 s.
 
 ## 11. Integration with the modem receiver
 
@@ -509,7 +517,10 @@ Differences allowed by this text, beyond the receiver integration above.
 - **One speaker:** one frame plays at a time, so a risk loop and an ack loop never mix. A half-duplex device that does not feed the microphone while it plays relies on the listen windows (§5.3) and receipt listens (§6.4).
 - **Output level:** always maximum; there is no `level` option and no loud-place level change (§9.2).
 - **Other texts:** the short id of another text (risk frames) needs a `scratch` buffer to unpack into; without one it is `000000`.
-- **Errors:** two extra codes, `BYS_SERR_PLAY` (playback failed) and `BYS_SERR_NO_SPACE` (the receiver's text buffer is too small).
+- **Timing:** timers are polled: the app calls `bys_sender_tick()` / `bys_receiver_tick()` with a millisecond clock, so deadlines are met to the tick period; durations are whole milliseconds.
+- **Comparing texts:** two payload frames have the same content when their packed length and CRC-32 match (the text is not unpacked).
+- **Bounded memory:** `RiskMemory` keeps the last `BYS_RISK_MEMORY_SIZE` (8) incidents, a session reports at most `BYS_SESSION_SEEN` (8) distinct incidents, and the pre-listen keeps at most `BYS_SESSION_MAX_REPORTS` (24) noise reports per channel (6 s).
+- **Errors:** two extra codes, `BYS_SERR_PLAY` (playback failed) and `BYS_SERR_NO_SPACE` (the receiver's text buffer is too small). `bys_receiver_confirmed()` does not wait: before delivery it returns the failure code, or `BYS_SERR_PENDING` while the result is still open.
 
 ## 12. More sequences
 
@@ -562,7 +573,7 @@ A port is conformant when:
 
 - ack and risk frames reproduce `v4-acks.json`, `v4-risk.json` and `session-acks.json` exactly (header, body, symbols, frame seconds), and decode back;
 - its security table equals `security-levels.json`, with field-by-field overrides;
-- it passes scenarios equivalent to `web/src/session/session.test.ts` and `adapt.test.ts` on simulated air (the Swift, Kotlin and C ports run them in `ios/Tests/BySoundTests/SessionTests.swift` with `SessionAir.swift`, `android/.../session/SessionTest.kt` and `AdaptTest.kt` with `SimAir.kt`, and `c/test/test_session.c`): ack stops the sender and the receipt reaches the receiver; a second sender makes the receiver fail and warn, and the real sender stop and relay; a sender hearing another text stops and warns; overlap on one band is a clash; a copy on another band is a clone; pre-listen refusals; the confirm gate per level (off / clean / expired, and closed by a later text); quarantine never blocks the next session; relays stop at 2 hops; `honor: false` only reports; reference mode with a local resolver (and its failures); the channel ladder with a speaker that only plays `mid`, the calibration learned and used; noisy channels skipped; robust start and the explicit profile; calibration expiry.
+- it passes scenarios equivalent to `web/src/session/session.test.ts` and `adapt.test.ts` on simulated air (the Swift, Kotlin and C ports run them in `ios/Tests/BySoundTests/SessionTests.swift` with `SessionAir.swift`, `android/.../session/SessionTest.kt` and `AdaptTest.kt` with `SimAir.kt`, and `c/test/test_session.c`): ack stops the sender and the receipt reaches the receiver; a second sender makes the receiver fail and warn, and the real sender stop and relay; a sender hearing another text stops and warns; overlap on one channel is a clash; a copy on another channel is a clone; pre-listen refusals; the confirm gate per level (off / clean / expired, and closed by a later text); quarantine never blocks the next session; relays stop at 2 hops; `honor: false` only reports; reference mode with a local resolver (and its failures); the channel ladder with a speaker that only plays `mid`, the calibration learned and used; noisy channels skipped; robust start and the explicit profile; calibration expiry.
 
 The simulated air of the reference (`testAir.ts`) sums every device's sound into every microphone with a gain per pair and white noise, on one sample clock, and can filter a device's speaker.
 

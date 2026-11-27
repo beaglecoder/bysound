@@ -3,6 +3,7 @@
 #if os(iOS)
 import AVFoundation
 
+/// Why a session could not start on the device audio (a `SessionError` reports what happened once it runs).
 public enum BySoundSessionError: Error {
     /// The person denied microphone access (or it is restricted).
     case microphoneDenied
@@ -34,12 +35,17 @@ private final class AudioRig {
         guard granted else { throw BySoundSessionError.microphoneDenied }
         return try await MainActor.run {
             let rig = AudioRig()
-            try rig.platform.player.open()
             rig.listener.onAir = hear
             rig.listener.onLevel = onLevel
             rig.listener.onStopped = onStopped
             rig.platform.player.onStopped = onStopped
-            try rig.listener.start()
+            do {
+                try rig.platform.player.open()
+                try rig.listener.start()
+            } catch {
+                rig.close() // the speaker may be open already
+                throw error
+            }
             rig.retained = rig
             return rig
         }
@@ -87,7 +93,9 @@ public final class ReceiveSession: @unchecked Sendable {
     public func cancel() { onMain { [core] in core.cancel() } }
     /// `true` if the sender answered the ack with a receipt.
     public var receipt: Bool { get async { (try? await core.receipt.value) ?? false } }
+    /// Completes when nothing plays any more and the microphone is released.
     public var finished: Void { get async { _ = try? await core.finished.value } }
+    /// Where the session is. Read it on the main queue.
     public var state: ReceiverState { core.state }
 }
 
@@ -98,7 +106,9 @@ public final class Reception: @unchecked Sendable {
     public let via: ContentMode
     public let session: ReceiveSession
     init(_ r: Received, _ s: ReceiveSession) { text = r.text; band = r.band; via = r.via; session = s }
+    /// The confirm gate (see `ReceiveSession.confirmed()`): call it before acting on `text`.
     public func confirmed() async throws -> Confirmation { try await session.confirmed() }
+    /// The person left: stop listening and acking. Never throws.
     public func cancel() { session.cancel() }
     public var receipt: Bool { get async { await session.receipt } }
     public var finished: Void { get async { await session.finished } }
@@ -142,13 +152,18 @@ public enum BySoundSession {
     }
 
     /// Listens for one session and returns the handle once the audio is running: delivers the data, acknowledges it by sound and keeps
-    /// the confirm gate. Needs the microphone.
+    /// the confirm gate. Needs the microphone. A reference resolver may call its `done` from any queue: the answer is handed to the main queue.
     public static func startReceiving(options: ReceiverOptions = ReceiverOptions(), onLevel: ((Float) -> Void)? = nil) async throws -> ReceiveSession {
+        var o = options
+        if let resolve = o.resolve {
+            o.resolve = { fp, done in resolve(fp) { found in onMain { done(found) } } }
+        }
         let ears = Box<(AirEvent) -> Void>()
         let stopped = Box<() -> Void>()
         let rig = try await AudioRig.open(hear: { ears.value?($0) }, onLevel: onLevel, onStopped: { stopped.value?() })
+        let receiverOptions = o
         return await MainActor.run {
-            let core = ReceiverSession(platform: rig.platform, options: options)
+            let core = ReceiverSession(platform: rig.platform, options: receiverOptions)
             ears.value = { core.hear($0) }
             stopped.value = { core.cancel() }
             core.finished.onSettle { _ in rig.close() }

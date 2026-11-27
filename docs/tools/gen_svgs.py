@@ -177,7 +177,7 @@ def pipeline():
 # ---------------------------------------------------------------- bands.svg
 def bands():
     W, H = 820, 348
-    s = head(W, H, 'bysound v4 bands', 'The seven bysound v4 bands on a 0 to 22 kHz axis; six sit between 15 and 19.5 kHz, where human hearing fades, and one is audible.')
+    s = head(W, H, 'bysound v4 channels', 'The seven bysound v4 channels on a 0 to 22 kHz axis; six sit between 15 and 19.5 kHz, where human hearing fades, and one is audible.')
     x0, x1, fmax = 40, 790, 22000
     X = lambda f: x0 + (x1 - x0) * f / fmax
     ytop, rh = 66, 30

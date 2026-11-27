@@ -60,7 +60,7 @@ static uint64_t fnv64(const std::string &s) {
 }
 
 // ---------------------------------------------------------------- systems and configurations
-enum Sys { SBSND, GGWAVE };
+enum Sys { BYSOUND, GGWAVE };
 struct Config {
   Sys sys;
   std::string name;  // e.g. "bysound top/normal", "ggwave ultrasound-fast"
@@ -71,8 +71,8 @@ struct Config {
 static std::vector<Config> bys_configs() {
   static const char *bn[] = { "top", "high", "upper", "mid", "audible", "xhigh", "wide" };
   std::vector<Config> v;
-  for (int b = 0; b < 7; b++) { Config c; c.sys = SBSND; c.band = b; c.profile = 0; c.name = std::string("bysound ") + bn[b] + "/normal"; v.push_back(c); }
-  for (int b = 0; b < 4; b++) { Config c; c.sys = SBSND; c.band = b; c.profile = 1; c.name = std::string("bysound ") + bn[b] + "/robust"; v.push_back(c); }
+  for (int b = 0; b < 7; b++) { Config c; c.sys = BYSOUND; c.band = b; c.profile = 0; c.name = std::string("bysound ") + bn[b] + "/normal"; v.push_back(c); }
+  for (int b = 0; b < 4; b++) { Config c; c.sys = BYSOUND; c.band = b; c.profile = 1; c.name = std::string("bysound ") + bn[b] + "/robust"; v.push_back(c); }
   return v;
 }
 static std::vector<Config> gg_configs(bool include_mt_fixed) {
@@ -179,7 +179,7 @@ static int gg_tx_instance(int fixed_len, int freq) {
 }
 static Wave encode(const Config &c, const std::string &msg, unsigned rate) {
   Wave w;
-  if (c.sys == SBSND) {
+  if (c.sys == BYSOUND) {
     bys_tx_cfg_t cfg; bys_tx_cfg_default(&cfg); cfg.sample_rate = rate;
     bys_tx_t tx;
     int ri = bys_tx_init_payload(&tx, &cfg, (bys_band_t)c.band, (bys_profile_t)c.profile, msg.data(), msg.size());
@@ -377,10 +377,10 @@ static void dump(const char *tag, const char *d, size_t n) {
 static double cpu_now() { struct timespec t; clock_gettime(CLOCK_THREAD_CPUTIME_ID, &t); return (double)t.tv_sec + (double)t.tv_nsec * 1e-9; }
 static const size_t CHUNK = 1024;
 
-struct SbsCtx { const std::string *expect; RxResult *res; long pushed; };
+struct BysCtx { const std::string *expect; RxResult *res; long pushed; };
 static void bys_cb(void *user, const bys_demod_event_t *e) {
-  SbsCtx *c = (SbsCtx *)user;
-  if (g_verbose) printf("  sbs event type %d (1 frame, 2 header, 3 clash) band %d profile %d at sample %ld\n", e->type, e->band, e->profile, c->pushed);
+  BysCtx *c = (BysCtx *)user;
+  if (g_verbose) printf("  bysound event type %d (1 frame, 2 header, 3 clash) band %d profile %d at sample %ld\n", e->type, e->band, e->profile, c->pushed);
   if (e->type != BYS_EV_FRAME) return;
   if (e->result->kind != BYS_KIND_PAYLOAD || !e->payload) { c->res->n_wrong++; return; }  // ack/reference/risk out of noise counts as false
   static char text[300000];
@@ -394,10 +394,10 @@ static bys_demod_t *g_demod;
 static uint8_t g_demod_out[255 * 48 + 8];
 // bysound receiver listens to every channel its profile has (normal: 7 channels; robust: top, high, upper, mid): it does not
 // know in advance which one the sender uses, like ggwave's receiver, which by default tries every protocol.
-static RxResult rx_sbs(const std::vector<int16_t> &pcm, unsigned rate, int profile, const std::string *expect, uint8_t band_mask = 0) {
+static RxResult rx_bys(const std::vector<int16_t> &pcm, unsigned rate, int profile, const std::string *expect, uint8_t band_mask = 0) {
   RxResult res;
   if (!g_demod) g_demod = (bys_demod_t *)calloc(1, sizeof(bys_demod_t));
-  SbsCtx ctx{ expect, &res, 0 };
+  BysCtx ctx{ expect, &res, 0 };
   double t0 = cpu_now();
   bys_demod_cfg_t cfg; bys_demod_cfg_default(&cfg);
   cfg.sample_rate = rate; cfg.profile = (bys_profile_t)profile; cfg.band_mask = band_mask ? band_mask : profile ? 0x0f : 0x7f;
@@ -409,7 +409,7 @@ static RxResult rx_sbs(const std::vector<int16_t> &pcm, unsigned rate, int profi
     ctx.pushed = (long)(i + k);
     bys_demod_push(g_demod, pcm.data() + i, k);
   }
-  if (g_verbose) { const bys_demod_stats_t *st = bys_demod_stats(g_demod); printf("  sbs stats: frames %u headers %u failures %u clashes %u\n", st->frames, st->headers, st->failures, st->clashes); }
+  if (g_verbose) { const bys_demod_stats_t *st = bys_demod_stats(g_demod); printf("  bysound stats: frames %u headers %u failures %u clashes %u\n", st->frames, st->headers, st->failures, st->clashes); }
   res.cpu_s = cpu_now() - t0;
   return res;
 }
@@ -566,12 +566,12 @@ static int run_trial(FILE *f, const Cell &c, int t) {
       size_t gap = c.cfg.sys == GGWAVE && c.reps > 1 ? (size_t)(0.35 * c.rate) * (size_t)(c.reps - 1) : 0;
       air = (double)(w.x.size() * (size_t)c.reps + gap) / c.rate;
       act = (double)w.active * c.reps / c.rate;
-      if (c.cfg.sys == SBSND) rr = rx_sbs(rx.pcm, c.rate, c.cfg.profile, &msg);
+      if (c.cfg.sys == BYSOUND) rr = rx_bys(rx.pcm, c.rate, c.cfg.profile, &msg);
       else rr = rx_gg(rx.pcm, c.cfg.fixed ? (int)msg.size() : 0, &msg, c.cfg.freq);
       success = rr.n_correct > 0;
     }
     double lat = rr.first_ok_sample >= 0 ? (double)((long)rr.first_ok_sample - (long)rx.lead) / c.rate : -1;
-    fprintf(f, "%s,%s,%s,%u,%s,%zu,%s,%s,%d,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s\n", c.plan.c_str(), c.cfg.sys == SBSND ? "bysound" : "ggwave",
+    fprintf(f, "%s,%s,%s,%u,%s,%zu,%s,%s,%d,%d,%d,%d,%d,%d,%d,%s,%s,%s,%s,%s,%s\n", c.plan.c_str(), c.cfg.sys == BYSOUND ? "bysound" : "ggwave",
             c.cfg.name.c_str(), c.rate, c.size.c_str(), msg.size(), c.cond.c_str(), c.clean ? "" : fmt(c.snr).c_str(), c.clean ? 1 : 0, c.reps, t,
             w.ok ? success : -1, rr.n_correct, rr.n_wrong, rr.n_failed, fmt(air).c_str(), fmt(act).c_str(), fmt(lat).c_str(),
             fmt((double)rx.pcm.size() / c.rate).c_str(), fmt(rr.cpu_s).c_str(), fmt(rx.clip_frac, 3).c_str());
@@ -630,7 +630,7 @@ static void replay(const char *plan, const char *config, const char *size, const
 // Minimal bysound repro with no channel at all: the encoder's int16 output, `lead` zero samples before it and 1 s of zeros after,
 // pushed into a fresh demodulator in `chunk`-sample pieces. Also decodes the same frame at the symbol level (bys_frame_next ->
 // bys_rx_push, no audio) to separate the codec from the demodulator.
-static void repro_sbs(int band, int profile, const char *size, int trial, int lead, int chunk) {
+static void repro_bys(int band, int profile, const char *size, int trial, int lead, int chunk) {
   std::string msg = make_payload(size, trial);
   dump("payload", msg.data(), msg.size());
   bys_tx_cfg_t cfg; bys_tx_cfg_default(&cfg); cfg.sample_rate = 48000;
@@ -658,7 +658,7 @@ static void repro_sbs(int band, int profile, const char *size, int trial, int le
   g_verbose = 1;
   if (!g_demod) g_demod = (bys_demod_t *)calloc(1, sizeof(bys_demod_t));
   RxResult res;
-  SbsCtx ctx{ &msg, &res, 0 };
+  BysCtx ctx{ &msg, &res, 0 };
   bys_demod_cfg_t dc; bys_demod_cfg_default(&dc);
   dc.profile = (bys_profile_t)profile; dc.band_mask = (uint8_t)(1u << band);
   dc.out = g_demod_out; dc.out_cap = sizeof g_demod_out; dc.cb = bys_cb; dc.user = &ctx;
@@ -720,7 +720,7 @@ static void codec_scan(const char *size, int n) {
 // Fraction of random payloads that a noiseless channel fails to deliver, per configuration of both systems (encoder output at
 // full scale straight into the receiver, 12345 zero samples before it and 1 s after, 1024-sample chunks).
 // inaudible: bysound top only and ggwave DT/MT moved to 18 kHz (receiver restricted to them).
-static void scan_sbs(const char *size, int n, bool inaudible) {
+static void scan_bys(const char *size, int n, bool inaudible) {
   auto all = inaudible ? bys_top_configs() : bys_configs();
   auto gg = inaudible ? gg_inaudible_configs() : gg_configs(false);
   all.insert(all.end(), gg.begin(), gg.end());
@@ -734,7 +734,7 @@ static void scan_sbs(const char *size, int n, bool inaudible) {
       std::vector<int16_t> pcm(12345, 0);
       for (float v : w.x) pcm.push_back((int16_t)std::lrint(v * 32768.0f));
       pcm.insert(pcm.end(), 48000, 0);
-      RxResult rr = c.sys == SBSND ? rx_sbs(pcm, 48000, c.profile, &msg) : rx_gg(pcm, c.fixed ? (int)msg.size() : 0, &msg, c.freq);
+      RxResult rr = c.sys == BYSOUND ? rx_bys(pcm, 48000, c.profile, &msg) : rx_gg(pcm, c.fixed ? (int)msg.size() : 0, &msg, c.freq);
       wrong += rr.n_wrong;
       if (!rr.n_correct) { fails++; if (which.size() < 60) which += " " + std::to_string(t); }
     }
@@ -764,8 +764,8 @@ static void run_idle(int shard, int nshards, const char *outpath, bool inaudible
     std::vector<int16_t> pcm(n);
     for (size_t i = 0; i < n; i++) { double s = std::nearbyint(noise[i] * g * 32768.0); pcm[i] = (int16_t)std::max(-32768.0, std::min(32767.0, s)); }
     RxResult rr;
-    if (!inaudible) rr = rxi < 2 ? rx_sbs(pcm, 48000, rxi, nullptr) : rx_gg(pcm, 0, nullptr);
-    else rr = rxi < 2 ? rx_sbs(pcm, 48000, rxi, nullptr, 0x01) : rx_gg(pcm, rxi == 3 ? 32 : 0, nullptr, GG_BIN_18K);
+    if (!inaudible) rr = rxi < 2 ? rx_bys(pcm, 48000, rxi, nullptr) : rx_gg(pcm, 0, nullptr);
+    else rr = rxi < 2 ? rx_bys(pcm, 48000, rxi, nullptr, 0x01) : rx_gg(pcm, rxi == 3 ? 32 : 0, nullptr, GG_BIN_18K);
     fprintf(f, "%s,%s,%d,60,%d,%d,%s\n", inaudible ? rxi18[rxi] : rxs[rxi], nn[nt], seg, rr.n_wrong + rr.n_correct, rr.n_failed, fmt(rr.cpu_s).c_str());
   }
   fclose(f);
@@ -815,7 +815,7 @@ static void info(const char *outdir) {
       for (float v : w.x) { peak = std::max(peak, (double)std::fabs(v)); e += (double)v * v; }
       double papr = w.ok && e > 0 ? 10 * std::log10(peak * peak / (e / (double)w.active)) : 0;
       double air = (double)w.x.size() / rate, act = (double)w.active / rate;
-      fprintf(f, "%s,%s,%u,%s,%zu,%d,%s,%s,%s,%s,%s,%s\n", c.sys == SBSND ? "bysound" : "ggwave", c.name.c_str(), rate, sz, msg.size(), w.ok ? 1 : 0,
+      fprintf(f, "%s,%s,%u,%s,%zu,%d,%s,%s,%s,%s,%s,%s\n", c.sys == BYSOUND ? "bysound" : "ggwave", c.name.c_str(), rate, sz, msg.size(), w.ok ? 1 : 0,
               w.ok ? fmt(air).c_str() : "", w.ok ? fmt(act).c_str() : "", w.ok ? fmt(msg.size() / air).c_str() : "", w.ok ? fmt(msg.size() / act).c_str() : "",
               w.ok ? fmt(papr, 4).c_str() : "", w.ok ? "ok" : w.why ? w.why : "cannot send");
     }
@@ -830,7 +830,7 @@ static void info(const char *outdir) {
     int lo = 0, hi = 20000;
     while (lo < hi) { int mid = (lo + hi + 1) / 2; Wave w = encode(c, make_payload(std::to_string(mid), 0), 48000); if (w.ok) lo = mid; else hi = mid - 1; }
     Wave w = encode(c, make_payload(std::to_string(lo), 0), 48000);
-    fprintf(f, "%s,%s,%d,%s\n", c.sys == SBSND ? "bysound" : "ggwave", c.name.c_str(), lo, fmt((double)w.x.size() / 48000).c_str());
+    fprintf(f, "%s,%s,%d,%s\n", c.sys == BYSOUND ? "bysound" : "ggwave", c.name.c_str(), lo, fmt((double)w.x.size() / 48000).c_str());
   }
   fclose(f);
 
@@ -864,7 +864,7 @@ static void info(const char *outdir) {
     while (hi > lo && ch + p[hi] < 0.005 * tot) ch += p[hi--];
     double sin_ = 0; for (size_t k = lo; k <= hi; k++) sin_ += p[k];
     double hz = (double)rate / 4096;
-    fprintf(f, "%s,%s,%u,%.0f,%.0f,%.4f", c.sys == SBSND ? "bysound" : "ggwave", c.name.c_str(), rate, lo * hz, hi * hz, sin_ / tot);
+    fprintf(f, "%s,%s,%u,%.0f,%.0f,%.4f", c.sys == BYSOUND ? "bysound" : "ggwave", c.name.c_str(), rate, lo * hz, hi * hz, sin_ / tot);
     for (int nt = 0; nt < 3; nt++) {
       auto &q = npsd[ri][(size_t)nt];
       double qt = 0, qi = 0; for (size_t k = 0; k < q.size(); k++) { qt += q[k]; if (k >= lo && k <= hi) qi += q[k]; }
@@ -898,10 +898,10 @@ int main(int argc, char **argv) {
   if ((argc == 9 || argc == 10) && !strcmp(argv[1], "trial")) {
     if (argc == 10) g_snr_override = atof(argv[9]);
     replay(argv[2], argv[3], argv[4], argv[5], argv[6], atoi(argv[7]), atoi(argv[8])); return 0; }
-  if (argc >= 6 && !strcmp(argv[1], "repro")) { repro_sbs(atoi(argv[2]), atoi(argv[3]), argv[4], atoi(argv[5]), argc > 6 ? atoi(argv[6]) : 0, argc > 7 ? atoi(argv[7]) : 1024); return 0; }
+  if (argc >= 6 && !strcmp(argv[1], "repro")) { repro_bys(atoi(argv[2]), atoi(argv[3]), argv[4], atoi(argv[5]), argc > 6 ? atoi(argv[6]) : 0, argc > 7 ? atoi(argv[7]) : 1024); return 0; }
   if (argc == 4 && !strcmp(argv[1], "codec")) { g_verbose = 1; codec_scan(argv[2], atoi(argv[3])); return 0; }
   if (argc >= 3 && !strcmp(argv[1], "dither")) { dither_check(argc - 2, argv + 2); return 0; }
-  if ((argc == 4 || argc == 5) && !strcmp(argv[1], "scan")) { scan_sbs(argv[2], atoi(argv[3]), argc == 5 && !strcmp(argv[4], "inaudible")); return 0; }
+  if ((argc == 4 || argc == 5) && !strcmp(argv[1], "scan")) { scan_bys(argv[2], atoi(argv[3]), argc == 5 && !strcmp(argv[4], "inaudible")); return 0; }
   if (argc >= 2 && !strcmp(argv[1], "jobs")) {
     std::string plan = argc >= 3 ? argv[2] : "all";
     if (plan == "idle") { printf("90\n"); return 0; }

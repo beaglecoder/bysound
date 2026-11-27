@@ -2,7 +2,7 @@
 
 The device half of [`../web-wifi-setup`](../web-wifi-setup/): an ESP32-S3 that receives Wi-Fi credentials by sound, joins the network and keeps the credentials.
 
-**Status: it builds (ESP-IDF 5.4, ESP32-S3, app 0xc2f10 bytes = about 800 KB of a 1.5 MB partition). It has NOT been run on a board**: the audio path is the one of [`../../esp32`](../../esp32/) (also lightly tested), and the Wi-Fi/crypto code here has only had its text parser checked on a host. Expect to debug it on first run.
+**Status: it builds (ESP-IDF 5.4, ESP32-S3, app 0xc2f10 bytes = about 800 KB of a 1.5 MB partition). It has NOT been run on a board**: the audio path is the one of [`../../esp32`](../../esp32/) (also not yet run on a board), and the Wi-Fi/crypto code here has only had its text parser checked on a host. Expect to debug it on first run.
 
 ## What it shows
 
@@ -37,7 +37,7 @@ Options (menuconfig): accept plain texts (`WIFISETUP_ALLOW_PLAIN`, off), code va
 
 **Sound is not secret.** Anyone in earshot (or a recording) gets everything that is sent. Plain `WIFI:` texts pass the credentials in clear, so they are refused unless you enable `WIFISETUP_ALLOW_PLAIN`. The protected mode hides them behind the one-time code, but the code has only about 40 bits: a recording can be attacked offline (200000 PBKDF2 iterations slow it, they do not stop a determined attacker). It protects against someone who hears the exchange but cannot afford that attack, not against one who records and has the compute; the physical presence of the person who reads the code from the device is the real factor. The code is shown only on the serial log here; a product should show it on a display. Do not reuse your main Wi-Fi password if that matters.
 
-## Deferred / honest limits
+## Limits
 
 - Not run on a board; PBKDF2 duration on the S3 (hardware SHA enabled) is not measured.
 - The code is only logged: no on-device display or LED.

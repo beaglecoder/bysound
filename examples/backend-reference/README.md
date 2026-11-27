@@ -34,7 +34,7 @@ If the rogue starts during the sender's pre-listen, the sender refuses to play (
 | `sender.ts`, `receiver.ts`, `rogue.ts` | The three pages: `sendSession(payload, { mode: 'reference' })`, `receiveSession({ resolve })` with the confirm gate, and an attacker with every protection off |
 | `vite.config.mjs`, `tsconfig.json`, `package.json` | Standalone setup that borrows `../../web`'s Vite and TypeScript |
 
-## Honest limits
+## Limits
 
 - **A demo, not a backend.** "Signing in" is a header (`x-demo-user`) anyone can set, there is no TLS, and the store is a `Map` that forgets everything on restart. A real backend authenticates with a session token over TLS, stores entries in a database with an atomic consume, and pushes the result to the sender instead of being polled.
 - **The backend adds** confidentiality, the publisher's identity, expiry, single use, blocking and an audit log. **bysound adds** integrity and detection of a second emitter when a microphone hears it. Neither stops a **relay attack** (sound captured and replayed elsewhere in real time) or **jamming**; see SECURITY.md for the mitigations.

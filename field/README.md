@@ -1,6 +1,6 @@
-# Over-the-air field evaluation (v4)
+# Over-the-air measurements (v4 format)
 
-Real measurements of the v4 over-the-air format between two consumer devices, with recorded noise and a second emitter played from a laptop's speakers. This complements the simulated benchmark in [`bench/`](../bench): the benchmark says how the modem behaves for a known SNR; this folder says what SNR a real speaker-to-microphone link reached on a table, and what happened at that SNR.
+Measurements of the v4 over-the-air format between two consumer devices, with recorded noise and a second emitter played from a laptop's speakers. They complement the simulated benchmark in [`bench/`](../bench): the benchmark shows how the modem behaves at a known SNR; this folder shows what SNR a real speaker-to-microphone link reached on a table, and what happened at that SNR. Section 6.8 of the [paper](../PAPER.md) summarises them.
 
 | File | What it is |
 |---|---|
@@ -15,13 +15,13 @@ python3 field/analyze.py
 
 ## What was measured, and with what
 
-**Read this first.** These runs were made with the author's private application, not with the code in this repository. That application uses earlier builds (library 4.0.0, 4.1.0 and 4.2.0) of the same v4 over-the-air format and the same receiver family (preamble detection, per-tone noise floor, Reed–Solomon, repetition combining), but it wraps them in its own flow:
+**Read this first.** These runs were made with the author's private application, not with the code in this repository. That application uses three builds (labelled 4.0.0, 4.1.0 and 4.2.0) of the author's private library, which implements the same v4 over-the-air format and the same receiver design (preamble detection, per-tone noise floor, Reed–Solomon, repetition combining), and wraps it in its own flow:
 
 - **Payment-style requests with a backend.** The sender registers a request on a server, then plays only a reference frame (a 12-byte fingerprint with its parity, the pattern in [SECURITY.md](../docs/SECURITY.md#using-a-backend)). The receiver decodes the fingerprint and fetches the request from the server. A request lives 20 s on the server; the receiver gives up after 22 s.
 - **Acknowledgements and alerts on.** Security level `maximum`: the sender listens about 3 s before playing and does not play if it hears another transmission; the receiver watches the air after delivering (8 s window) and raises a conflict warning if a different request or a risk frame appears.
 - **Channel choice by the application.** The sender started on `top` and fell back to `mid` when no acknowledgement came. The CSV records the channel each frame was decoded on, not the profile (normal or robust).
 
-So the numbers below characterise the v4 modem and session behaviour over the air, but not this repository's exact build, and the end-to-end times include the application's pre-listen and server round trips. **ggwave was not run over the air**: there is no over-the-air comparison.
+The numbers below therefore characterise the v4 format and this receiver design over the air, not this repository's code, and the end-to-end times include the application's pre-listen and server round trips. **ggwave was not run over the air**: there is no over-the-air comparison.
 
 ### Devices and room
 
@@ -45,7 +45,7 @@ flowchart LR
   subgraph L2["45 cm series (R08–R14): only the laptop moves"]
     direction LR
     a2["Galaxy A50"] -.-|"signal 44.7 / 44.8 cm, facing"| i2["iPad"]
-    m2["MacBook: 63 cm (medium) · 26 cm aside (hard) · 10 cm, in the path (very hard)"] --- a2
+    m2["MacBook: 63 cm (medium) · 26 cm aside (hard) · 10 cm, in the path (ultra)"] --- a2
     m2 --- i2
   end
 ```
@@ -77,7 +77,7 @@ In most attempts the noise source is **closer to the listening microphone than t
 
 **Levels.** Noise recordings play at gain low (−18 dB), medium (−9 dB) or high (0 dB), on top of the laptop's system volume (69 % or 100 % where recorded, `noise_source_volume_pct`; not recorded in 10 runs). The short plans use only high.
 
-**Runs.** 14 runs, 1–5 November 2026 (UTC): 12 short plans of 16 v4 attempts (one cut short at 6) and one full plan of 95. Run R04 is excluded by the validity check below: its noise source was not audible.
+**Runs.** 14 runs, 1–5 November 2026 (UTC): 13 short plans of 16 attempts (one of them, R05, cut short at 6) and one full plan of 95 (R03), 293 attempts in all. Run R04 is excluded by the validity check below: its noise source was not audible.
 
 ## Method
 
@@ -112,7 +112,7 @@ All tables are in [`results.md`](results.md); this section quotes them.
 
 <img src="charts/noise-by-scenario.svg" alt="Read rate per noise scenario" width="100%">
 
-All noise attempts: **99/146 read (68 %, 95 % CI 60–75)**. Quiet room: **26/26**, median measured SNR **47.0 dB**.
+All noise attempts: **99/146 read (68 %, Wilson 95 % CI 60–75 %)**. Quiet room: **26/26**, median measured SNR **47.0 dB**.
 
 | Scenario | Read / attempts | High level only | Median SNR of reads (dB) | Median read time (s) |
 |---|---:|---:|---:|---:|
@@ -132,9 +132,9 @@ All noise attempts: **99/146 read (68 %, 95 % CI 60–75)**. Quiet room: **26/26
 | hard | 25/28 (89 %, CI 73–96) | 25/28 | −6 to −5 | 23.6 |
 | ultra | 61/102 (60 %, CI 50–69) | 34/66 (52 %) | −24 to −14 | 19.6 |
 
-- **Noise below the channels does not matter.** Bar, traffic and the 2–6 kHz alarm were read every time, even in the ultra layouts; so was the whistle that covers `top`, every time on `mid`.
-- **Broadband noise near the microphone is the limit.** Hair dryer and vacuum account for 34 of the 40 attempts where nothing was decoded (vacuum 21, dryer 13; then sweep 3, music 2, cutlery 1).
-- **Classes are coarse.** Medium and hard overlap (16 and 28 attempts, wide intervals; all 3 medium failures and 2 of the 3 hard ones are hair dryer or vacuum with the A50 sending). Ultra is clearly lower.
+- **Noise below the channels did not matter.** Bar, traffic and the 2–6 kHz alarm were read every time, even in the ultra layouts; so was the whistle that covers `top`, every time on `mid`.
+- **Broadband noise near the microphone was the limit.** Hair dryer and vacuum account for 34 of the 40 attempts where nothing was decoded (vacuum 21, dryer 13; then sweep 3, music 2, cutlery 1).
+- **Classes are coarse.** Medium and hard overlap (16 and 28 attempts, wide intervals). All 3 medium failures (hair dryer or vacuum) and 2 of the 3 hard ones (vacuum) were with the A50 sending. Ultra is clearly lower.
 - **Failures, by kind:** 40 nothing decoded; 6 decoded only after the request's 20 s lifetime (read at 20.8–22.2 s, measured SNR 9.2–14.4 dB, all on `mid`, after `top` went unacknowledged); 1 sweep attempt where the receiver took the sweep for another transmission and refused.
 - **Time:** successful reads took a median **6.5 s** from the start of listening (90th percentile 14.9 s), which includes the sender's ~3 s pre-listen and its server registration; from the first preamble to the decoded frame, median **1.09 s**.
 
@@ -236,14 +236,14 @@ Times are median (range).
 | `undue_delivery` | `true` if delivered while another sender was active, without a warning within 3 s. |
 | `delivered_request` | In competing-request scenarios: `legitimate` or `competing`. |
 
-Removed from the source exports: request and payment codes, plan identifiers, free-text details and traces, server timings, calibration internals, and the v2 rows (another protocol, run in the same sessions).
+Removed from the source exports: request and payment codes, plan identifiers, free-text details and traces, server timings, calibration internals, and the rows of a different over-the-air format run in the same sessions.
 
 ## Limitations
 
 - **One device pair, one room, one table.** One Android phone and one iPad; noise from laptop speakers playing recordings, not real environments. Per-scenario cells are small (2–30 attempts).
 - **No absolute levels.** No sound level meter; laptop volume recorded in 4 of 13 kept runs. Geometric margins are free-field estimates with coarse penalties; they rank layouts, they do not predict SNR.
 - **Worst-case geometry.** In most attempts the noise source was closer to the listening microphone than the sender (−24 to −5 dB margins); no layout reached the easy class. A typical counter (noise 1–2 m away) was not measured.
-- **Not this repository's build.** Library 4.0.0–4.2.0 inside a private application with a server, reference frames, acknowledgements, a 20 s request lifetime and a 22 s receiver timeout. Its channel fallback (`top` then `mid`) differs from the ladder in this repository (`top`, `high`, `upper`, `mid`), and the robust profile is not recorded.
+- **Not this repository's code.** Builds 4.0.0–4.2.0 of a private library inside a private application with a server, reference frames, acknowledgements, a 20 s request lifetime and a 22 s receiver timeout. The competing-request outcome differs between builds (below), and which behaviour this repository's implementation has was not measured over the air. Its channel fallback (`top` then `mid`) differs from the ladder in this repository (`top`, `high`, `upper`, `mid`), and the robust profile is not recorded.
 - **SNR only on success.** The receiver measures SNR on a decoded frame, so failures have no SNR and the SNR tables are conditional.
 - **Direction and device confounded.** Each direction is one fixed sender/receiver pair, so speaker, microphone and position effects cannot be separated.
 - **Security rivals are recordings** played by the laptop at fixed gains (the registered competing request about 35 dB below the other rival sounds, to approximate a phone), except that the competing request is genuinely registered on the server. The 3 s warning limit is an assumption.

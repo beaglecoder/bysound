@@ -1,7 +1,7 @@
 // Automatic adaptation of the sender (docs/SESSION.md §9): channel ladder, ambient check, robust ladder and calibration memory.
 // Pure functions and small classes: the sender state machine calls them.
-import { referenceFrame, payloadFrame } from '../modem/codec';
-import { GAP_SECONDS, hasRobust, type BandId, type Profile } from '../modem/protocol';
+import { pack, payloadMicros, referenceFrame } from '../modem/codec';
+import { BANDS, GAP_SECONDS, hasRobust, inProfile, type BandId, type Profile } from '../modem/protocol';
 import type { BandNoise } from './controlListener';
 
 /** The default ladder, from the least audible band down. mid, the most audible, is last. */
@@ -62,10 +62,12 @@ export interface CalibrationStore {
   load(): Calibration | null;
   save(c: Calibration | null): void;
 }
+/** A calibration store that lives in memory (lost on reload). */
 export function memoryCalibrationStore(initial: Calibration | null = null): CalibrationStore {
   let c = initial;
   return { load: () => c, save: (next) => { c = next; } };
 }
+/** A calibration store in localStorage under `key`; falls back to memory where storage is unavailable (private mode, workers). */
 export function localStorageCalibrationStore(key = 'bysound.calibration'): CalibrationStore {
   const storage = (): Storage | null => { try { return globalThis.localStorage ?? null; } catch { return null; } };
   const fallback = memoryCalibrationStore();
@@ -148,8 +150,9 @@ export function lapped(played: readonly BandId[], routeLength: number): boolean 
 /**
  * The longest repetition (frame + gap) this content can have on the default ladder: top in the robust profile. The receiver's ack
  * run and the sender's receipts are timed with it, so they cover a listen window even after a hop or a switch to robust.
+ * Computed, not rendered: a text too long for robust top (it was sent normal, or on another band) still gets a duration.
  */
 export function longestRepetitionSeconds(content: { kind: 'payload'; text: string } | { kind: 'reference' }): number {
-  const f = content.kind === 'payload' ? payloadFrame(content.text, 'top', 'robust') : referenceFrame(new Array<number>(12).fill(0), 'top', 0, 'robust');
-  return f.frameSeconds + GAP_SECONDS;
+  if (content.kind === 'payload') return payloadMicros(inProfile(BANDS.top, 'robust'), pack(content.text).length) / 1e6;
+  return referenceFrame(new Array<number>(12).fill(0), 'top', 0, 'robust').frameSeconds + GAP_SECONDS;
 }

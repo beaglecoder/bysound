@@ -46,8 +46,9 @@ static bys_receiver_t s_rcv;
 static bys_risk_memory_t s_mem;
 static bys_session_io s_io_snd, s_io_rcv;
 static char s_tx_text[256];
-static volatile int s_send_req;          /* set by audio_send(), consumed by the task */
-static int s_snd_on, s_rcv_on;           /* 1 running, 0 off, -1 finished (the task cleans up) */
+static volatile int s_send_req;          /* set by audio_send(), cleared by the task once the sender started (or failed to) */
+static volatile int s_snd_on;            /* 1 running, 0 off, -1 finished (the task cleans up); read by audio_send() too */
+static int s_rcv_on;                     /* same, for the receiver */
 static int s_rcv_confirmed;
 static uint32_t s_rcv_delivered_at, s_noise_at;
 
@@ -64,6 +65,8 @@ static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 static const char *const ERR_NAMES[] = { "none", "OTHER_TRANSMISSION", "CLONED_TRANSMISSION", "OTHER_EMITTER", "RISK_SIGNAL", "MULTIPLE_TRANSMISSIONS", "TIMEOUT",
                                          "STOPPED", "CANCELLED", "NOT_FOUND", "MISMATCH", "NO_RESOLVER", "PLAY", "NO_SPACE", "PENDING" };
 static const char *const BAND_NAMES[] = { "top", "high", "upper", "mid", "audible", "xhigh", "wide" };
+
+static const char *err_name(int e) { return e >= 0 && e < (int)(sizeof ERR_NAMES / sizeof *ERR_NAMES) ? ERR_NAMES[e] : "unknown"; }
 
 /* ---------- I2S ---------- */
 static esp_err_t i2s_setup(void) {
@@ -158,7 +161,7 @@ static void io_received(void *u, const char *text, size_t len, bys_band_t band, 
   s_rcv_confirmed = 0;
 }
 static void io_receipt(void *u, int heard) { (void)u; if (heard) ESP_LOGI(TAG, "receipt heard: the sender knows"); else ESP_LOGI(TAG, "no receipt (acking ended)"); }
-static void io_failed(void *u, bys_session_error_t e, const bys_alert_t *a) { (void)u; (void)a; ESP_LOGW(TAG, "session failed: %s", ERR_NAMES[e]); }
+static void io_failed(void *u, bys_session_error_t e, const bys_alert_t *a) { (void)u; (void)a; ESP_LOGW(TAG, "session failed: %s", err_name(e)); }
 static void snd_finished(void *u) { (void)u; s_snd_on = -1; }
 static void rcv_finished(void *u) { (void)u; s_rcv_on = -1; }
 
@@ -240,7 +243,7 @@ static void session_tick(uint32_t now) {
       bys_confirmation_t cf;
       const int e = bys_receiver_confirmed(&s_rcv, now, &cf);
       s_rcv_confirmed = 1;
-      if (e != 0) ESP_LOGW(TAG, "not confirmed: %s", ERR_NAMES[e]);
+      if (e != 0) ESP_LOGW(TAG, "not confirmed: %s", err_name(e));
       else {
         ESP_LOGI(TAG, "confirmed (watch %s, %lu ms)", cf.watch == BYS_WATCH_CLEAN ? "clean" : cf.watch == BYS_WATCH_OFF ? "off" : "expired", (unsigned long)cf.watched_ms);
         if (s_on_text) s_on_text(s_text);
@@ -256,10 +259,10 @@ static void audio_task(void *arg) {
     if (s_snd_on < 0) { s_snd_on = 0; receiver_start(); }          /* send over: listen again */
     else if (s_rcv_on < 0) { s_rcv_on = 0; receiver_start(); }     /* text delivered and acknowledged (or failed): the next one */
     if (s_send_req && s_snd_on <= 0) {                             /* the button: stop receiving, send */
-      s_send_req = 0;
       if (s_rcv_on > 0) { bys_receiver_cancel(&s_rcv, now_ms()); }
       s_rcv_on = 0;
       sender_start();
+      s_send_req = 0; /* only now: until the sender runs, audio_send() must not overwrite s_tx_text */
     }
     if (s_playing) {
       const size_t n = bys_tx_fill(&s_tx_state, s_pcm, BLOCK);
@@ -307,7 +310,18 @@ esp_err_t audio_start(audio_text_cb_t on_text) {
 
 esp_err_t audio_send(const char *text) {
   if (s_send_req || s_snd_on > 0) return ESP_ERR_INVALID_STATE;
-  if (strlcpy(s_tx_text, text, sizeof s_tx_text) >= sizeof s_tx_text) ESP_LOGW(TAG, "text truncated to %u bytes", (unsigned)(sizeof s_tx_text - 1));
+  if (strlcpy(s_tx_text, text, sizeof s_tx_text) >= sizeof s_tx_text) {
+    /* Cut at a character boundary: never send half a UTF-8 sequence. */
+    size_t n = sizeof s_tx_text - 1, lead = n;
+    while (lead > 0 && ((uint8_t)s_tx_text[lead - 1] & 0xC0) == 0x80) lead--;
+    if (lead > 0 && ((uint8_t)s_tx_text[lead - 1] & 0x80)) {
+      const uint8_t b = (uint8_t)s_tx_text[lead - 1];
+      const size_t len = b >= 0xF0 ? 4 : b >= 0xE0 ? 3 : 2;
+      if (lead - 1 + len > n) n = lead - 1;
+    }
+    s_tx_text[n] = 0;
+    ESP_LOGW(TAG, "text truncated to %u bytes", (unsigned)n);
+  }
   s_send_req = 1;
   return ESP_OK;
 }

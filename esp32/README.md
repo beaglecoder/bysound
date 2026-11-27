@@ -1,11 +1,13 @@
-# bysound_demo (ESP32-S3)
+# bysound demo (ESP32-S3)
+
+**Status:** builds with ESP-IDF 5.4 for the ESP32-S3; it has not been run on a board yet, so on-device behaviour and CPU load are unmeasured.
 
 Listens continuously for bysound v4 messages, acknowledges each one by sound and logs it over serial. Press BOOT (GPIO0) to send a text (default
 `hello from esp32`) and wait for the ack. It uses the session layer ([`docs/SESSION.md`](../docs/SESSION.md), `c/include/bysound_session.h`): as a receiver the board
 delivers the text, plays acks on `mid` until the sender's receipt, and acts on the text (`main.c` logs it) once the confirm gate is still clean 2 s later; as a
-sender it pre-listens, steps down the channel ladder (top, high, upper, mid, then robust) and stops as soon as it hears the ack, logging the band that worked
+sender it pre-listens, steps down the channel ladder (top, high, upper, mid, then robust) and stops as soon as it hears the ack, logging the channel that worked
 and keeping the calibration in NVS so the next send starts there. Uses the [`../c`](../c) library (wrapped as the `bysound` component in `components/bysound`) and the I2S standard driver
-(`driver/i2s_std.h`). Tested with ESP-IDF v5.4.
+(`driver/i2s_std.h`).
 
 ## Hardware
 
@@ -33,7 +35,7 @@ The microphone uses I2S port 1 and the amplifier I2S port 0, each with its own c
 . ~/esp/esp-idf/export.sh          # your ESP-IDF install
 cd esp32
 idf.py set-target esp32s3
-idf.py menuconfig                  # optional: "bysound demo" (band, profile, text, pins, gain) and "bysound" (demodulator)
+idf.py menuconfig                  # optional: "bysound demo" (security level, channel, text, pins, gain) and "bysound" (demodulator)
 idf.py build
 idf.py -p PORT flash monitor       # PORT is e.g. /dev/ttyACM0 or /dev/cu.usbmodem1101
 ```
@@ -46,21 +48,21 @@ and `c/build/bysound ack "hello from esp32" -o ack.wav --heard top` makes the ac
 ## Configuration notes
 
 - Security level (menuconfig): `maximum` (default), `standard` or `basic`; `maximum` pre-listens 3-4.2 s before the first frame, so a send starts a few seconds after the button.
-- Band: by default the sender uses the channel ladder; "Send on one band only" fixes it (no ladder, no calibration). `bysound bands` on the host lists all seven bands.
+- Channel: by default the sender uses the channel ladder; "Send on one band only" fixes it (no ladder, no calibration). `bysound bands` on the host lists all seven channels.
   The receiver always listens to top, high, upper and mid.
 - Robust profile: "Also listen to the robust profile" (default on) adds a second demodulator, so both boards hear the sender's robust repetitions. Off saves about 85 KB of RAM,
-  but a sender that goes robust is then not heard.
+  but a sender that switches to the robust profile is then not heard.
 - Microphone gain: the INMP441 is quiet at 18 kHz; the default digital gain is x4 (`BYSOUND_DEMO_MIC_GAIN_SHIFT`). Raise it if nothing is heard,
   lower it if the sound clips.
 - Half duplex: while the board plays a frame it does not read the microphone, and the demodulators are reset afterwards so they do not hear it. The session's listen windows
   (2 s after each repetition) and receipt listens (3 s between ack runs) are made for that. It is also why a board cannot receive while acking: the next text is heard once
   the ack loop ends (receipt or 30 s).
 - The demo takes the time from `esp_timer`, the calibration goes to NVS (`bysound/cal`), and `esp_random()` jitters the pre-listen.
-- CPU of two demodulators on four bands was not measured on a board.
+- CPU of two demodulators on four channels was not measured on a board.
 
 ## Footprint (default configuration, ESP-IDF 5.4.2, esp32s3)
 
 From `idf.py size`: image 286.7 KB; internal RAM static data 150.1 KB `.bss` + 10.8 KB `.data` of 342 KB; no PSRAM needed. Of the flash, the session layer is about
-10 KB, SHA-256 1 KB and NVS 13.6 KB. Of the `.bss`, the two robust-capable demodulators on the four ladder bands take 132 KB and the two sessions about 2 KB.
+10 KB, SHA-256 1 KB and NVS 13.6 KB. Of the `.bss`, the two robust-capable demodulators on the four ladder channels take 132 KB and the two sessions about 2 KB.
 Without the robust receiver (`BYSOUND_DEMO_ROBUST_RX` off) a single normal-profile demodulator takes 45.5 KB, about 85 KB less.
 CPU on the device was not measured (no board was used); on an Apple-silicon host the FFT engine runs a single-band demodulator at roughly 740x real time.

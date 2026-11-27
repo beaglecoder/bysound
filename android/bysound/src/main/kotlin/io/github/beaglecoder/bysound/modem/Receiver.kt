@@ -36,7 +36,7 @@ class Receiver(val rate: Int, val profile: Profile, private val events: Receiver
     internal var total = 0L
         private set
     private var ring: FloatArray
-    private var hops = 0
+    private var hops = 0L
     private var sinceHop = 0
     private val highBank: ToneBank
     private val lowBank: ToneBank?
@@ -115,7 +115,7 @@ class Receiver(val rate: Int, val profile: Profile, private val events: Receiver
 
     private fun onHop() {
         val index = hops++
-        window(index.toLong() * hopSize)
+        window(index * hopSize)
         // With the FFT, one transform per hop feeds both banks.
         fft?.analyze(windowed)
         highBank.compute(this, index, fft != null)

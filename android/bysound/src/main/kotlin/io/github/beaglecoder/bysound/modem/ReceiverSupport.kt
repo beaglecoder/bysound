@@ -100,8 +100,8 @@ internal class ToneBank(val baseBin: Int, tones: Int, rate: Int) {
     private val history = Array(HOP_HISTORY) { DoubleArray(tones) }
 
     /** [analyzed]: the FFT of the window is already done (both banks share it). */
-    fun compute(r: Receiver, hop: Int, analyzed: Boolean) = toneEnergies(r, r.windowed, baseBin, coeffs, history[hop % HOP_HISTORY], analyzed)
-    fun at(hop: Int): DoubleArray = history[hop % HOP_HISTORY]
+    fun compute(r: Receiver, hop: Long, analyzed: Boolean) = toneEnergies(r, r.windowed, baseBin, coeffs, history[(hop % HOP_HISTORY).toInt()], analyzed)
+    fun at(hop: Long): DoubleArray = history[(hop % HOP_HISTORY).toInt()]
 }
 
 /** Blocks of the text being recovered, accumulated across laps. */

@@ -17,7 +17,6 @@ final class SoundPlayer {
     func open() throws {
         try BySoundAudio.configureSession()
         let session = AVAudioSession.sharedInstance()
-        try? session.overrideOutputAudioPort(.speaker)
         sampleRate = session.sampleRate > 0 ? session.sampleRate : 48000
         engine.mainMixerNode.outputVolume = 1
         engine.prepare()

@@ -113,13 +113,13 @@ internal class ChannelReader(
     private fun start(k: Int) = ch.symbolStart(k, r.rate)
     private fun symbolEnd(k: Int): Long = frameStart + start(k) + samples(endOffset, r.rate)
     private val firstBody get() = PREAMBLE.size + headerSymbols
-    private fun hopEnd(i: Int): Long = r.winSize.toLong() + i.toLong() * r.hopSize
-    private fun energy(hop: Int, t: Int) = bank.at(hop)[offset + t]
+    private fun hopEnd(i: Long): Long = r.winSize.toLong() + i * r.hopSize
+    private fun energy(hop: Long, t: Int) = bank.at(hop)[offset + t]
 
     /** Blocks of the text in the frame being read; 0 if none. */
     val blocksInFrame get() = if (isBlocks) dataLength else 0
 
-    fun onHop(index: Int) {
+    fun onHop(index: Long) {
         if (state == State.SEARCH) updateFloor(index)
         when (state) {
             State.SEARCH -> {
@@ -133,9 +133,9 @@ internal class ChannelReader(
         progress = currentProgress()
     }
 
-    private fun updateFloor(hop: Int) {
+    private fun updateFloor(hop: Long) {
         val f = floor
-        if (hop == 0) {
+        if (hop == 0L) {
             val sorted = DoubleArray(tones) { energy(hop, it) }.also { it.sort() }
             f.fill(sorted[tones shr 1])
             return
@@ -156,7 +156,7 @@ internal class ChannelReader(
     }
 
     /** Preamble match ending at hop [index]: the frame start and its score, or null if there is not enough history. */
-    private fun preambleScore(index: Int): Pair<Long, Double>? {
+    private fun preambleScore(index: Long): Pair<Long, Double>? {
         val rate = r.rate
         val start = hopEnd(index) - roundHalfUpLong(preambleSpan * rate)
         if (start < 0) return null
@@ -167,7 +167,7 @@ internal class ChannelReader(
             val end = start + roundHalfUpLong((k * ch.sym + endOffset) * rate)
             val hop = roundHalfUpLong((end - r.winSize).toDouble() / r.hopSize)
             if (hop < 0 || hop > index || index - hop >= HOP_HISTORY) return null
-            val e = bank.at(hop.toInt())
+            val e = bank.at(hop)
             val off = offset
             for (t in 0 until tones) w[t] = e[off + t] / maxOf(floor[t], minimum)
             for (g in 0 until ch.groups) {
@@ -192,7 +192,7 @@ internal class ChannelReader(
         return roundHalfUpLong(sum / n)
     }
 
-    private fun search(index: Int) {
+    private fun search(index: Long) {
         val (start, score) = preambleScore(index) ?: return
         if (start < searchFrom) return
         if (score >= PREAMBLE_THRESHOLD && candStarts.size < 64) {
@@ -211,7 +211,7 @@ internal class ChannelReader(
     }
 
     /** Inside a body the preamble is searched too: on top of it is another sender, and after the minimum it is the next lap. */
-    private fun searchInBody(index: Int): Boolean {
+    private fun searchInBody(index: Long): Boolean {
         val found = preambleScore(index) ?: return false
         val (start, score) = found
         val rate = r.rate

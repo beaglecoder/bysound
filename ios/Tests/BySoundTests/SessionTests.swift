@@ -431,4 +431,67 @@ final class SessionTests: XCTestCase {
         air.run(5) { b.delivered.isSettled }
         XCTAssertEqual(b.reps.first?.band, .top)
     }
+
+    // MARK: length limits
+
+    /// A clock and a speaker without air: timers and sound ends run in time order when `drain` is called.
+    private final class Clock: SessionPlatform {
+        private var due: [(at: Double, fn: () -> Void, id: Int)] = []
+        private var cancelled = Set<Int>()
+        private var next = 0
+        var t = 0.0
+        var played: [Int] = []
+        let sampleRate = 48000.0
+        func now() -> Double { t }
+        func after(_ seconds: Double, _ fn: @escaping () -> Void) -> Cancel {
+            let id = next
+            next += 1
+            due.append((t + seconds, fn, id))
+            return { [weak self] in self?.cancelled.insert(id) }
+        }
+        func play(_ audio: [Float], onEnd: @escaping () -> Void) -> Cancel {
+            played.append(audio.count)
+            return after(Double(audio.count) / sampleRate, onEnd)
+        }
+        func random() -> Double { 0 }
+        func drain(until: () -> Bool) {
+            while !until() {
+                due.removeAll { cancelled.contains($0.id) }
+                guard let i = due.indices.min(by: { due[$0].at < due[$1].at }) else { return }
+                let d = due.remove(at: i)
+                t = d.at
+                d.fn()
+            }
+        }
+    }
+
+    func testATextTooLongForTopRobustIsPlayedNormalAndStillTimesItsAcks() throws {
+        let text = String(repeating: "a", count: Modem.maxPayloadBytes(band: .top)) // fits top/normal, not top/robust
+        let l = longestRepetitionSeconds(text: text)
+        XCTAssertGreaterThan(l, Double(Protocol.maxFrameSeconds))
+        XCTAssertEqual(ackRunSeconds(repetition: l), ackRunMaxSeconds)
+        // The robust ladder would kick in after six repetitions: the text does not fit robust there, so it stays normal.
+        let clock = Clock()
+        var reps: [Profile] = []
+        var o = SenderOptions()
+        o.band = .top; o.securityLevel = .basic; o.ambient = false; o.memory = RiskMemory(); o.timeoutSeconds = 1000
+        o.onRepetition = { _, _, p in reps.append(p) }
+        let s = try SenderSession(text: text, platform: clock, options: o)
+        s.start()
+        clock.drain { reps.count >= 9 }
+        XCTAssertEqual(reps, Array(repeating: .normal, count: 9))
+        XCTAssertTrue(clock.played.allSatisfy { $0 == clock.played[0] && $0 > 0 })
+        // Checked up front: too long for the band (or for a fixed robust profile, or for one channel of the ladder), or empty.
+        var robust = SenderOptions(); robust.band = .top; robust.profile = .robust
+        var ladder = SenderOptions(); ladder.channels = [.mid, .top]
+        var fixed = SenderOptions(); fixed.band = .top
+        for (t, opts) in [(text + "a", fixed), (text, robust), (text + "a", ladder)] {
+            XCTAssertThrowsError(try SenderSession(text: t, platform: clock, options: opts)) { e in
+                guard case ModemError.exceedsMaxDuration = e else { return XCTFail("wrong error \(e)") }
+            }
+        }
+        XCTAssertThrowsError(try SenderSession(text: "", platform: clock)) { e in
+            guard case ModemError.emptyText = e else { return XCTFail("wrong error \(e)") }
+        }
+    }
 }

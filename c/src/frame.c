@@ -39,7 +39,7 @@ int bys_max_payload_bytes(bys_band_t band, bys_profile_t profile) {
   bys_band_info_t bi;
   int r = bys_band_info(band, profile, &bi);
   if (r < 0) return r;
-  uint32_t lo = 0, hi = 48u * BYS_MAX_BLOCKS - 4; /* binary search: fits() is monotonic */
+  uint32_t lo = 0, hi = BYS_BLOCK_DATA * BYS_MAX_BLOCKS - 4; /* binary search: fits() is monotonic */
   if (!fits(bi.groups, bi.symbol_us, 0)) return 0;
   if (fits(bi.groups, bi.symbol_us, hi)) return (int)hi;
   while (hi - lo > 1) {
@@ -130,7 +130,10 @@ int bys_frame_duration_us(bys_kind_t kind, bys_band_t band, bys_profile_t profil
   if (!us) return BYS_E_ARG;
   uint32_t body, sym;
   switch (kind) {
-    case BYS_KIND_PAYLOAD: sym = payload_symbols(bi.groups, packed_len); break;
+    case BYS_KIND_PAYLOAD:
+      if (packed_len > BYS_BLOCK_DATA * BYS_MAX_BLOCKS - 4) return BYS_E_TOO_LONG; /* also keeps sym * symbol_us within 32 bits */
+      sym = payload_symbols(bi.groups, packed_len);
+      break;
     case BYS_KIND_REFERENCE: body = BYS_REF_DATA + BYS_REF_PARITY; goto small;
     case BYS_KIND_ACK: body = BYS_ACK_BODY; goto small;
     case BYS_KIND_RISK: body = BYS_RISK_BODY; goto small;

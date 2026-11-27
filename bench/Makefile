@@ -2,22 +2,22 @@
 CC      ?= clang
 CXX     ?= clang++
 JOBS    ?= $(shell sysctl -n hw.ncpu 2>/dev/null || nproc)
-SBS     := ../c
+BYS_DIR := ../c
 GG      := third_party/ggwave
 # bysound: FFT engine, robust profile and the audible channel compiled in (as in ../c/Makefile's demodulator tests)
 BYS_DEFS := -DBYS_DEMOD_FFT=1 -DBYS_DEMOD_ROBUST=1 -DBYS_DEMOD_LOW_BANK=1
-CFLAGS   := -std=c99 -O2 -Wall -Wextra $(BYS_DEFS) -I$(SBS)/include -I$(SBS)/src
-CXXFLAGS := -std=c++17 -O2 -Wall -Wextra $(BYS_DEFS) -I$(SBS)/include -I$(GG)/include -I$(GG)/src
+CFLAGS   := -std=c99 -O2 -Wall -Wextra $(BYS_DEFS) -I$(BYS_DIR)/include -I$(BYS_DIR)/src
+CXXFLAGS := -std=c++17 -O2 -Wall -Wextra $(BYS_DEFS) -I$(BYS_DIR)/include -I$(GG)/include -I$(GG)/src
 BUILD   := build
-BYS_SRC := $(wildcard $(SBS)/src/*.c)
-BYS_OBJ := $(patsubst $(SBS)/src/%.c,$(BUILD)/sbs/%.o,$(BYS_SRC))
+BYS_SRC := $(wildcard $(BYS_DIR)/src/*.c)
+BYS_OBJ := $(patsubst $(BYS_DIR)/src/%.c,$(BUILD)/bys/%.o,$(BYS_SRC))
 PLANS   := snr size cond rate44 mtfixed idle inaudible inaudible-idle
 # Inaudible comparison only (bysound top vs ggwave DT/MT moved to 18 kHz): `make inaudible`
 INAUDIBLE_PLANS := inaudible inaudible-idle
 
 all: $(BUILD)/bench
 
-$(BUILD)/sbs/%.o: $(SBS)/src/%.c $(wildcard $(SBS)/include/*.h $(SBS)/src/*.h)
+$(BUILD)/bys/%.o: $(BYS_DIR)/src/%.c $(wildcard $(BYS_DIR)/include/*.h $(BYS_DIR)/src/*.h)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 

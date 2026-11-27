@@ -26,19 +26,24 @@ const failure = (e: unknown) => {
 };
 
 let sending: SendSession | null = null;
+let opening = false; // a click while the session is still opening must not start a second one
 sendBtn.onclick = async () => {
   if (sending) return sending.stop();
+  if (opening) return;
+  opening = true;
   try {
     sendBtn.textContent = 'Stop';
     sendBtn.classList.add('active');
     say('Listening before sending…');
     const fixed = band.value === 'auto' ? {} : { band: band.value as BandId };
     const s = (sending = await sendSession(text.value, { ...fixed, onRepetition: (r) => say(`Sending on ${r.band}${r.profile === 'robust' ? ' (robust)' : ''}…`) }));
+    opening = false;
     s.delivered.then((d) => say(`✓ Received on ${d.band} by the other device`), (e: unknown) => say(failure(e)));
     await s.finished;
   } catch (e) {
     fail(e);
   } finally {
+    opening = false;
     sending = null;
     sendBtn.textContent = 'Send';
     sendBtn.classList.remove('active');
@@ -47,17 +52,22 @@ sendBtn.onclick = async () => {
 
 const musicBtn = $<HTMLButtonElement>('music');
 let playing: Sending | null = null;
+let starting = false;
 musicBtn.onclick = async () => {
   if (playing) return playing.stop();
+  if (starting) return;
+  starting = true;
   try {
     musicBtn.classList.add('active');
     musicBtn.textContent = 'Stop music';
     const s = (playing = await send(text.value, { band: 'top', repeat: 'forever', backing: renderMelody }));
+    starting = false;
     say('Playing music with the message on top…');
     await s.done;
   } catch (e) {
     fail(e);
   } finally {
+    starting = false;
     playing = null;
     musicBtn.textContent = '♪ Music + hidden message';
     musicBtn.classList.remove('active');
@@ -93,7 +103,8 @@ async function receiveOne() {
     onHeard: (b) => say(`Receiving on ${b}…`),
     onAlert: (a) => { if (a.direction === 'heard') say('⚠ Another device raised an alert'); },
   }));
-  say('Listening…');
+  if (!wanted) r.cancel(); // Stop was pressed while the microphone was opening
+  else say('Listening…');
   try {
     const got = await r.result;
     const meta = addReceived(got.text, `${got.band} · ${new Date().toLocaleTimeString()}`);

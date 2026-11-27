@@ -1,5 +1,5 @@
 {
-  "comment": "Security levels of the bysound session layer (docs/SESSION.md section 7). Every implementation must resolve exactly these values; an explicit option always wins over the level. 'maximum' is the default. Values are copied from the original library; fields of features that are not part of the public release (energy detector, short listens) are left out.",
+  "comment": "Security levels of the bysound session layer (docs/SESSION.md section 7). Every implementation must resolve exactly these values; an explicit option always wins over the level. 'maximum' is the default.",
   "default": "maximum",
   "levels": {
     "basic": {

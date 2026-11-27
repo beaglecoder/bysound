@@ -1,9 +1,16 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+type: software
 title: "bysound: a robust near-ultrasonic data-over-sound modem"
+abstract: >-
+  Near-ultrasonic data-over-sound modem (MFSK on a 46.875 Hz grid, Reed-Solomon
+  blocks, CRC-32) with a session layer (acknowledgements, second-sender detection,
+  alerts, security levels, channel adaptation), implemented in TypeScript, Swift,
+  Kotlin and C, with a reproducible benchmark against ggwave.
 authors:
   - family-names: Gandara
     given-names: Agustin
+    affiliation: beaglecoder
 version: 4.0.0
 date-released: 2026-11-25
 license: MIT
@@ -15,3 +22,15 @@ keywords:
   - MFSK
   - Reed-Solomon
   - ESP32
+preferred-citation:
+  type: report
+  title: "bysound: incremental changes to near-ultrasonic data-over-sound, measured against ggwave"
+  authors:
+    - family-names: Gandara
+      given-names: Agustin
+      affiliation: beaglecoder
+  year: 2026
+  month: 11
+  url: "https://github.com/beaglecoder/bysound/blob/main/PAPER.md"
+  repository-code: "https://github.com/beaglecoder/bysound"
+  license: MIT

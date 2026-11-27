@@ -12,7 +12,7 @@ writeFileSync(new URL('../src/bys_tables.h', import.meta.url),
 #ifndef BYS_TABLES_H
 #define BYS_TABLES_H
 #include <stdint.h>
-/* GF(2^8), polinomio 0x11D, generator 2. Kept in flash (const). */
+/* GF(2^8), polynomial 0x11D, generator 2. Kept in flash (const). */
 static const uint8_t BYS_GF_EXP[512] = {${rows(exp, 16)}
 };
 static const uint8_t BYS_GF_LOG[256] = {${rows(log, 16)}

@@ -15,8 +15,8 @@ import io.github.beaglecoder.bysound.modem.Profile
  *
  * While sending, the track is pinned to the built-in loudspeaker even with headphones connected (they would not reach the
  * other device) and, only if that routing worked, the music volume is raised to the maximum (never when the output is a
- * headset or Bluetooth). The previous volume is restored on [stop] and on every failure path. Not thread-safe:
- * call from one thread (the main thread is fine).
+ * headset or Bluetooth). The previous volume is restored on [stop] and on every failure path. Thread-safe; the session layer
+ * plays through [playOnce] from its own thread.
  */
 class SoundSender(context: Context) {
     private val audio = context.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -74,6 +74,7 @@ class SoundSender(context: Context) {
     }
 
     /** Starts looping [text] on [band]. Replaces a previous send. */
+    @Synchronized
     fun send(text: String, band: Band = Band.TOP, profile: Profile = Profile.NORMAL, sampleRate: Int = SAMPLE_RATE) {
         stop()
         val samples = Modem.encode(text, band, profile, sampleRate)
@@ -97,6 +98,7 @@ class SoundSender(context: Context) {
     }
 
     /** Stops the loop and restores the volume. Safe to call when idle. */
+    @Synchronized
     fun stop() {
         track?.let { runCatching { it.stop() }; it.release() }
         track = null

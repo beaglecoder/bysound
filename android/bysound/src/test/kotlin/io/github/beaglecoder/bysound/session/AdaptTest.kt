@@ -1,7 +1,9 @@
 package io.github.beaglecoder.bysound.session
 
 import io.github.beaglecoder.bysound.modem.Band
+import io.github.beaglecoder.bysound.modem.Modem
 import io.github.beaglecoder.bysound.modem.Profile
+import io.github.beaglecoder.bysound.modem.TextTooLongException
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -78,6 +80,42 @@ class AdaptRulesTest {
         assertEquals(3.36, l, 0.005)
         assertEquals(7.86, ackRunSeconds(l), 0.005)
         assertEquals(10.86, receiptSeconds(l), 0.005)
+    }
+
+    @Test fun aTextTooLongForTopRobustIsPlayedNormalAndStillTimesItsAcks() {
+        val text = "a".repeat(Modem.maxPayloadBytes(Band.TOP, Profile.NORMAL)) // fits top/normal, not top/robust
+        val l = longestRepetitionSeconds(text)
+        assertTrue(l > Modem.MAX_FRAME_SECONDS)
+        assertEquals(ACK_RUN_MAX_SECONDS, ackRunSeconds(l), 0.0)
+        // The robust ladder would kick in after six repetitions: the text does not fit robust there, so it stays normal.
+        val played = ArrayList<Int>()
+        class Due(val at: Double, val fn: () -> Unit) { var cancelled = false }
+        val due = ArrayList<Due>()
+        var clock = 0.0
+        val platform = object : Platform {
+            override val sampleRate = 48000
+            override fun now() = clock
+            override fun after(seconds: Double, fn: () -> Unit): () -> Unit { val d = Due(clock + seconds, fn); due.add(d); return { d.cancelled = true } }
+            override fun play(audio: FloatArray, onEnd: () -> Unit): () -> Unit { played.add(audio.size); return after(audio.size / 48000.0, onEnd) }
+            override fun random() = 0.0
+        }
+        val reps = ArrayList<Repetition>()
+        SenderSession(text, platform, SenderOptions(band = Band.TOP, securityLevel = SecurityLevel.BASIC, ambient = false, memory = RiskMemory(),
+            timeoutSeconds = 1000.0, onRepetition = { reps.add(it) })).start()
+        while (reps.size < 9) {
+            val d = due.filter { !it.cancelled }.minByOrNull { it.at } ?: break
+            due.remove(d)
+            clock = d.at
+            d.fn()
+        }
+        assertEquals(9, reps.size)
+        assertTrue(reps.all { it.profile == Profile.NORMAL })
+        assertTrue(played.all { it == played[0] && it > 0 })
+        // Checked up front, on the caller's thread: too long for the band (or for a fixed robust profile), or empty.
+        assertThrows(TextTooLongException::class.java) { SenderSession(text + "a", platform, SenderOptions(band = Band.TOP)) }
+        assertThrows(TextTooLongException::class.java) { SenderSession(text, platform, SenderOptions(band = Band.TOP, profile = Profile.ROBUST)) }
+        assertThrows(TextTooLongException::class.java) { SenderSession(text + "a", platform, SenderOptions(channels = listOf(Band.MID, Band.TOP))) }
+        assertThrows(IllegalArgumentException::class.java) { SenderSession("", platform) }
     }
 }
 

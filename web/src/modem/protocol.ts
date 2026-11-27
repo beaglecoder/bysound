@@ -53,10 +53,12 @@ export const BANDS: Record<BandId, Band> = {
   xhigh: band('xhigh', 352, 4, 0.25),
   wide: band('wide', 320, 6, 0.2),
 };
+/** Every band, in channel-id order. */
 export const BAND_IDS = Object.keys(BANDS) as BandId[];
 
 export const samples = (seconds: number, rate: number) => Math.round(seconds * rate);
 export const symbolStart = (k: number, rate: number, b: Band) => Math.round(k * b.sym * rate);
+/** Frequency in Hz of tone `tone` (0..15) of group `group` on band `b`. */
 export const toneHz = (b: Band, group: number, tone: number) => (b.bin + group * TONES + tone) * SPACING_HZ;
 /** Band identifier in the header. */
 export const CHANNEL_IDS: Record<BandId, number> = { top: 0, high: 1, upper: 2, mid: 3, audible: 4, xhigh: 5, wide: 6 };
@@ -68,6 +70,7 @@ export const PREAMBLE_KEYS: Record<BandId, [number, number]> = {
 export const PREAMBLE_KEYS_ROBUST: Partial<Record<BandId, [number, number]>> = { top: [1, 13], high: [3, 11], upper: [0, 8], mid: [2, 9] };
 /** The bands that have a robust profile. */
 export const ROBUST_BANDS: readonly BandId[] = ['top', 'high', 'upper', 'mid'];
+/** The band has a robust profile. */
 export const hasRobust = (id: BandId) => ROBUST_BANDS.includes(id);
 /** The band with the timings of its profile: robust doubles the symbol and the window start (the receiver sets the window and step). */
 export function inProfile(b: Band, profile: Profile = 'normal'): Band {

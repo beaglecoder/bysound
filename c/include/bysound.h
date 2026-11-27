@@ -62,7 +62,7 @@ extern "C" {
 #define BYS_E_SPACE    (-9)  /* the caller's buffer is too small */
 #define BYS_E_INCOMPLETE (-10) /* missing symbols */
 
-/* Bands: the value is the band identifier carried in the header. `high` is the API's `ultrasonic`. */
+/* Bands: the value is the band identifier carried in the header. */
 typedef enum { BYS_TOP = 0, BYS_HIGH = 1, BYS_UPPER = 2, BYS_MID = 3, BYS_AUDIBLE = 4, BYS_XHIGH = 5, BYS_WIDE = 6, BYS_BAND_COUNT = 7 } bys_band_t;
 typedef enum { BYS_NORMAL = 0, BYS_ROBUST = 1 } bys_profile_t;
 /* Frame type = magic byte of the header. */
@@ -124,17 +124,19 @@ typedef struct {
   uint8_t buf[BYS_BLOCK_BYTES]; /* current block (or the whole body for reference, ack and risk) */
 } bys_frame_t;
 
-/* Payload frame: 48-byte blocks with RS(+12) and CRC-32. */
+/* Payload frame: 48-byte blocks with RS(+12) and CRC-32. BYS_E_TOO_LONG if one transmission would exceed BYS_MAX_FRAME_SECONDS.
+ * An empty text (n = 0) encodes, but receivers do not deliver an empty payload: callers should not send one. */
 int bys_frame_init_payload(bys_frame_t *f, bys_band_t band, bys_profile_t profile, const char *utf8, size_t n);
-/* Reference: fp[12] (the first 12 bytes of the payload's SHA-256) and parity set `set` (0 = A, 1 = B). */
 /* Largest packed payload (bytes after text packing, before the CRC-32) that fits in BYS_MAX_FRAME_SECONDS, or an error (BYS_E_ARG, BYS_E_PROFILE). */
 int bys_max_payload_bytes(bys_band_t band, bys_profile_t profile);
+/* Reference: fp[12] (the first 12 bytes of the payload's SHA-256) and parity set `set` (0 = A, 1 = B). */
 int bys_frame_init_reference(bys_frame_t *f, bys_band_t band, bys_profile_t profile, unsigned set, const uint8_t fp[BYS_REF_BYTES]);
 /* Ack (receipt: 0 ack, 1 receipt) with the first 4 bytes of the payload's SHA-256. Always the normal profile. */
 int bys_frame_init_ack(bys_frame_t *f, bys_band_t band, int receipt, const uint8_t hash4[4]);
 /* Ack or receipt with the "heard" nibble of the session layer (docs/SESSION.md 3.1): 0 = not stated, else robust << 3 | (band id + 1). */
 int bys_frame_init_ack_heard(bys_frame_t *f, bys_band_t band, int receipt, unsigned heard, const uint8_t hash4[4]);
-/* Duration of a frame without its gap, in microseconds. `packed_len`: packed payload bytes (payload frames only). */
+/* Duration of a frame without its gap, in microseconds. `packed_len`: packed payload bytes (payload frames only); BYS_E_TOO_LONG if
+ * it needs more than 255 blocks. Pure arithmetic: a payload longer than BYS_MAX_FRAME_SECONDS still gets its duration. */
 int bys_frame_duration_us(bys_kind_t kind, bys_band_t band, bys_profile_t profile, uint32_t packed_len, uint32_t *us);
 /* Risk: reason, source (0 sender, 1 receiver), hops, short 3-byte fingerprints. Always the normal profile. */
 int bys_frame_init_risk(bys_frame_t *f, bys_band_t band, unsigned reason, unsigned source, unsigned hops, const uint8_t own[3], const uint8_t intruder[3]);
@@ -309,7 +311,7 @@ typedef struct {
   bys_rx_t rx;
   int64_t frame_start, search_from;
   float frame_score, echo;
-  int32_t cand_idx[BYS_DEMOD_CAND];
+  uint32_t cand_idx[BYS_DEMOD_CAND];   /* step index of each candidate, modulo 2^32 (see plateau in demod.c) */
   float cand_score[BYS_DEMOD_CAND];
   uint32_t sym_us, win_start, end_off, span; /* band timings in samples (sym_us in microseconds) */
   uint16_t pool_off, bank_off, sym_next, body_read, probe_tried;

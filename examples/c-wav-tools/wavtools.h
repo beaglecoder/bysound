@@ -47,6 +47,7 @@ static int16_t *wav_read(const char *path, size_t *n_out, uint32_t *rate_out, in
         *n_out = frames; *rate_out = rate;
         break;
       }
+      if (sz > avail) break; /* a chunk that runs past the end of the file */
       pos += 8 + (size_t)sz + (sz & 1u);
     }
   }
@@ -70,7 +71,7 @@ static int wav_write(const char *path, const int16_t *pcm, size_t n, uint32_t ra
 
 /* ---------- decoding every frame of a buffer ---------- */
 #define WT_MAX_FRAMES 16
-#define WT_TEXT_MAX 4096
+#define WT_TEXT_MAX 8192 /* the longest text one transmission can carry unpacks to under 5 KB (digit pairs double) */
 typedef struct { int band, profile; unsigned corrected; int kind; char text[WT_TEXT_MAX]; double at_s; } wt_frame_t;
 typedef struct { wt_frame_t frames[WT_MAX_FRAMES]; int count; } wt_result_t;
 

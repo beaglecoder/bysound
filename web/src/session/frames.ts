@@ -3,7 +3,7 @@
 import { crc16, toSymbols, type Frame } from '../modem/codec';
 import { BANDS, BAND_IDS, CHANNEL_IDS, MAGIC_ACK, MAGIC_RISK, PREAMBLE, TONES, headerBytes, preambleSymbol, type BandId, type Profile } from '../modem/protocol';
 import { rsDecode, rsEncode } from '../modem/reedSolomon';
-import { hex, textHash } from './sha256';
+import { fromHex, hex, textHash } from './sha256';
 
 /** Reed–Solomon parity bytes of an ack and of a risk frame. */
 export const CONTROL_PARITY = 8;
@@ -54,7 +54,6 @@ export const ackId = (text: string) => payloadId(text).slice(0, 8);
 /** What a risk frame carries: 3 bytes, 6 hex characters. */
 export const shortId = (text: string) => payloadId(text).slice(0, 6);
 
-const fromHex = (s: string) => Array.from({ length: s.length >> 1 }, (_, i) => parseInt(s.slice(2 * i, 2 * i + 2), 16));
 const withCrc = (data: number[]) => { const c = crc16(data); return data.concat([c >> 8, c & 255]); };
 
 /** High nibble of the ack's first byte: 0 (not stated), or robust << 3 | (channel id + 1). */
@@ -77,12 +76,14 @@ function controlFrame(magic: number, data: number[], bandId: BandId): Frame {
   return { header, body, symbols, frameSeconds: symbols.length * b.sym, band: b };
 }
 
-/** Always the normal profile. */
+/** An ack or receipt frame (§3.1), by default on mid (ack) or high (receipt). Always the normal profile. */
 export const ackFrame = (a: AckFrame, bandId: BandId = a.receipt ? RECEIPT_BAND : ACK_BAND) => controlFrame(MAGIC_ACK, ackBytes(a), bandId);
+/** A risk frame (§3.2) on `bandId`. Always the normal profile. */
 export const riskFrame = (r: RiskFrame, bandId: BandId) => controlFrame(MAGIC_RISK, riskBytes(r), bandId);
 
 const crcOk = (d: number[]) => d.length > 2 && crc16(d.slice(0, -2)) === ((d[d.length - 2]! << 8) | d[d.length - 1]!);
 
+/** Ack data bytes (after Reed–Solomon) → the ack, or null if the CRC-16 or a field is wrong. */
 export function parseAck(data: number[]): AckFrame | null {
   if (data.length !== ACK_DATA || !crcOk(data)) return null;
   const kind = data[0]! & 15, h = data[0]! >> 4;
@@ -93,6 +94,7 @@ export function parseAck(data: number[]): AckFrame | null {
   if (!band) return null;
   return { ...ack, heard: { band, profile: h & 8 ? 'robust' : 'normal' } };
 }
+/** Risk data bytes (after Reed–Solomon) → the risk frame, or null if the CRC-16 or a field is wrong. */
 export function parseRisk(data: number[]): RiskFrame | null {
   if (data.length !== RISK_DATA || !crcOk(data)) return null;
   const reason = REASONS[data[0]! - 1], source = ROLES[data[1]! & 15];

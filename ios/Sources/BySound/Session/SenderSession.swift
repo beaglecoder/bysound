@@ -92,12 +92,17 @@ public final class SenderSession {
     private var lastEnd = -Double.infinity
     private var firstAt = 0.0
     private var stopPayload: Cancel?
+    /// Packed length of the text (payload mode): decides whether a repetition fits the robust profile.
+    private let packed: Int
     private var seen = Set<String>()
     /// Pre-listen heard a frame start or a clash.
     private var busy = false
 
-    /// Throws `ModemError` if the text cannot be sent on the first band of the ladder (too long for one transmission).
+    /// Throws `ModemError.emptyText` for an empty text, and `ModemError.exceedsMaxDuration` (payload mode) if the text does not fit one
+    /// transmission on a band the session may play (the fixed band, or every channel of the ladder) in the normal profile, or in the
+    /// fixed profile if given.
     public init(text: String, platform: SessionPlatform, options: SenderOptions = SenderOptions()) throws {
+        if text.isEmpty { throw ModemError.emptyText }
         self.text = text
         self.platform = platform
         self.options = options
@@ -111,10 +116,17 @@ public final class SenderSession {
         case .store(let c): store = c
         }
         own = (Ids.shortId(text), Ids.ackId(text), Ids.fingerprint(text))
-        let chain = options.channels?.isEmpty == false ? options.channels! : Adapt.defaultChannels
-        band = options.band ?? chain[0]
+        let bands = options.band.map { [$0] } ?? (options.channels?.isEmpty == false ? options.channels! : Adapt.defaultChannels)
+        band = bands[0]
         s = Scheduler(platform)
-        if options.mode == .payload { _ = try Codec.payloadFrame(text, band: band, profile: options.profile ?? .normal) }
+        packed = options.mode == .payload ? TextPacking.pack(text).count : 0
+        if options.mode == .payload {
+            for b in bands {
+                let p: Profile = options.profile == .robust && b.hasRobust ? .robust : .normal
+                let max = Modem.maxPayloadBytes(band: b, profile: p)
+                if packed > max { throw ModemError.exceedsMaxDuration(packedBytes: packed, maxPackedBytes: max) }
+            }
+        }
     }
 
     public func start() {
@@ -210,15 +222,17 @@ public final class SenderSession {
         }
         onChannel += 1
         let band = route[hop]
-        return (band, ladder.next(band), mode == .reference ? sent % 2 : 0)
+        var profile = ladder.next(band)
+        // A text that fits the normal profile may not fit the robust one (twice the airtime): the normal profile is played then.
+        if profile == .robust && mode == .payload && packed > Modem.maxPayloadBytes(band: band, profile: .robust) { profile = .normal }
+        return (band, profile, mode == .reference ? sent % 2 : 0)
     }
 
     private func render(_ band: Band, _ profile: Profile, _ set: Int) -> [Float] {
         let key = "\(band)/\(profile)/\(set)/\(level)"
         if let a = audio[key] { return a }
-        // A text that fits the normal profile may not fit the robust one (twice the airtime): the normal profile is played then.
-        let a = (try? renderRepetition(text: text, mode: mode, band: band, rate: platform.sampleRate, level: level, set: set, profile: profile))
-            ?? (try? renderRepetition(text: text, mode: mode, band: band, rate: platform.sampleRate, level: level, set: set, profile: .normal)) ?? []
+        // The length was checked in init; what can still fail is a band above Nyquist at this rate: it plays nothing.
+        let a = (try? renderRepetition(text: text, mode: mode, band: band, rate: platform.sampleRate, level: level, set: set, profile: profile)) ?? []
         audio[key] = a
         return a
     }

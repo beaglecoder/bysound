@@ -57,6 +57,7 @@ export type SessionErrorCode =
   /** Receiver: a reference frame was heard and there is no resolver. */
   | 'NO_RESOLVER';
 
+/** Why a session failed: `code` says what happened, `alert` is the risk frame involved (emitted or heard), if any. */
 export class SessionError extends Error {
   constructor(readonly code: SessionErrorCode, message: string, readonly alert?: Alert, options?: { cause?: unknown }) {
     super(message, options);

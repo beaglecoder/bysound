@@ -43,6 +43,10 @@ export interface Confirmation {
   uncoveredSeconds: number;
 }
 
+/**
+ * The receiver state machine (docs/SESSION.md §6). Platform-independent: `receiveSession` wires it to Web Audio; tests drive it on
+ * simulated air. Call start(), feed it what the microphone hears with hear(), read `result`, then call confirmed() before acting.
+ */
 export class ReceiverSession {
   state: ReceiverState = 'listening';
   readonly result: Promise<Received>;

@@ -89,6 +89,7 @@ static int16_t *read_wav(const char *path, size_t *n_out, uint32_t *rate_out) {
       *rate_out = rate;
       break;
     }
+    if (sz > avail) break; /* a chunk that runs past the end of the file */
     pos += 8 + (size_t)sz + (sz & 1u);
   }
   if (!out && fmt == 0) fprintf(stderr, "%s: no fmt chunk\n", path);
@@ -116,6 +117,7 @@ static int cmd_encode(int argc, char **argv) {
     else return usage();
   }
   if (!text || !out || repeat < 1) return usage();
+  if (!*text) { fputs("nothing to send: the text is empty (receivers do not deliver an empty payload)\n", stderr); return 2; }
 
   bys_tx_cfg_t cfg;
   bys_tx_cfg_default(&cfg);
@@ -128,7 +130,7 @@ static int cmd_encode(int argc, char **argv) {
               BYS_MAX_FRAME_SECONDS, BAND_NAMES[band], PROFILE_NAMES[profile], bys_max_payload_bytes((bys_band_t)band, (bys_profile_t)profile), bys_max_payload_bytes((bys_band_t)band, (bys_profile_t)profile));
       return 1;
     }
-    fprintf(stderr, "cannot encode: error %d (%s)\n", r, r == BYS_E_PROFILE ? "robust exists only for top, high, upper and mid" : r == BYS_E_RATE ? "sample rate too low for this band" : r == BYS_E_TOO_LONG ? "text too long" : "see bysound.h");
+    fprintf(stderr, "cannot encode: error %d (%s)\n", r, r == BYS_E_PROFILE ? "robust exists only for top, high, upper and mid" : r == BYS_E_RATE ? "sample rate not supported for this band" : "see bysound.h");
     return 1;
   }
   const size_t lead = rate / 5, one = bys_tx_total_samples(&tx), total = lead + one * (size_t)repeat;

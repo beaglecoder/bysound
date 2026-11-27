@@ -40,9 +40,9 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         val pad = (16 * resources.displayMetrics.density).toInt()
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(pad, pad * 2, pad, pad) }
-        name = field("Name", InputType.TYPE_TEXT_FLAG_CAP_WORDS)
+        name = field("Name", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_WORDS)
         phone = field("Phone (optional)", InputType.TYPE_CLASS_PHONE)
-        email = field("Email (optional)", InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
+        email = field("Email (optional)", InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS)
         send = Button(this).apply { text = "Send by sound"; setOnClickListener { if (sending == null) withMic(::startSend) else sending?.stop() } }
         listen = Button(this).apply { text = "Listen"; setOnClickListener { if (receiving == null) withMic(::startListen) else receiving?.cancel() } }
         status = TextView(this)
@@ -99,6 +99,13 @@ class MainActivity : Activity() {
             }
             r.finished.whenComplete { _, _ -> ui { receiving = null; listen.text = "Listen" } }
         } catch (e: Exception) { status.text = "Cannot listen: ${e.message}" }
+    }
+
+    /** Leaving the screen releases the microphone and the speaker. */
+    override fun onDestroy() {
+        sending?.stop()
+        receiving?.cancel()
+        super.onDestroy()
     }
 
     /** ACTION_INSERT opens the Contacts app prefilled; nothing is saved until the person taps Save there. */

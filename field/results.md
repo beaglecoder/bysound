@@ -58,9 +58,9 @@ All noise attempts: 99/146 (68 %, 95 % CI 60–75). Quiet baseline: 26/26 (100 %
 | scenario | read / attempts | high level only | median SNR of reads (dB) | median read time (s) |
 |---|---:|---:|---:|---:|
 | Bar (voices, dishes) | 30/30 (100 %) | 26/26 (100 %) | 21.5 | 6.6 |
-| Audible alarm (2-6 kHz) | 6/6 (100 %) | 2/2 (100 %) | 40.2 | 9.6 |
+| Audible alarm (2–6 kHz) | 6/6 (100 %) | 2/2 (100 %) | 40.2 | 9.6 |
 | Traffic | 6/6 (100 %) | 2/2 (100 %) | 18.6 | 11.0 |
-| Loud whistle (18-19.5 kHz tones) | 6/6 (100 %) | 2/2 (100 %) | 43.2 | 5.6 |
+| Loud whistle (18–19.5 kHz tones) | 6/6 (100 %) | 2/2 (100 %) | 43.2 | 5.6 |
 | Cutlery | 5/6 (83 %) | 1/2 (50 %) | 15.1 | 12.0 |
 | Music | 23/30 (77 %) | 20/26 (77 %) | 23.5 | 6.3 |
 | Hair dryer | 14/28 (50 %) | 12/24 (50 %) | 17.1 | 6.6 |

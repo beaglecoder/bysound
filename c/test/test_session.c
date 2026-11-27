@@ -369,6 +369,36 @@ static void test_sender_timeout_stop(void) {
   c = scfg(&A, TEXT, BYS_SEC_BASIC); c.ambient = 0;
   bys_sender_start(&A.snd, &c, &A.io, 0);
   CHECK(A.nfail == 1 && A.err == BYS_SERR_PLAY && bys_sender_state(&A.snd) == BYS_SS_DONE);
+  /* bad band or profile */
+  dev_init(&A, "A");
+  c = scfg(&A, TEXT, BYS_SEC_BASIC); c.ambient = 0; c.band = -2; CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_E_ARG);
+  c.band = -1; c.profile = 2; CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_E_ARG);
+  /* a text too long for a band the session may play is refused before anything plays (reference mode sends only the fingerprint) */
+  {
+    static char longtxt[3000];
+    const int maxn = bys_max_payload_bytes(BYS_TOP, BYS_NORMAL), maxr = bys_max_payload_bytes(BYS_TOP, BYS_ROBUST);
+    memset(longtxt, 'a', sizeof longtxt);
+    CHECK(maxn > maxr && maxn < (int)sizeof longtxt);
+    dev_init(&A, "A");
+    c = scfg(&A, TEXT, BYS_SEC_BASIC); c.ambient = 0; c.text = longtxt; c.text_len = (size_t)maxn + 1;
+    CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_E_TOO_LONG && A.nplay == 0);
+    c.band = BYS_MID; CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_OK);
+    dev_init(&A, "A");
+    c.band = -1; c.reference = 1; CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_OK);
+    dev_init(&A, "A");
+    c.reference = 0; c.band = BYS_TOP; c.profile = BYS_ROBUST; c.text_len = (size_t)maxr + 1;
+    CHECK(bys_sender_start(&s, &c, &A.io, 0) == BYS_E_TOO_LONG);
+    /* one that fits normal but not robust keeps the normal profile when the ladder goes robust */
+    dev_init(&A, "A");
+    c.profile = -1; c.text_len = (size_t)(maxn + maxr) / 2; c.timeout_ms = 1000000;
+    CHECK(bys_sender_start(&A.snd, &c, &A.io, 0) == BYS_OK);
+    uint32_t t = 0;
+    for (int i = 0; i < 9; i++) { t += 20000; bys_sender_play_done(&A.snd, t); t += 2000; bys_sender_tick(&A.snd, t); }
+    int robust = 0;
+    for (int i = 0; i < A.nrep && i < 64; i++) robust += A.reps[i].profile == BYS_ROBUST;
+    CHECK(A.nrep >= 8 && robust == 0 && A.nfail == 0 && A.nplay == A.nrep);
+    bys_sender_stop(&A.snd, t);
+  }
 }
 
 static void test_sender_prelisten(void) {
@@ -616,6 +646,15 @@ static void test_receiver(void) {
   bys_receiver_hear(&A.rcv, 5000, ev_simple(&E, BYS_EV_HEADER, BYS_UPPER)); /* 5000 + 2500 > 1000 + 6000: capped */
   bys_receiver_tick(&A.rcv, 6999); CHECK(A.nrecv == 0); bys_receiver_tick(&A.rcv, 7000); CHECK(A.nrecv == 1);
   /* a header while delivering is ignored by acks: no header events for acks exist (the demodulator does not raise them) */
+  /* the text buffer must hold the text and its NUL; packed bytes that are not a valid text are not a frame */
+  dev_init(&A, "R"); c = rcfg(&A, BYS_SEC_BASIC); c.text_cap = strlen(TEXT); bys_receiver_start(&A.rcv, &c, &A.io, 0);
+  bys_receiver_hear(&A.rcv, 1000, ev_payload(&E, TEXT, BYS_TOP, 0)); CHECK(A.nrecv == 0 && A.err == BYS_SERR_NO_SPACE);
+  dev_init(&A, "R"); c = rcfg(&A, BYS_SEC_BASIC); c.text_cap = strlen(TEXT) + 1; bys_receiver_start(&A.rcv, &c, &A.io, 0);
+  bys_receiver_hear(&A.rcv, 1000, ev_payload(&E, TEXT, BYS_TOP, 0)); CHECK(A.nrecv == 1 && !strcmp(A.rtext, TEXT));
+  dev_init(&A, "R"); c = rcfg(&A, BYS_SEC_BASIC); bys_receiver_start(&A.rcv, &c, &A.io, 0);
+  ev_payload(&E, TEXT, BYS_TOP, 0); E.packed[0] = 0x01; /* not a packing byte */
+  bys_receiver_hear(&A.rcv, 1000, &E.ev); CHECK(A.nrecv == 0 && A.nfail == 0 && bys_receiver_state(&A.rcv) == BYS_RS_LISTENING);
+  bys_receiver_hear(&A.rcv, 1500, ev_payload(&E, TEXT, BYS_TOP, 0)); CHECK(A.nrecv == 1);
 
   /* timeout while nothing is heard: TIMEOUT without a risk frame */
   dev_init(&A, "R"); c = rcfg(&A, BYS_SEC_STANDARD); c.timeout_ms = 5000; bys_receiver_start(&A.rcv, &c, &A.io, 100);

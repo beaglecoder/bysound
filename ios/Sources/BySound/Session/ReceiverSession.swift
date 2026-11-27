@@ -2,6 +2,7 @@
 // that keeps watching for other emitters until the app calls `confirmed()`. A plain state machine over `SessionPlatform` and `AirEvent`s.
 import Foundation
 
+/// Options of a session receiver. The defaults are those of the TypeScript `receiveSession`.
 public struct ReceiverOptions {
     /// Fails with `.timeout` if no frame was heard by then.
     public var timeoutSeconds = 60.0
@@ -30,12 +31,14 @@ public struct ReceiverOptions {
 
 public enum ReceiverState: String, Sendable { case listening, finalListen = "final-listen", delivered, closed, failed }
 
+/// The data a receiver delivered: the text, where it was heard and whether it travelled itself or as a reference.
 public struct Received: Equatable {
     public var text: String
     public var band: Band
     public var via: ContentMode
 }
 
+/// What the confirm gate saw (see `ReceiverSession.confirmed()`).
 public struct Confirmation: Equatable {
     public enum Watch: String, Sendable {
         /// Watched until now.

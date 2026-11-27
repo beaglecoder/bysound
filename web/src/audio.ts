@@ -6,7 +6,9 @@ import { ReceiverHost, type Analyzer, type AnalyzerEvents, type LevelEvent } fro
 import type { Heard } from './modem/receiver';
 
 export interface EncodeOptions {
+  /** Default 'top'. */
   band?: BandId;
+  /** Default 'normal'. 'robust' exists on top, high, upper and mid only (elsewhere the normal profile is used). */
   profile?: Profile;
   /** Output sample rate in Hz. Default 48000. */
   sampleRate?: number;
@@ -14,14 +16,21 @@ export interface EncodeOptions {
   level?: number;
 }
 
-/** One frame of audio (preamble, header, data) followed by a short gap, as mono Float32 in -1..1. */
+/**
+ * One frame of audio (preamble, header, data) followed by a short gap, as mono Float32 in -1..1.
+ * Throws a RangeError for an empty text, a level outside 0..1 or a sample rate too low for the band, and a TooLongError if the
+ * text does not fit one transmission (see maxPayloadBytes).
+ */
 export function encode(text: string, { band = 'top', profile = 'normal', sampleRate = 48000, level = 1 }: EncodeOptions = {}): Float32Array {
+  if (!text) throw new RangeError('Nothing to send: the text is empty');
+  if (!(level >= 0 && level <= 1)) throw new RangeError(`level must be between 0 and 1 (got ${level})`);
   const frame = payloadFrame(text, band, profile);
   return fitLevel(render(frame.symbols, frame.band, sampleRate, GAP_SECONDS), level);
 }
 
-/** Decodes recorded audio offline (for example a WAV file). Returns every frame heard, in order. */
+/** Decodes recorded audio offline (for example a WAV file). Returns every frame heard, in order. `sampleRate`: 8000 Hz or more. */
 export function decode(samples: Float32Array, sampleRate: number): Heard[] {
+  if (!(Number.isFinite(sampleRate) && sampleRate >= 8000)) throw new RangeError(`sampleRate must be at least 8000 Hz (got ${sampleRate})`);
   const heard: Heard[] = [];
   const host = new ReceiverHost(sampleRate, { onFrame: (h) => heard.push(h) });
   const feed = (x: Float32Array) => { for (let i = 0; i < x.length; i += 1024) host.feed(x.subarray(i, Math.min(i + 1024, x.length))); };
@@ -33,19 +42,25 @@ export function decode(samples: Float32Array, sampleRate: number): Heard[] {
 
 /** Thrown for anything the browser refuses: no Web Audio, no microphone permission, no user gesture. */
 export class SoundError extends Error {
-  constructor(public code: 'UNSUPPORTED' | 'MIC_DENIED', message: string, public cause?: unknown) { super(message); }
+  constructor(public code: 'UNSUPPORTED' | 'MIC_DENIED', message: string, public cause?: unknown) {
+    super(message);
+    this.name = 'SoundError';
+  }
 }
 
 type ContextClass = typeof AudioContext;
-function newContext(): AudioContext {
+/** An AudioContext at the device rate. Create it synchronously inside a user gesture. */
+export function newContext(): AudioContext {
   const Ctx = globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: ContextClass }).webkitAudioContext;
   if (!Ctx) throw new SoundError('UNSUPPORTED', 'This browser has no Web Audio');
   return new Ctx(); // device sample rate: asking for another one makes the browser resample, which hurts near 20 kHz
 }
 
-const FADE_SECONDS = 0.015; // stopping a loud high tone abruptly leaves an audible broadband click; a short fade avoids it
+/** Stopping a loud high tone abruptly leaves an audible broadband click; a short fade avoids it. */
+export const FADE_SECONDS = 0.015;
 const RESUME_WAIT_MS = 1500;
-const resumed = (ctx: AudioContext) => Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, RESUME_WAIT_MS))]);
+/** Resolves once the context resumed, or after RESUME_WAIT_MS (some browsers never settle resume() without a gesture). */
+export const resumed = (ctx: AudioContext) => Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, RESUME_WAIT_MS))]);
 
 /** Repeats `frame` end to end over the length of `backing` (whole frames only) and adds the two. */
 export function mix(frame: Float32Array, backing: Float32Array): Float32Array {
@@ -55,11 +70,11 @@ export function mix(frame: Float32Array, backing: Float32Array): Float32Array {
 }
 
 export interface SendOptions extends EncodeOptions {
-  /** How many times to play the frame, or 'forever' until stop(). Default 1. */
+  /** How many times to play the frame (a positive integer), or 'forever' until stop(). Default 1. */
   repeat?: number | 'forever';
   /**
-   * Music (or any sound, peak <= 0.5) to play underneath. The frame is repeated over it; the music loops.
-   * The message stays inaudible on the 'top' band because the music lives far below it.
+   * Music (or any sound, peak <= 0.5) to play underneath. The frame is repeated over it (at level 0.5, `level` is ignored); the music
+   * loops. The message stays inaudible on the 'top' band because the music lives far below it.
    */
   backing?: (sampleRate: number) => Float32Array;
 }
@@ -74,12 +89,19 @@ export interface Sending {
  * For best range turn the device volume up and use the speaker, not headphones.
  */
 export async function send(text: string, options: SendOptions = {}): Promise<Sending> {
+  const repeat = options.repeat ?? 1;
+  if (repeat !== 'forever' && !(Number.isInteger(repeat) && repeat >= 1)) throw new RangeError(`repeat must be a positive integer or 'forever' (got ${repeat})`);
   const ctx = newContext(); // created synchronously, inside the gesture
   const ready = resumed(ctx);
-  const audio = options.backing ? mix(encode(text, { ...options, level: 0.5, sampleRate: ctx.sampleRate }), options.backing(ctx.sampleRate)) : encode(text, { ...options, sampleRate: ctx.sampleRate });
+  let audio: Float32Array;
+  try {
+    audio = options.backing ? mix(encode(text, { ...options, level: 0.5, sampleRate: ctx.sampleRate }), options.backing(ctx.sampleRate)) : encode(text, { ...options, sampleRate: ctx.sampleRate });
+  } catch (e) {
+    void ctx.close().catch(() => undefined); // a too-long text must not leak the context (browsers allow only a few)
+    throw e;
+  }
   await ready;
-  if (ctx.state !== 'running') { void ctx.close(); throw new SoundError('UNSUPPORTED', 'The browser did not start audio: tap a button first'); }
-  const repeat = options.repeat ?? 1;
+  if (ctx.state !== 'running') { void ctx.close().catch(() => undefined); throw new SoundError('UNSUPPORTED', 'The browser did not start audio: tap a button first'); }
   const buffer = ctx.createBuffer(1, audio.length, ctx.sampleRate);
   buffer.getChannelData(0).set(audio);
   const gain = ctx.createGain();
@@ -119,6 +141,7 @@ export interface ListenOptions {
   onSamples?(samples: Float32Array): void;
 }
 export interface Listening {
+  /** Releases the microphone, the worker and the audio context. Safe to call more than once. */
   stop(): void;
   sampleRate: number;
 }
@@ -193,9 +216,15 @@ export async function listen({ onFrame, onLevel, onHeader, onClash, onSamples }:
   }
   await resumed(ctx);
   if (ctx.state !== 'running') { stopTracks(); throw fail('UNSUPPORTED', 'The browser did not start audio: tap a button first'); }
+  let source: MediaStreamAudioSourceNode, tap: AudioWorkletNode;
+  try {
+    source = ctx.createMediaStreamSource(stream);
+    tap = new AudioWorkletNode(ctx, 'sound-tap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
+  } catch (e) {
+    stopTracks();
+    throw fail('UNSUPPORTED', 'Could not start the audio processor', e);
+  }
   const analysis = analyzer(ctx.sampleRate, { onFrame, onLevel, onHeader, onClash });
-  const source = ctx.createMediaStreamSource(stream);
-  const tap = new AudioWorkletNode(ctx, 'sound-tap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1 });
   tap.port.onmessage = (e) => {
     onSamples?.(e.data as Float32Array);
     analysis.feed(e.data as Float32Array);
@@ -204,9 +233,12 @@ export async function listen({ onFrame, onLevel, onHeader, onClash, onSamples }:
   mute.gain.value = 0;
   source.connect(tap);
   tap.connect(mute).connect(ctx.destination);
+  let stopped = false;
   return {
     sampleRate: ctx.sampleRate,
     stop() {
+      if (stopped) return;
+      stopped = true;
       tap.port.onmessage = null;
       source.disconnect();
       tap.disconnect();

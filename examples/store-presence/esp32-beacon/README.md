@@ -1,6 +1,6 @@
 # store-presence / esp32-beacon
 
-ESP-IDF project (ESP32-S3) that plays the presence token of [`../README.md`](../README.md) on the `top` band every few seconds. Transmit only: no microphone, no session, no acknowledgements. It reuses the `bysound` component (`esp32/components/bysound`, the C library in `c/`) and the speaker pins and output level from `esp32/main/Kconfig.projbuild`; the token is computed with mbedTLS (`mbedtls_md_hmac`, SHA-256) and matches `../token.ts`.
+ESP-IDF project (ESP32-S3) that plays the presence token of [`../README.md`](../README.md) on the `top` channel every few seconds. Transmit only: no microphone, no session, no acknowledgements. It reuses the `bysound` component (`esp32/components/bysound`, the C library in `c/`) and the speaker pins and output level from `esp32/main/Kconfig.projbuild`; the token is computed with mbedTLS (`mbedtls_md_hmac`, SHA-256) and matches `../token.ts`.
 
 Hardware: an I2S amplifier (MAX98357A) with a speaker, wired as in `esp32/README.md` (the microphone is not used here).
 

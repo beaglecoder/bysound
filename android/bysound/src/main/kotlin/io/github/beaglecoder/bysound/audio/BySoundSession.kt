@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import io.github.beaglecoder.bysound.modem.Level
 import io.github.beaglecoder.bysound.session.AirEvent
+import io.github.beaglecoder.bysound.session.AsyncResolver
 import io.github.beaglecoder.bysound.session.Calibration
 import io.github.beaglecoder.bysound.session.CalibrationStore
 import io.github.beaglecoder.bysound.session.Confirmation
@@ -42,6 +43,7 @@ internal class AndroidPlatform(private val handler: Handler, private val sender:
         return { handler.removeCallbacks(r) }
     }
     override fun play(audio: FloatArray, onEnd: () -> Unit): () -> Unit {
+        if (audio.isEmpty()) return after(0.0, onEnd) // nothing to play (an AudioTrack cannot be empty)
         val stopTrack = sender.playOnce(audio, sampleRate)
         val cancel = after(audio.size.toDouble() / sampleRate + 0.03) { stopTrack(); onEnd() }
         return { cancel(); stopTrack() }
@@ -50,13 +52,15 @@ internal class AndroidPlatform(private val handler: Handler, private val sender:
 }
 
 /** Everything one session owns: a handler thread (all the state machine runs there), the loudspeaker and the microphone. */
-internal class SessionRuntime(context: Context, onLevel: ((Level) -> Unit)?, onError: ((String) -> Unit)?) {
+internal class SessionRuntime(context: Context, onLevel: ((Level) -> Unit)?) {
     private val thread = HandlerThread("bysound-session").also { it.start() }
     val handler = Handler(thread.looper)
     val speaker = SoundSender(context)
     val platform: Platform = AndroidPlatform(handler, speaker)
-    private val mic = SoundListener(context, Ears.adapter { e -> handler.post { hear?.invoke(e) } }, onLevel, onError)
+    private val mic = SoundListener(context, Ears.adapter { e -> handler.post { hear?.invoke(e) } }, onLevel) { handler.post { micLost?.invoke() } }
     @Volatile var hear: ((AirEvent) -> Unit)? = null
+    /** The microphone stopped by itself (read error): runs on the session thread. */
+    @Volatile var micLost: (() -> Unit)? = null
 
     fun open() {
         speaker.holdVolume()
@@ -102,24 +106,38 @@ class ReceiveSession internal constructor(private val rt: SessionRuntime, privat
 /**
  * Sends [text] as a session: listens first (other emitters, noise per channel), repeats it with listen windows down a channel ladder
  * until the receiver acknowledges, remembers where it was read (SharedPreferences, unless you pass your own store) and watches for
- * other emitters. Needs RECORD_AUDIO. Throws [IllegalStateException] if the microphone cannot be opened.
+ * other emitters. Needs RECORD_AUDIO. Throws [io.github.beaglecoder.bysound.modem.TextTooLongException] if the text does not fit one
+ * transmission on every channel the session may use, [IllegalStateException] if the microphone cannot be opened. If the microphone fails later, the
+ * session stops ([delivered][SendSession.delivered] fails with STOPPED).
  */
 fun sendSession(context: Context, text: String, options: SenderOptions = SenderOptions(), onLevel: ((Level) -> Unit)? = null): SendSession {
-    val rt = SessionRuntime(context, onLevel, null)
+    val rt = SessionRuntime(context, onLevel)
     val o = if (options.calibration === sharedCalibrationStore) options.copy(calibration = SharedPreferencesCalibrationStore(context)) else options
-    val session = SenderSession(text, rt.platform, o)
+    val session = try { SenderSession(text, rt.platform, o) } catch (e: Exception) { rt.close(); throw e }
     rt.hear = { session.hear(it) }
+    rt.micLost = { session.stop() }
     rt.open()
     rt.handler.post { session.start() }
     session.finished.whenComplete { _, _ -> rt.close() }
     return SendSession(rt, session)
 }
 
-/** Listens for one session: delivers the data, acknowledges it by sound and keeps the confirm gate. Needs RECORD_AUDIO. */
+/**
+ * Listens for one session: delivers the data, acknowledges it by sound and keeps the confirm gate. Needs RECORD_AUDIO. Throws
+ * [IllegalStateException] if the microphone cannot be opened; if it fails later, the session is cancelled (CANCELLED). An
+ * [ReceiverOptions.resolveAsync] may complete on any thread: its answer is handed to the session thread.
+ */
 fun receiveSession(context: Context, options: ReceiverOptions = ReceiverOptions(), onLevel: ((Level) -> Unit)? = null): ReceiveSession {
-    val rt = SessionRuntime(context, onLevel, null)
-    val session = ReceiverSession(rt.platform, options)
+    val rt = SessionRuntime(context, onLevel)
+    val async = options.resolveAsync
+    val o = if (async == null) options else options.copy(resolveAsync = AsyncResolver { fp ->
+        val out = CompletableFuture<String?>()
+        async.resolve(fp).whenComplete { v, e -> rt.handler.post { if (e != null) out.completeExceptionally(e) else out.complete(v) } }
+        out
+    })
+    val session = ReceiverSession(rt.platform, o)
     rt.hear = { session.hear(it) }
+    rt.micLost = { session.cancel() }
     rt.open()
     rt.handler.post { session.start() }
     session.finished.whenComplete { _, _ -> rt.close() }

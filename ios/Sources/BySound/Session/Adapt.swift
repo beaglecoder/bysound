@@ -85,7 +85,7 @@ public final class UserDefaultsCalibrationStore: CalibrationStore {
     private let fallback = MemoryCalibrationStore()
     public init(defaults: UserDefaults = .standard, key: String = "bysound.calibration") { self.defaults = defaults; self.key = key }
     public func load() -> Calibration? {
-        if let data = defaults.data(forKey: key), let c = try? JSONDecoder().decode(Calibration.self, from: data), c.uses >= 0 { return c }
+        if let data = defaults.data(forKey: key), let c = try? JSONDecoder().decode(Calibration.self, from: data), c.uses >= 0, c.band != .audible { return c }
         return fallback.load()
     }
     public func save(_ c: Calibration?) {

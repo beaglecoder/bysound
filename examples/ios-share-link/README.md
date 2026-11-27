@@ -2,8 +2,8 @@
 
 A minimal SwiftUI app: send a URL by sound, receive one, and open it only after the confirm gate and a check.
 
-- **Send:** type a link, tap *Send by sound*. It runs a session with the band on automatic (the ladder picks it) and shows `Delivered on <band>` when the receiver acknowledges.
-- **Receive:** tap *Listen*. When the data is in, the app calls `confirmed()` (throws if another emitter or a risk frame appeared meanwhile), then shows the text, the band it was read on and, if it is an `http`/`https` URL with a host, its host in bold and an *Open* button.
+- **Send:** type a link, tap *Send by sound*. It runs a session with the channel chosen automatically (channel ladder) and shows `Delivered on <channel>` when the receiver acknowledges.
+- **Receive:** tap *Listen*. When the data is in, the app calls `confirmed()` (throws if another emitter or a risk frame appeared meanwhile), then shows the text, the channel it was read on and, if it is an `http`/`https` URL with a host, its host in bold and an *Open* button.
 
 It uses the `BySound` package by relative path (`../..`, the root `Package.swift`), so the repo is all you need. No network, no keys, no signing team.
 
@@ -17,7 +17,7 @@ xcodebuild -project examples/ios-share-link/ShareLink.xcodeproj -scheme ShareLin
 
 The microphone and speaker only work on a real device; use a loud speaker, not headphones or Bluetooth.
 
-## Honesty note
+## Security note
 
 Sound is not secret and not authenticated: anyone in earshot can send you any text, and the confirm gate only says that no second emitter or risk frame was heard, not who sent it. So the app never opens what it heard blindly:
 

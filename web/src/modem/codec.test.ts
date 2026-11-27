@@ -44,15 +44,15 @@ describe('codes', () => {
     expect(rsDecode(bad, 12)).toBeNull();
   });
   it('a block is corrected and the payload assembled', () => {
-    const f = payloadFrame('hola 1234 ñ', 'upper');
+    const f = payloadFrame('hello 1234 ñ', 'upper');
     const body = f.body.slice();
     body[3]! ^= 0xff;
     const r = decodeBlock(body);
     expect(r?.corrected).toBe(1);
-    expect(assemble([r!.block.chunk])).toBe('hola 1234 ñ');
+    expect(assemble([r!.block.chunk])).toBe('hello 1234 ñ');
   });
   it('the reference checks out with a single set, and with both together', () => {
-    const fp = fingerprint('dato');
+    const fp = fingerprint('data');
     const a = referenceFrame(fp, 'top', 0).body, b = referenceFrame(fp, 'top', 1).body;
     const data = a.slice(0, 14);
     expect(decodeMother(data, [a.slice(14), null])?.fingerprint).toEqual(fp);

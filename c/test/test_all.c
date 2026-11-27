@@ -207,6 +207,12 @@ static void test_max_duration(void) {
       CHECK(bys_tx_total_samples(&tx) <= 30u * 44100u);
       CHECK(bys_frame_init_payload(&f, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m + 1) == BYS_E_TOO_LONG);
       CHECK(bys_tx_init_payload(&tx, NULL, (bys_band_t)b, (bys_profile_t)pr, txt, (size_t)m + 1) == BYS_E_TOO_LONG);
+      /* the duration is arithmetic: past the cap it is still given, past 255 blocks there is no such frame */
+      uint32_t us = 0;
+      CHECK(bys_frame_duration_us(BYS_KIND_PAYLOAD, (bys_band_t)b, (bys_profile_t)pr, (uint32_t)m + 1, &us) == BYS_OK && us + BYS_GAP_MS * 1000u > 30000000u);
+      CHECK(bys_frame_duration_us(BYS_KIND_PAYLOAD, (bys_band_t)b, (bys_profile_t)pr, BYS_BLOCK_DATA * BYS_MAX_BLOCKS - 4, &us) == BYS_OK);
+      CHECK(bys_frame_duration_us(BYS_KIND_PAYLOAD, (bys_band_t)b, (bys_profile_t)pr, BYS_BLOCK_DATA * BYS_MAX_BLOCKS - 3, &us) == BYS_E_TOO_LONG);
+      CHECK(bys_frame_duration_us(BYS_KIND_PAYLOAD, (bys_band_t)b, (bys_profile_t)pr, 0xffffffffu, &us) == BYS_E_TOO_LONG);
     }
 }
 

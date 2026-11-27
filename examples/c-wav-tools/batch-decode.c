@@ -21,8 +21,11 @@ int main(int argc, char **argv) {
   size_t count = 0;
   for (struct dirent *e; (e = readdir(d));) {
     if (!is_wav(e->d_name)) continue;
-    names = realloc(names, (count + 1) * sizeof *names);
-    names[count++] = strdup(e->d_name);
+    char **grown = realloc(names, (count + 1) * sizeof *names);
+    char *name = grown ? strdup(e->d_name) : NULL;
+    if (!name) { fputs("out of memory\n", stderr); closedir(d); free(grown ? grown : names); return 2; }
+    names = grown;
+    names[count++] = name;
   }
   closedir(d);
   if (count) qsort(names, count, sizeof *names, cmp);

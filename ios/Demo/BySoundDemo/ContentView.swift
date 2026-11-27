@@ -7,7 +7,7 @@ struct Row: Identifiable {
     let detail: String
 }
 
-/// "Auto" runs a session (pre-listen, channel ladder, ack, confirm gate); a band plays that band in a loop, like before.
+/// "Auto" runs a session (pre-listen, channel ladder, ack, confirm gate); a band plays that band in a loop, with no session.
 enum BandChoice: Hashable {
     case auto
     case band(Band)

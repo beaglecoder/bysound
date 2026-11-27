@@ -3,11 +3,13 @@
 import AVFoundation
 
 /// Taps the microphone (measurement mode, no voice processing) and runs a `Listener` (or `Ears`, see `onAir`) on a background queue.
-/// Callbacks arrive on the main queue.
+/// Call `start()` and `stop()` on the main queue; callbacks arrive there too, and none arrives after `stop()`.
 public final class SoundListener {
     private let engine = AVAudioEngine()
     private let queue = DispatchQueue(label: "BySound.listener", qos: .userInitiated)
     private var ears: Ears?
+    /// Bumped by every start and stop: events of an older run still queued for the main queue are dropped.
+    private var generation = 0
 
     /// A text (or a reference fingerprint, see `Heard.kind`) was decoded.
     public var onFrame: ((Heard) -> Void)?
@@ -24,6 +26,7 @@ public final class SoundListener {
 
     private var observers: [NSObjectProtocol] = []
 
+    /// True while the microphone is tapped.
     public private(set) var isListening = false
 
     public init() {}
@@ -52,14 +55,18 @@ public final class SoundListener {
         }
         let rate = format.sampleRate
         sampleRate = rate
+        generation += 1
+        let run = generation
         let ears = Ears(sampleRate: rate, robust: true, control: onAir != nil) { [weak self] e in
             DispatchQueue.main.async {
-                guard let self = self else { return }
+                guard let self = self, self.generation == run else { return }
                 if case .frame(let h) = e { self.onFrame?(h) }
                 self.onAir?(e)
             }
         }
-        ears.onLevel = { [weak self] l in DispatchQueue.main.async { self?.onLevel?(l) } }
+        ears.onLevel = { [weak self] l in
+            DispatchQueue.main.async { if let self = self, self.generation == run { self.onLevel?(l) } }
+        }
         self.ears = ears
 
         input.installTap(onBus: 0, bufferSize: 2048, format: format) { [weak self] buffer, _ in
@@ -73,6 +80,7 @@ public final class SoundListener {
         } catch {
             input.removeTap(onBus: 0)
             self.ears = nil
+            generation += 1
             throw error
         }
         isListening = true
@@ -83,6 +91,7 @@ public final class SoundListener {
         }
     }
 
+    /// Stops listening and releases the microphone. Safe to call when idle.
     public func stop() {
         guard isListening else { return }
         observers.forEach(NotificationCenter.default.removeObserver)
@@ -90,6 +99,7 @@ public final class SoundListener {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         queue.sync {}
+        generation += 1
         ears = nil
         isListening = false
     }

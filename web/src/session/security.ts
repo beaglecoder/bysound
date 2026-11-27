@@ -46,6 +46,7 @@ export const SECURITY_LEVELS: Record<SecurityLevel, Security> = {
 /** Explicit options win over the level, field by field (also inside riskSignal). */
 export type SecurityOverrides = Partial<Omit<Security, 'riskSignal'>> & { riskSignal?: Partial<RiskSignal> };
 
+/** The settings of `level` (default 'maximum') with `overrides` applied. Throws for an unknown level. */
 export function resolveSecurity(level: SecurityLevel = DEFAULT_SECURITY_LEVEL, overrides: SecurityOverrides = {}): Security {
   const base = SECURITY_LEVELS[level];
   if (!base) throw new Error(`Unknown securityLevel "${String(level)}" (basic, standard or maximum)`);

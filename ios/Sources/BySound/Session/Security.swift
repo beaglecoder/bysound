@@ -1,11 +1,13 @@
 // Security levels (docs/SESSION.md section 7). The table is test-vectors/security-levels.json; the tests check they are equal.
 import Foundation
 
+/// How much a session watches for other emitters and risk frames (docs/SESSION.md section 7). `maximum` by default.
 public enum SecurityLevel: String, CaseIterable, Sendable {
     case basic, standard, maximum
     public static let `default` = SecurityLevel.maximum
 }
 
+/// What a session does about risk frames (the warning sounded when another emitter is detected).
 public struct RiskSignal: Equatable, Sendable {
     public enum Emit: String, Sendable { case auto, off }
     public enum ListenUntil: String, Sendable { case delivery, confirm }
@@ -25,6 +27,7 @@ public struct RiskSignal: Equatable, Sendable {
     public var quarantineMs: Int
 }
 
+/// The resolved security settings of a session: a level (`Security.level`) plus explicit overrides (`Security.resolve`).
 public struct Security: Equatable, Sendable {
     /// Sender: pre-listen and listen windows act on what they hear. Receiver: final listen and clash rejection.
     public var detectMultipleEmitters: Bool
@@ -38,6 +41,7 @@ public struct Security: Equatable, Sendable {
     public var confirmWatchSeconds: Double
     public var riskSignal: RiskSignal
 
+    /// The settings of a level, as in test-vectors/security-levels.json.
     public static func level(_ level: SecurityLevel) -> Security {
         func risk(_ emit: RiskSignal.Emit, _ on: Bool, _ until: RiskSignal.ListenUntil, _ d: Int, _ det: Int, _ q: Int) -> RiskSignal {
             RiskSignal(emit: emit, listen: on, honor: on, listenUntil: until, durationMs: d, detectorDurationMs: det, quarantineMs: q)
@@ -68,6 +72,7 @@ public struct SecurityOverrides: Sendable {
     public init() {}
 }
 
+/// Explicit risk-signal values that win over the level. `nil` keeps the level's value.
 public struct RiskSignalOverrides: Sendable {
     public var emit: RiskSignal.Emit?
     public var listen: Bool?

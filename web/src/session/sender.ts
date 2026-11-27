@@ -1,7 +1,8 @@
 // Session sender (docs/SESSION.md §5, §9): pre-listen (other emitters + ambient), repetitions with listen windows over a channel ladder
 // that adapts (noisy channels skipped, robust after a while, calibration remembered), ack → receipts, other emitters → risk frame,
 // heard risk frames → stop and relay. A plain state machine over Platform and AirEvents: no Web Audio here.
-import type { BandId, Profile } from '../modem/protocol';
+import { maxPayloadBytes, pack, TooLongError } from '../modem/codec';
+import { hasRobust, type BandId, type Profile } from '../modem/protocol';
 import {
   RobustLadder, lapped, longestRepetitionSeconds, plan, readAmbient, sharedCalibrationStore, DEFAULT_CHANNELS,
   type Ambient, type Calibration, type CalibrationStore, type Plan,
@@ -61,6 +62,10 @@ export interface Delivered {
   calibration: Calibration | null;
 }
 
+/**
+ * The sender state machine (docs/SESSION.md §5). Platform-independent: `sendSession` wires it to Web Audio; tests drive it on simulated air.
+ * Call start(), feed it what the microphone hears with hear(), and watch `delivered` and `finished`.
+ */
 export class SenderSession {
   state: SenderState = 'pre-listen';
   readonly delivered: Promise<Delivered>;
@@ -72,6 +77,8 @@ export class SenderSession {
   private readonly memory: RiskMemory;
   private readonly store: CalibrationStore | null;
   private readonly own: { short: string; ack: string; fingerprint: string };
+  /** Packed length of the text (payload mode): decides whether a repetition fits the robust profile. */
+  private readonly packed: number;
   private readonly audio = new Map<string, Float32Array>();
   private readonly s: Scheduler;
   private resolveDelivered!: (d: Delivered) => void;
@@ -96,14 +103,28 @@ export class SenderSession {
   /** Pre-listen heard a frame start or a clash. */
   private busy = false;
 
+  /**
+   * Throws a RangeError for an empty text, and a TooLongError (payload mode) if the text does not fit one transmission on a band
+   * the session may play (the fixed band, or every channel of the ladder) in the normal profile, or in the fixed profile if given.
+   */
   constructor(private readonly text: string, private readonly platform: Platform, private readonly options: SenderOptions = {}) {
+    if (!text) throw new RangeError('Nothing to send: the text is empty');
     this.security = resolveSecurity(options.securityLevel, options.security);
     this.mode = options.mode ?? 'payload';
     this.level = options.level ?? 1;
     this.memory = options.memory ?? sharedRiskMemory;
     this.store = options.calibration === undefined ? sharedCalibrationStore : options.calibration;
     this.own = { short: shortId(text), ack: ackId(text), fingerprint: fingerprint(text) };
-    this.band = options.band ?? (options.channels ?? DEFAULT_CHANNELS)[0]!;
+    const bands = options.band ? [options.band] : options.channels?.length ? options.channels : DEFAULT_CHANNELS;
+    this.band = bands[0]!;
+    this.packed = this.mode === 'payload' ? pack(text).length : 0;
+    if (this.mode === 'payload') {
+      for (const b of bands) {
+        const p: Profile = options.profile === 'robust' && hasRobust(b) ? 'robust' : 'normal';
+        const max = maxPayloadBytes(b, p);
+        if (this.packed > max) throw new TooLongError(`The data is too long for one transmission on ${b}/${p}: ${this.packed} packed bytes, at most ${max}`);
+      }
+    }
     this.s = new Scheduler(platform);
     this.delivered = new Promise((resolve, reject) => { this.resolveDelivered = resolve; this.rejectDelivered = reject; });
     this.delivered.catch(() => undefined); // the app may only look at finished
@@ -193,7 +214,10 @@ export class SenderSession {
     }
     this.onChannel++;
     const band = route[this.hop]!;
-    return { band, profile: this.ladder.next(band), set: this.mode === 'reference' ? this.sent % 2 : 0 };
+    let profile = this.ladder.next(band);
+    // A text that fits the normal profile may not fit the robust one (twice the airtime): the normal profile is played then.
+    if (profile === 'robust' && this.mode === 'payload' && this.packed > maxPayloadBytes(band, 'robust')) profile = 'normal';
+    return { band, profile, set: this.mode === 'reference' ? this.sent % 2 : 0 };
   }
 
   private render(band: BandId, profile: Profile, set: number) {

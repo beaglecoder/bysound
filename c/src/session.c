@@ -251,9 +251,34 @@ static int chain_index(const bys_sender_t *s, unsigned band) {
 
 static void s_begin(bys_sender_t *s, uint32_t now);
 
+/* Packed length of the text. */
+static uint32_t packed_len(const char *text, size_t n) {
+  bys_packer_t p;
+  uint32_t len = 0;
+  bys_packer_init(&p, text, n);
+  while (bys_packer_next(&p) >= 0) len++;
+  return len;
+}
+
+/* The text fits one transmission on every band the session may play (the fixed band, or every channel of the chain), in the normal
+ * profile or in the fixed one. Checked up front so a later repetition never fails to render. */
+static int text_fits(const bys_sender_cfg_t *cfg) {
+  const uint32_t len = packed_len(cfg->text, cfg->text_len);
+  const unsigned n = cfg->band >= 0 ? 1u : (cfg->nchannels ? cfg->nchannels : 4u);
+  for (unsigned i = 0; i < n; i++) {
+    const unsigned b = cfg->band >= 0 ? (unsigned)cfg->band : (cfg->nchannels ? cfg->channels[i] : DEFAULT_CHANNELS[i]);
+    const bys_profile_t p = (cfg->profile == BYS_ROBUST && b <= BYS_MID) ? BYS_ROBUST : BYS_NORMAL;
+    const int max = bys_max_payload_bytes((bys_band_t)b, p);
+    if (max < 0 || len > (uint32_t)max) return 0;
+  }
+  return 1;
+}
+
 int bys_sender_start(bys_sender_t *s, const bys_sender_cfg_t *cfg, const bys_session_io *io, uint32_t now) {
-  if (!s || !cfg || !io || !cfg->text || cfg->text_len == 0 || cfg->nchannels > BYS_SESSION_MAX_CHANNELS || cfg->band >= (int)BYS_BAND_COUNT) return BYS_E_ARG;
+  if (!s || !cfg || !io || !cfg->text || cfg->text_len == 0 || cfg->nchannels > BYS_SESSION_MAX_CHANNELS) return BYS_E_ARG;
+  if (cfg->band < -1 || cfg->band >= (int)BYS_BAND_COUNT || cfg->profile < -1 || cfg->profile > BYS_ROBUST) return BYS_E_ARG;
   for (unsigned i = 0; i < cfg->nchannels; i++) if (cfg->channels[i] >= BYS_BAND_COUNT) return BYS_E_ARG;
+  if (!cfg->reference && !text_fits(cfg)) return BYS_E_TOO_LONG;
   memset(s, 0, sizeof *s);
   s->cfg = *cfg;
   core_init(&s->core, io, &cfg->security, cfg->memory, cfg->scratch, cfg->scratch_cap, now);
@@ -365,7 +390,9 @@ static void s_play_repetition(bys_sender_t *s, uint32_t now) {
   if (s->on_channel >= s->every && s->route_len > 1) { s->on_channel = 0; s->hop = (uint8_t)((s->hop + 1) % s->route_len); }
   s->on_channel++;
   const unsigned band = s->route[s->hop];
-  const unsigned profile = ladder_next(s, band);
+  unsigned profile = ladder_next(s, band);
+  /* A text that fits the normal profile may not fit the robust one (twice the airtime): the normal profile is played then. */
+  if (profile == BYS_ROBUST && !s->cfg.reference && (int)s->own.len > bys_max_payload_bytes((bys_band_t)band, BYS_ROBUST)) profile = BYS_NORMAL;
   s->band = (uint8_t)band; s->profile = (uint8_t)profile;
   if (band != s->last_band) { s->changes++; s->last_band = (uint8_t)band; }
   if (s->core.io->on_repetition) s->core.io->on_repetition(s->core.io->user, s->sent, (bys_band_t)band, (bys_profile_t)profile);
@@ -691,7 +718,8 @@ static void r_heard_frame(bys_receiver_t *r, uint32_t now, const bys_demod_event
     r->first_reference = c.kind == BYS_KIND_REFERENCE;
     if (!r->first_reference) {
       int n = bys_unpack(ev->payload, ev->payload_len, r->cfg.text, r->cfg.text_cap);
-      if (n < 0) { r_fail(r, now, BYS_SERR_NO_SPACE, 0, NULL, -1, NULL); return; }
+      if (n == BYS_E_FORMAT) { r->have_first = 0; return; } /* CRC-32 passed but the bytes are not a valid packing: like the reference, not delivered */
+      if (n < 0 || (size_t)n >= r->cfg.text_cap) { r_fail(r, now, BYS_SERR_NO_SPACE, 0, NULL, -1, NULL); return; } /* room for the NUL too */
       r->text_len = (uint32_t)n;
     } else {
       if (!r->cfg.resolve) { r_fail(r, now, BYS_SERR_NO_RESOLVER, 0, NULL, -1, NULL); return; }

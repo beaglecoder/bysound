@@ -1,19 +1,15 @@
 // The session layer on Web Audio: a speaker (AudioContext) and the microphone (listen() from ../audio), wired to the state machines.
-import { listen, SoundError, type Listening } from '../audio';
+import { FADE_SECONDS, listen, newContext, resumed, SoundError, type Listening } from '../audio';
 import { localStorageCalibrationStore } from './adapt';
 import { ControlListener } from './controlListener';
 import type { AirEvent, Platform } from './ears';
 import { ReceiverSession, type Confirmation, type Received, type ReceiverOptions, type ReceiverState } from './receiver';
 import { SenderSession, type Delivered, type SenderOptions, type SenderState } from './sender';
 
-const FADE_SECONDS = 0.015;
-
 /** Speaker and clock of the page. Create it inside a user gesture (click / tap). */
 function webPlatform(): { platform: Platform; ready: Promise<void>; close(): void } {
-  const Ctx = globalThis.AudioContext ?? (globalThis as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!Ctx) throw new SoundError('UNSUPPORTED', 'This browser has no Web Audio');
-  const ctx = new Ctx();
-  const ready = Promise.race([ctx.resume().catch(() => undefined), new Promise((r) => setTimeout(r, 1500))]).then(() => {
+  const ctx = newContext();
+  const ready = resumed(ctx).then(() => {
     if (ctx.state !== 'running') throw new SoundError('UNSUPPORTED', 'The browser did not start audio: tap a button first');
   });
   const platform: Platform = {
@@ -75,12 +71,19 @@ export interface SendSession {
 /**
  * Sends `text` as a session: listens first (other emitters, noise per channel), repeats it with listen windows down a channel ladder
  * until the receiver acknowledges, remembers where it was read (localStorage) and watches for other emitters. Call it from a user
- * gesture. Needs the microphone (HTTPS or localhost).
+ * gesture. Needs the microphone (HTTPS or localhost). Rejects with a RangeError for an empty text, a TooLongError if the text does
+ * not fit one transmission, and a SoundError if the browser refuses audio or the microphone.
  */
 export async function sendSession(text: string, options: SenderOptions = {}): Promise<SendSession> {
   const speaker = webPlatform();
-  // The calibration survives reloads: the speaker of this device does not change.
-  const session = new SenderSession(text, speaker.platform, { ...options, calibration: options.calibration === undefined ? localStorageCalibrationStore() : options.calibration });
+  let session: SenderSession;
+  try {
+    // The calibration survives reloads: the speaker of this device does not change.
+    session = new SenderSession(text, speaker.platform, { ...options, calibration: options.calibration === undefined ? localStorageCalibrationStore() : options.calibration });
+  } catch (e) {
+    speaker.close(); // empty or too long text, unknown security level
+    throw e;
+  }
   // Both audio contexts are created now, inside the user gesture: listen() makes its own before its first await.
   const opening = webEars((e) => session.hear(e));
   let mic: Listening | null = null;
@@ -114,7 +117,13 @@ export interface ReceiveSession {
 /** Listens for one session: delivers the data, acknowledges it by sound and keeps the confirm gate. Call it from a user gesture. */
 export async function receiveSession(options: ReceiverOptions & { onLevel?(rms: number): void } = {}): Promise<ReceiveSession> {
   const speaker = webPlatform();
-  const session = new ReceiverSession(speaker.platform, options);
+  let session: ReceiverSession;
+  try {
+    session = new ReceiverSession(speaker.platform, options);
+  } catch (e) {
+    speaker.close(); // unknown security level
+    throw e;
+  }
   // Both audio contexts are created now, inside the user gesture: listen() makes its own before its first await.
   const opening = webEars((e) => session.hear(e), options.onLevel);
   let mic: Listening | null = null;

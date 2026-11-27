@@ -23,6 +23,8 @@ public enum TextPacking {
         return chunks
     }
 
+    /// Text packing (protocol/v4-reference.mjs): digit pairs in one byte (0x80 + n), printable ASCII as is, anything else as 0xFF,
+    /// length, UTF-8.
     public static func pack(_ text: String) -> [UInt8] {
         let s = Array(text.unicodeScalars)
         var out: [UInt8] = []
@@ -115,7 +117,7 @@ enum Codec {
         return symbols * jsRound(ch.symbolSeconds * 1e6) + jsRound(Protocol.gapSeconds * 1e6)
     }
 
-    /// Dato completo: pack + CRC-32 in blocks of 48 bytes, each `RS([index, total] + data, 12)`.
+    /// Payload frame: pack + CRC-32 in blocks of 48 bytes, each `RS([index, total] + data, 12)`.
     static func payloadFrame(_ text: String, band: Band, profile: Profile) throws -> Frame {
         let content = TextPacking.pack(text)
         let c = crc32(content)
@@ -165,4 +167,6 @@ public enum ModemError: Error {
     case exceedsMaxDuration(packedBytes: Int, maxPackedBytes: Int)
     /// The highest tone of the band is not below Nyquist (`sampleRate` / 2).
     case bandAboveNyquist(highestToneHz: Double, sampleRate: Double)
+    /// A session has nothing to send: the text is empty.
+    case emptyText
 }

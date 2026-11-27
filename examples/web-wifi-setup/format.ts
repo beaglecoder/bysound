@@ -6,7 +6,7 @@
 
 export interface Wifi { ssid: string; password: string; security: 'WPA' | 'WEP' | 'nopass' }
 
-const esc = (s: string) => s.replace(/([\;,:"])/g, '\\$1');
+const esc = (s: string) => s.replace(/([\\;,:"])/g, '\\$1');
 const unesc = (s: string) => s.replace(/\\(.)/g, '$1');
 
 export function wifiText({ ssid, password, security }: Wifi): string {

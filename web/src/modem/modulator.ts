@@ -4,9 +4,10 @@ import { RAMP_SECONDS, TONES, samples, symbolStart, toneHz, type Band } from './
 /** Throws if the highest tone of the band is not below Nyquist (rate / 2) (the same rule as BYS_E_RATE in the C library). */
 export function assertBandFitsRate(b: Band, rate: number): void {
   const top = toneHz(b, b.groups - 1, TONES - 1);
-  if (top >= rate / 2) throw new RangeError(`Band ${b.id} needs tones up to ${top} Hz, which is not below Nyquist (${rate / 2} Hz) at a sample rate of ${rate} Hz`);
+  if (!(top < rate / 2)) throw new RangeError(`Band ${b.id} needs tones up to ${top} Hz, which is not below Nyquist (${rate / 2} Hz) at a sample rate of ${rate} Hz`);
 }
 
+/** The audio of `symbols` on band `b` (already in its profile) at `rate`, followed by `gapSeconds` of silence. Peak may exceed 1: see fitLevel. */
 export function render(symbols: number[][], b: Band, rate: number, gapSeconds: number): Float32Array {
   assertBandFitsRate(b, rate);
   const out = new Float32Array(symbolStart(symbols.length, rate, b) + samples(gapSeconds, rate));

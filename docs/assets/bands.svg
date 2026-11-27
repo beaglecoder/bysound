@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 348" width="820" height="348" role="img" aria-labelledby="t d">
-<title id="t">bysound v4 bands</title>
-<desc id="d">The seven bysound v4 bands on a 0 to 22 kHz axis; six sit between 15 and 19.5 kHz, where human hearing fades, and one is audible.</desc>
+<title id="t">bysound v4 channels</title>
+<desc id="d">The seven bysound v4 channels on a 0 to 22 kHz axis; six sit between 15 and 19.5 kHz, where human hearing fades, and one is audible.</desc>
 <style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;fill:#8b949e} .b{font-weight:600} @media (prefers-reduced-motion: reduce){*{animation:none!important}}</style>
 <defs><linearGradient id="hear" x1="0" x2="1"><stop offset="0" stop-color="#e8913a" stop-opacity="0.30"/><stop offset="0.6364" stop-color="#e8913a" stop-opacity="0.30"/><stop offset="0.9091" stop-color="#e8913a" stop-opacity="0"/></linearGradient></defs>
 <rect x="40" y="34" width="750" height="12" rx="3" fill="url(#hear)"/><text x="40" y="26" font-size="12" class="b" style="fill:#e8913a">human hearing</text><text x="579.5" y="26" font-size="11.5" text-anchor="end">fades with frequency and age</text>

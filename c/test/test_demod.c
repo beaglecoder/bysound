@@ -151,6 +151,16 @@ static void run(listen_t *L, unsigned rate, unsigned profile, unsigned mask, con
   }
 }
 
+/* Like run (normal profile, 48 kHz, four high bands), but as if `step` search steps of silence had already gone by. */
+static void run_from_step(listen_t *L, int64_t step, const int16_t *x, size_t n) {
+  run(L, 48000, 0, 0x0f, x, 0, 0, 1);
+  D.hops = step;
+  D.total = (int64_t)D.win + (step - 1) * (int64_t)D.hop;
+  D.next_hop_end = (int64_t)D.win + step * (int64_t)D.hop;
+  D.wp = (uint32_t)(D.total % BYS_DEMOD_RING);
+  for (size_t i = 0; i < n; i += 480) bys_demod_push(&D, x + i, n - i < 480 ? n - i : 480);
+}
+
 static int matches(const listen_t *L, int idx, const tcase_t *c) {
   const ev_t *e = &L->ev[idx];
   if (e->band != c->band || e->profile != c->profile) return 0;
@@ -348,6 +358,15 @@ static void test_misc(void) {
   CHECK(count_ok(&H, &c) >= 1);
   log_listen("hop_mult 2", &H);
 
+  /* months of continuous listening: the step counter crosses 2^31 and 2^32 while the preamble is being found */
+  static const int64_t from_steps[2] = { ((int64_t)1 << 31) - 150, ((int64_t)1 << 32) - 150 };
+  for (int k = 0; k < 2; k++) {
+    listen_t U;
+    run_from_step(&U, from_steps[k], MIX, n);
+    printf("  step counter from %lld: %d of %d frames\n", (long long)from_steps[k], count_ok(&U, &c), A.n);
+    CHECK(count_ok(&U, &c) == A.n);
+  }
+
   /* silence and noise alone: nothing, and zero failures */
   {
     size_t m = 48000 * 4;
@@ -365,7 +384,7 @@ static void test_misc(void) {
 
   /* two senders on the same band (a preamble on top of the body) and on different bands */
   {
-    tcase_t a = mk_payload(BYS_UPPER, 0, LONG_TXT), b = mk_payload(BYS_UPPER, 0, SHORT_TXT " otro");
+    tcase_t a = mk_payload(BYS_UPPER, 0, LONG_TXT), b = mk_payload(BYS_UPPER, 0, SHORT_TXT " other");
     render_lap(&a, 48000, 1.0f);
     size_t la = lap_len;
     memcpy(SIG, LAP, la * 2);

@@ -2,7 +2,7 @@
 #if os(iOS)
 import AVFoundation
 
-/// Plays one frame over and over until `stop()` is called.
+/// Plays one frame over and over until `stop()` is called. Use it from the main queue.
 /// The audio session is `.playAndRecord` (measurement mode, shared with `SoundListener`) with `.defaultToSpeaker`, so sound always leaves through the loudspeaker
 /// (never a headset), and the level is 1.0. Set the device volume to maximum for the best range.
 public final class SoundSender {
@@ -15,6 +15,7 @@ public final class SoundSender {
 
     private var observers: [NSObjectProtocol] = []
 
+    /// True while a frame is looping.
     public private(set) var isPlaying = false
 
     public init() {}
@@ -24,8 +25,6 @@ public final class SoundSender {
         stop()
         try BySoundAudio.configureSession()
         let session = AVAudioSession.sharedInstance()
-        try? session.overrideOutputAudioPort(.speaker)
-
         let rate = session.sampleRate > 0 ? session.sampleRate : 48000
         let samples = try Modem.encode(text: text, band: band, profile: profile, sampleRate: rate, level: 1)
         guard let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1),
@@ -54,6 +53,7 @@ public final class SoundSender {
         }
     }
 
+    /// Stops the loop. Safe to call when idle.
     public func stop() {
         guard isPlaying else { return }
         observers.forEach(NotificationCenter.default.removeObserver)

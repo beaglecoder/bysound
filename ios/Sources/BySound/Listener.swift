@@ -14,6 +14,7 @@ public final class Listener {
     public var onFrame: ((Heard) -> Void)?
     /// RMS of the audio, about every 60 ms.
     public var onLevel: ((Float) -> Void)?
+    /// Two frames overlapped on one band and neither was delivered.
     public var onClash: (() -> Void)?
     /// A valid header was read on this band (a frame is starting there).
     public var onHeader: ((Band) -> Void)?
@@ -29,8 +30,10 @@ public final class Listener {
         }
     }
 
+    /// Frames that were seen but could not be read, both receivers together.
     public var failures: Int { normal.failures + (robust?.failures ?? 0) }
 
+    /// Feeds microphone samples (mono, -1...1, at `sampleRate`).
     public func feed(_ samples: [Float]) {
         normal.feed(samples)
         robust?.feed(samples)

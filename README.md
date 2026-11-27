@@ -22,7 +22,7 @@ No accounts, no API keys, no server: everything runs locally.
 ## What it does
 
 - 📱 ➜ 🔊 ➜ 📱 One device **plays** a short burst of tones, another **listens** and gets the **exact same text**.
-- 🔌 No pairing, no Wi-Fi, no Bluetooth, no camera.
+- 🔌 No pairing, no Wi-Fi, no Bluetooth, no camera: just a speaker and a microphone.
 
 ## Use cases
 
@@ -37,28 +37,28 @@ No accounts, no API keys, no server: everything runs locally.
 
 <img src="docs/assets/pillars.svg" alt="Inaudible: 10× more noise tolerated above 18 kHz. Speed: 2× data in the same 5 s. Noisy places: reads with noise 25× louder than the message. Exact data: 0 wrong messages in 87,380 trials. Security: rival senders noticed 52 of 52 times over the air." width="100%">
 
-Compared with [ggwave](https://github.com/ggerganov/ggwave), the best-known open-source library for data over sound. Same core idea (tones on a 46.875 Hz grid with Reed–Solomon); bysound changes the framing, the receiver and what sits on top.
+Compared with [ggwave](https://github.com/ggerganov/ggwave), the best-known open-source library for data over sound. Same core idea (tones on a 46.875 Hz grid with Reed–Solomon); bysound changes the framing, the receiver and what sits on top. Unless marked *over the air*, figures come from the [simulated benchmark](bench/README.md).
 
 ### 🔇 Inaudible
 
 <img src="docs/assets/inaudible.svg" alt="Above 18 kHz: bysound top tolerates 25 times the message's power in noise and sends 32 bytes in 2.3 s; ggwave's DT moved there tolerates 2.5 times in 3.7 s; its MT tolerates 63 to 100 times but takes 5.6 to 16.9 s and stops at 64 bytes" width="100%">
 
 - 🔇 `top` (18–19.5 kHz) is inaudible to most adults. ggwave's built-in modes are audible or start at 15 kHz.
-- 🔊 Moving ggwave above 18 kHz: `top` tolerates **10× more noise** than its 2-tone mode and is faster.
+- 🔊 With ggwave moved above 18 kHz: `top` tolerates **10× more noise** than its 2-tone mode and is faster; its 1-tone mode tolerates more noise but is 2.4–7.3× slower, stops at 64 B and needs the length in advance.
 
 ### ⚡ Speed
 
-<img src="docs/assets/same-5-seconds.svg" alt="In the 5 seconds ggwave needs for 140 bytes, bysound sends 284 bytes on the same frequencies, or the same 140 bytes higher up, where most adults don't hear it" width="100%">
+<img src="docs/assets/same-5-seconds.svg" alt="In the 5 seconds ggwave needs for 140 bytes, bysound sends 300 bytes on the same frequencies, or the same 140 bytes higher up, where most adults don't hear it" width="100%">
 
-- ⚡ **Twice the data** in the same 5 s on the same band, or the same speed higher up.
-- 📦 Up to 30 s per message (up to ≈2 KB); ggwave stops at 140 B. For 8-byte messages ggwave is as fast or faster.
+- ⚡ **Twice the data** in the same 5 s on the same frequencies, or the same speed higher up (`high`, 17.25–19.5 kHz).
+- 📦 Up to 30 s per message (≈0.7–2 KB depending on the channel); ggwave stops at 140 B. For 8-byte messages ggwave is as fast or faster.
 
 ### 🌪️ Noisy places
 
 <img src="docs/assets/noise.svg" alt="How much louder than the message the noise can be, bysound vs ggwave" width="100%">
 
 - 🍻 **Over the air:** bar, traffic, an alarm and an 18 kHz whistle read every time; music 23 of 30.
-- 📶 Real threshold within ~2 dB of the simulation. [Over the air and distance](docs/HOW-IT-WORKS.md#over-the-air)
+- 📶 Over the air, the receiver needed the same SNR as in simulation, within ~2 dB. [Over the air and distance](docs/HOW-IT-WORKS.md#over-the-air)
 
 ### ✅ Exact data
 
@@ -73,7 +73,7 @@ Compared with [ggwave](https://github.com/ggerganov/ggwave), the best-known open
 
 ## CPU and devices
 
-- ⚙️ **CPU:** both run hundreds of times faster than real time on a laptop, but ggwave is lighter (41–51× idle, 1.2–14× decoding). If battery comes first, pick ggwave.
+- ⚙️ **CPU:** both run hundreds of times faster than real time on an Apple M4 Pro, but ggwave is lighter (41–51× idle, 1.2–14× decoding). If battery comes first, pick ggwave.
 - 🧠 **Memory:** the C library never calls `malloc`; the ESP32-S3 demo fits without PSRAM.
 
 | 🌐 Browsers | 🍎 iOS 15+ · macOS 13+ | 🤖 Android 7.0+ | 🔧 Any computer (C99) | 📟 ESP32-S3 |
@@ -82,7 +82,7 @@ Compared with [ggwave](https://github.com/ggerganov/ggwave), the best-known open
 
 - 🤝 All speak the same format, so any can send to any other.
 - 🔈 Many phone speakers fade above 17 kHz; the sender finds the highest channel that works.
-- 🧪 Tested over the air on a Galaxy A50 and an iPad; the ESP32 demo builds but hasn't run on a board yet.
+- 🧪 Over the air: one Galaxy A50 and one iPad in one room, same v4 format through the author's app ([field/](field)); ggwave was not measured there. The ESP32 demo builds but has not been run on a board.
 
 ## bysound or ggwave?
 
@@ -116,9 +116,10 @@ c/build/bysound decode hello.wav
 ## In your code
 
 ```ts
+// web/ is the package (not on npm): npm install ./bysound/web
 import { send, listen, sendSession, receiveSession } from 'bysound';
 await send('hello', { band: 'top' });                       // from a click
-await listen({ onFrame: (msg) => console.log(msg.payload) });
+await listen({ onFrame: (h) => h.kind === 'payload' && console.log(h.payload) });
 
 // With the session layer: ack, channel ladder, second-sender alerts
 await (await sendSession('pay 12.50 to shop 7')).delivered; // resolves on the receiver's ack
@@ -148,11 +149,14 @@ Channels, timings, tips and the full walk-through: **[docs/HOW-IT-WORKS.md](docs
 | 🔧 Any computer | [`c/`](c) · C99, no `malloc` | `c/build/bysound` (WAV in/out) |
 | 📟 ESP32-S3 | [`esp32/`](esp32) · ESP-IDF | `idf.py build flash monitor` |
 | 🧪 Examples | [`examples/`](examples) · all platforms | see [`examples/README.md`](examples/README.md) |
+| 📡 Field data | [`field/`](field) · over the air | `python3 field/analyze.py` |
 | 📊 Benchmark | [`bench/`](bench) · vs ggwave | `./fetch-ggwave.sh && make && make run` |
 
 Each folder's README has its API, tests and details. The [examples](examples) are small complete apps for the use cases above, all local and with no keys.
 
 ## Citing
+
+Cite the software as below, or the [paper](PAPER.md); [`CITATION.cff`](CITATION.cff) has both.
 
 ```bibtex
 @software{bysound,

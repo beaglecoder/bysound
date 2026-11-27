@@ -52,7 +52,7 @@ describe('web modem: the spectrum falls in the right band', () => {
   for (const id of ['top', 'high', 'upper', 'mid', 'audible', 'xhigh', 'wide'] as BandId[]) {
     it(`${id}: almost all the energy is in its tones`, () => {
       const b = BANDS[id];
-      const frame = payloadFrame('SBL2|CH|abcdefghijklmnopqrstuv|abcd1234 — prueba de espectro', id);
+      const frame = payloadFrame('BYS2|CH|abcdefghijklmnopqrstuv|abcd1234 — spectrum test', id);
       const e = energy(render(frame.symbols, b, RATE, GAP_SECONDS));
       const lo = b.bin * SPACING_HZ - 150;
       const hi = (b.bin + b.groups * TONES) * SPACING_HZ + 150;

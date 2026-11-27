@@ -15,15 +15,17 @@ function log(text: string) {
 
 /** One broadcast: a fresh token (the 30 s window may have changed) rendered with the plain modem on `top`. No session, no acks. */
 async function beep() {
-  if (!ctx) return;
+  const ac = ctx;
+  if (!ac) return;
   const token = await makeToken(key.value, store.value.trim(), Date.now());
+  if (ctx !== ac) return; // stopped (or restarted) while the token was being signed
   $('token').textContent = token;
-  const audio = encode(token, { band: 'top', sampleRate: ctx.sampleRate });
-  const buffer = ctx.createBuffer(1, audio.length, ctx.sampleRate);
+  const audio = encode(token, { band: 'top', sampleRate: ac.sampleRate });
+  const buffer = ac.createBuffer(1, audio.length, ac.sampleRate);
   buffer.getChannelData(0).set(audio);
-  const src = ctx.createBufferSource();
+  const src = ac.createBufferSource();
   src.buffer = buffer;
-  src.connect(ctx.destination);
+  src.connect(ac.destination);
   src.start();
   log(`played ${token} (${buffer.duration.toFixed(1)} s)`);
   const wait = Math.max(Number(every.value) * 1000, buffer.duration * 1000 + 500); // never overlap two frames

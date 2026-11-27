@@ -46,6 +46,7 @@ interface BandState {
   headers: { magic: number; length: number; nibbles: number[] }[];
 }
 
+/** Feed it microphone audio; it calls `onHeard` for every ack, receipt or risk frame decoded and `onNoise` every NOISE_REPORT_SECONDS. */
 export class ControlListener {
   private readonly win: number;
   private readonly hop: number;

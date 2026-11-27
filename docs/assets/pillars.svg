@@ -28,8 +28,8 @@
     <text class="k" x="12" y="30" fill="#3b82f6">SPEED</text>
     <text class="n" x="12" y="76" fill="#3b82f6">2×</text>
     <text class="c" x="12" y="100">data in the same 5 s</text>
-    <text class="c" x="12" y="115">on the same band</text>
-    <text class="g" x="12" y="150">284 B vs ggwave's 140 B</text>
+    <text class="c" x="12" y="115">on the same frequencies</text>
+    <text class="g" x="12" y="150">300 B vs ggwave's 140 B</text>
     <text class="g" x="12" y="164">at 15–19.5 kHz</text>
   </g>
 

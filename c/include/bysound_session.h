@@ -223,7 +223,8 @@ typedef struct {
   uint32_t on_channel, sent, pre_end, first_at, last_end, window_end;
 } bys_sender_t;
 
-/* Starts the session (pre-listen or first repetition). Returns BYS_OK or BYS_E_ARG. */
+/* Starts the session (pre-listen or first repetition). Returns BYS_OK, BYS_E_ARG (missing or empty text, bad band, profile or
+ * channel) or BYS_E_TOO_LONG (payload mode: the text does not fit one transmission on a band the session may play). */
 int  bys_sender_start(bys_sender_t *s, const bys_sender_cfg_t *cfg, const bys_session_io *io, uint32_t now_ms);
 void bys_sender_hear(bys_sender_t *s, uint32_t now_ms, const bys_demod_event_t *ev);
 /* Noise report (every BYS_NOISE_REPORT_MS during the pre-listen): dB per band relative to a full-scale grid tone, NAN if unknown. */

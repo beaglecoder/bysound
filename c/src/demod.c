@@ -260,12 +260,18 @@ static int64_t plateau(bys_demod_t *d, bys_demod_reader_t *r) {
   int64_t sum = 0;
   unsigned n = 0;
   for (unsigned i = 0; i < r->ncand; i++)
-    if (r->cand_score[i] >= best * 0.97f) { sum += hop_end(d, r->cand_idx[i]) - (int64_t)r->span; n++; }
+    if (r->cand_score[i] >= best * 0.97f) {
+      /* candidates are at most BYS_DEMOD_CAND steps old: their index is rebuilt from the current one, so it never wraps (2^31 steps of
+       * 4 ms are 99 days of continuous listening) */
+      const int64_t idx = d->hops - (int64_t)(uint32_t)((uint32_t)d->hops - r->cand_idx[i]);
+      sum += hop_end(d, idx) - (int64_t)r->span;
+      n++;
+    }
   r->ncand = 0;
   return rdiv(sum, (int64_t)n);
 }
 static void push_cand(bys_demod_reader_t *r, int64_t index, float score) {
-  r->cand_idx[r->ncand] = (int32_t)index;
+  r->cand_idx[r->ncand] = (uint32_t)index;
   r->cand_score[r->ncand] = score;
   r->ncand++;
 }

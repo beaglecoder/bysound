@@ -7,17 +7,17 @@
 <rect x="250" y="70" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
 <rect x="250" y="70" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Bar (voices, dishes): 30 of 30 read</title></rect>
 <text class="v" x="588" y="83">100 %  <tspan class="s" font-weight="400">30/30</tspan></text>
-<text class="t" x="20" y="113">Audible alarm (2-6 kHz)</text>
+<text class="t" x="20" y="113">Audible alarm (2–6 kHz)</text>
 <rect x="250" y="100" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
-<rect x="250" y="100" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Audible alarm (2-6 kHz): 6 of 6 read</title></rect>
+<rect x="250" y="100" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Audible alarm (2–6 kHz): 6 of 6 read</title></rect>
 <text class="v" x="588" y="113">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
 <text class="t" x="20" y="143">Traffic</text>
 <rect x="250" y="130" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
 <rect x="250" y="130" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Traffic: 6 of 6 read</title></rect>
 <text class="v" x="588" y="143">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
-<text class="t" x="20" y="173">Loud whistle (18-19.5 kHz tones)</text>
+<text class="t" x="20" y="173">Loud whistle (18–19.5 kHz tones)</text>
 <rect x="250" y="160" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>
-<rect x="250" y="160" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Loud whistle (18-19.5 kHz tones): 6 of 6 read</title></rect>
+<rect x="250" y="160" width="330.0" height="18" rx="4" fill="#14b8a6"><title>Loud whistle (18–19.5 kHz tones): 6 of 6 read</title></rect>
 <text class="v" x="588" y="173">100 %  <tspan class="s" font-weight="400">6/6</tspan></text>
 <text class="t" x="20" y="203">Cutlery</text>
 <rect x="250" y="190" width="330" height="18" rx="4" fill="#8b949e" fill-opacity=".15"/>

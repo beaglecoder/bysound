@@ -110,7 +110,7 @@ describe('repetitions', () => {
 describe('two senders on the same band', () => {
   it('a preamble on top of the body is a clash', () => {
     const rate = 48000;
-    const a = payloadAudio(LONG, 'upper', rate), b = payloadAudio(SHORT + ' otro', 'upper', rate);
+    const a = payloadAudio(LONG, 'upper', rate), b = payloadAudio(SHORT + ' other', 'upper', rate);
     const mix = a.slice();
     const off = Math.round(1 * rate);
     for (let i = 0; i < b.length; i++) mix[i + off]! += b[i]!;

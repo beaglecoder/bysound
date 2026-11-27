@@ -6,7 +6,7 @@ bysound sends a short text from one device to another **through sound**. The sen
 
 **In short:**
 
-- The text becomes **tones** above 15 kHz, where most adults hear little or nothing.
+- The text becomes **tones** between 15 and 19.5 kHz, where most adults hear little or nothing (an audible channel exists too).
 - It travels in **blocks with repair bytes**, so some damage gets fixed on the way.
 - The receiver **listens to every channel at once**, cleans up noise and echo, and delivers the text **only if its checksum matches**.
 - Optionally, the two devices **talk back** (acks, alerts) and the sender **adapts** to the room and the speaker.
@@ -39,7 +39,7 @@ Each transmission is a **frame**, played several times in a row with a short sil
 
 - **Preamble:** 8 fixed chords that say "a frame starts here". Each channel has its own pattern, so the receiver knows which one it is hearing.
 - **Header:** 4 bytes: kind of frame, how many blocks follow, which channel, and a small checksum.
-- **Blocks:** the text in pieces of up to 48 bytes. Each piece carries 12 extra **Reed–Solomon** bytes, the same kind of repair that lets a scratched CD or a dirty QR code still work. A block survives up to 6 wrong bytes, or up to 12 if the receiver knows which ones are doubtful.
+- **Blocks:** the text in pieces of up to 48 bytes. Each piece carries 12 extra **Reed–Solomon** bytes, the same kind of repair that lets a scratched CD or a dirty QR code still work. A block survives up to 6 wrong bytes; a byte the receiver marks as doubtful costs half as much to repair as a wrong one.
 - **Gap:** 350 ms of silence before the next repetition.
 
 A real frame as a spectrogram (time to the right, pitch upward): the diagonal preamble, the header, then the data tones hopping inside their groups.
@@ -61,10 +61,10 @@ A real frame as a spectrogram (time to the right, pitch upward): the diagonal pr
 
 1. **Listen** all the time, measuring every slot of every channel every 4 ms.
 2. **Learn the background:** each slot gets its own noise level, so a steady hum or whine is ignored.
-3. **Find the start:** look for any channel's preamble pattern. Noise alone never looks like one.
+3. **Find the start:** look for any channel's preamble pattern. Noise alone scores far below the detection threshold.
 4. **Read the header:** choose the closest valid header, which works even if part of it was damaged.
 5. **Clean up each chord:** subtract the echo of the previous chord (the preamble already showed how much echo the room has) and keep how likely each tone is, not just the loudest.
-6. **Repair:** Reed–Solomon fixes wrong bytes. If that fails, the receiver marks the least certain bytes as unknown and tries again; known gaps are twice as cheap to fix.
+6. **Repair:** Reed–Solomon fixes wrong bytes. If that fails, the receiver marks the 2 or 4 least certain bytes as unknown and tries again; known gaps are twice as cheap to fix.
 7. **Merge repetitions:** if a door slam hit one repetition and a cough the next, the good parts of each are combined.
 8. **Check:** the CRC-32 must match, or nothing is delivered. You get the exact text or nothing.
 
@@ -78,12 +78,12 @@ Time for one transmission, silence included:
 |---|---|---|---|---|---|
 | 8 bytes (a short code) | 1.6 s | 1.3 s | 1.1 s | 1.0 s | 2.8 s |
 | 32 bytes (a link id) | 2.3 s | 1.8 s | 1.5 s | 1.2 s | 4.3 s |
-| 140 bytes (a long link) | 6.7 s | 4.7 s | 3.7 s | 2.7 s | 13.0 s |
+| 140 bytes (a long link) | 6.7 s | 4.7 s | 3.6 s | 2.7 s | 13.0 s |
 | Most in 30 s | 700 B | 1,052 B | 1,408 B | 2,114 B | 335 B |
 
 - **Robust profile:** every chord lasts twice as long, so it takes twice the time but cuts through more noise. The sender switches to it on its own if nobody answers.
 - **30 s is the cap** for one transmission: longer is not practical by sound.
-- From the first tone to the decoded text, a real read took about **1.1 s** for a short message.
+- Over the air, a read took a median **1.1 s** from the first preamble to the decoded text (12-byte reference frames, [field/](../field/README.md)).
 
 ## 5. Tips for reliable reads
 
@@ -141,16 +141,16 @@ Both libraries use the same idea: MFSK on an orthogonal 46.875 Hz grid with Reed
 |---|---|
 | The room is noisy or has echo: more margin against broadband noise and echo (tables below) | CPU or battery is tight: ggwave's receiver is 41–51× lighter while idle and 1.2–14× while decoding |
 | A wrong message is worse than none: 0 wrong in 87,380 trials; ggwave delivered 34 wrong in 67,320, 32 of them 8-byte messages | Messages are a few bytes: at 8 B ggwave fastest (1.00 s) is faster than every bysound channel except `wide` (0.96 s) |
-| Messages are longer than 140 bytes: up to 30 s per transmission (700–2,114 B) | You want a project with years of public use and a larger community |
+| Messages are longer than 140 bytes: up to 30 s per transmission (700–2,114 B) | You want a single self-contained C++ source file to vendor, with a larger community |
 | It should be hard to hear: `top` (18–19.5 kHz), `high` (17.25–19.5 kHz); ggwave has no built-in protocol above 18 kHz (see below for its DT/MT moved there) | You want ready-made bindings (Python, JavaScript/WebAssembly, an iOS Swift package) and Arduino, RP2040 or ESP32 examples |
 | You want acks, second-sender alerts and channel adaptation (session layer, in all four implementations) | You want modes with one or two tones (DT/MT at 1.1–2.6 kHz); MT, with a receiver that knows the length, tolerates the most noise measured, also when moved above 18 kHz |
 | You want native TypeScript, Swift, Kotlin and C (no `malloc`) sharing one format | You need a long real-world track record: ggwave has years of use; bysound's over-the-air data is one device pair in one room ([field/](../field/README.md)) |
 
-Both cover the same kinds of platforms (browser, iOS, Android, desktop, ESP32): bysound with four native implementations, ggwave with one C++ core and bindings.
+Both cover the same kinds of platforms (browser, iOS, Android, desktop, microcontrollers): bysound with four native implementations, ggwave with one C++ core and bindings.
 
 ### From lab noise to real places
 
-The README describes the noise results with everyday places. This is how they map to what the benchmark actually simulated (32-byte message, success ≥ 90 %, noise measured over the whole 0–24 kHz band; `×N` = noise power N times the message's power, i.e. 10^(−SNR/10)):
+The noise chart in the README labels the simulated noise with everyday places. This is how they map to what the benchmark actually simulated (32-byte message, success ≥ 90 %, noise measured over the whole 0–24 kHz band; `×N` = noise power N times the message's power, i.e. 10^(−SNR/10)):
 
 | Place in the README | Simulated noise | bysound `top` | ggwave ultrasound fastest |
 |---|---|---|---|
@@ -163,13 +163,13 @@ Measured inside each mode's own band instead, the two are within 0–3 dB of eac
 
 ### Over the air
 
-A Galaxy A50 and an iPad 44–65 cm apart, with recorded noise played by a laptop usually closer to the listening device than the sender ([field/](../field/README.md)):
+One Galaxy A50 and one iPad 44–65 cm apart in one room, with recorded noise played by a laptop usually closer to the listening device than the sender. The runs used the author's app on the same v4 format, not this repository's code, and ggwave was not measured over the air ([field/](../field/README.md)):
 
 <img src="../field/charts/noise-by-scenario.svg" alt="Over-the-air reads by noise scenario" width="100%">
 
 - **Same threshold as in simulation:** the weakest real reads were at 7.8 dB (`top`) and 10.3 dB (`mid`) of measured SNR; the simulation predicts 9.9 and 10.1 dB. Real failures came from noise too close to the microphone, not from the decoder.
 - **By place:** bar, traffic, an audible alarm and a loud whistle at 18–19.5 kHz were read every time; music 23 of 30; hair dryer 14 of 28 and vacuum 7 of 28, with the appliance closer to the microphone than the sender.
-- **Latency:** about 1.1 s from the first tones to the decoded message.
+- **Latency:** a median 1.1 s from the first preamble to the decoded frame; 6.5 s from the start of listening, including the app's 3 s pre-listen and server round trip.
 
 ### Distance
 

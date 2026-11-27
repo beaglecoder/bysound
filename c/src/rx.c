@@ -92,6 +92,7 @@ static int finish_small(bys_rx_t *rx) { /* fingerprint, ack and risk */
       r->heard = (uint8_t)heard;
       memcpy(r->hash4, b + 1, 4);
     } else {
+      if (b[0] < 1 || b[0] > 4 || (b[1] & 15) > 1) return fail(rx, BYS_E_FORMAT);
       r->reason = b[0]; r->hops = b[1] >> 4; r->source = b[1] & 15;
       memcpy(r->own, b + 2, 3);
       memcpy(r->intruder, b + 5, 3);

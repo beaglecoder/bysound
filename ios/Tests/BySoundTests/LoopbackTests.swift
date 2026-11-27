@@ -36,13 +36,13 @@ final class LoopbackTests: XCTestCase {
     func testListenerHearsBothProfiles() throws {
         let rate = 48000.0
         let a = try Modem.encode(text: short, band: .upper, profile: .normal, sampleRate: rate)
-        let b = try Modem.encode(text: "otro", band: .top, profile: .robust, sampleRate: rate)
+        let b = try Modem.encode(text: "other", band: .top, profile: .robust, sampleRate: rate)
         var heard: [Heard] = []
         let l = Listener(sampleRate: rate)
         l.onFrame = { heard.append($0) }
         feed(air([a, a, b, b], rate: rate, noise: 0.1)) { l.feed($0) }
         XCTAssertTrue(heard.contains { $0.text == short && $0.profile == .normal })
-        XCTAssertTrue(heard.contains { $0.text == "otro" && $0.profile == .robust })
+        XCTAssertTrue(heard.contains { $0.text == "other" && $0.profile == .robust })
     }
 
     func testSilenceHearsNothing() {

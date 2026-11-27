@@ -261,9 +261,9 @@ ULTRA = [("bysound top/normal", PALETTE[0]), ("ggwave ultrasound-fast", PALETTE[
          ("ggwave ultrasound-normal", PALETTE[4]), ("bysound top/robust", PALETTE[5]), ("bysound wide/normal", PALETTE[6])]
 AUDI = [("bysound audible/normal", PALETTE[0]), ("ggwave audible-fast", PALETTE[1]), ("ggwave dt-fast", PALETTE[2]), ("ggwave audible-fastest", PALETTE[3]),
         ("ggwave audible-normal", PALETTE[4]), ("ggwave dt-normal", PALETTE[5]), ("ggwave dt-fastest", PALETTE[6])]
-SBSN = [("bysound top/normal", PALETTE[0]), ("bysound upper/normal", PALETTE[1]), ("bysound high/normal", PALETTE[2]), ("bysound xhigh/normal", PALETTE[3]),
+BYS_NORMAL = [("bysound top/normal", PALETTE[0]), ("bysound upper/normal", PALETTE[1]), ("bysound high/normal", PALETTE[2]), ("bysound xhigh/normal", PALETTE[3]),
         ("bysound mid/normal", PALETTE[4]), ("bysound audible/normal", PALETTE[5]), ("bysound wide/normal", PALETTE[6])]
-SBSR = [("bysound top/robust", PALETTE[0]), ("bysound upper/robust", PALETTE[1]), ("bysound high/robust", PALETTE[2]), ("bysound mid/robust", PALETTE[3])]
+BYS_ROBUST = [("bysound top/robust", PALETTE[0]), ("bysound upper/robust", PALETTE[1]), ("bysound high/robust", PALETTE[2]), ("bysound mid/robust", PALETTE[3])]
 
 
 def ntrials(agg, cfg, **kw):
@@ -276,7 +276,7 @@ if snr_agg:
     for reps in (1, 2):
         tag = "1 transmission" if reps == 1 else "2 transmissions (any decoded)"
         for fn, title, specs in (("snr_ultrasonic", "Near-ultrasonic modes: success vs SNR", ULTRA), ("snr_audible", "Audible modes: success vs SNR", AUDI),
-                                 ("snr_bysound_normal", "bysound normal profile, every channel", SBSN), ("snr_bysound_robust", "bysound robust profile", SBSR)):
+                                 ("snr_bysound_normal", "bysound normal profile, every channel", BYS_NORMAL), ("snr_bysound_robust", "bysound robust profile", BYS_ROBUST)):
             if fn.startswith("snr_bysound") and reps == 2:
                 continue
             p = os.path.join(CH, "%s_%dx.svg" % (fn, reps))

@@ -61,9 +61,10 @@ export function createBackend(options = {}) {
     return recent.length > perMinute;
   };
 
-  // Forget entries well after they expired (a real store would use its own TTL index).
+  // Forget entries well after they expired, and accounts idle for a minute (a real store would use its own TTL index).
   const sweep = setInterval(() => {
     for (const [fp, e] of entries) if (now() > e.expiresAt + 10 * 60_000) entries.delete(fp);
+    for (const [account, times] of hits) if (!times.some((x) => now() - x < 60_000)) hits.delete(account);
   }, 30_000);
   sweep.unref();
 
@@ -154,6 +155,9 @@ export function createBackend(options = {}) {
     const path = (req.url ?? '/').split('?')[0];
     const chunks = [];
     let size = 0;
+    // A client that hangs up mid-request emits 'error': without a listener it would crash the server.
+    req.on('error', () => undefined);
+    res.on('error', () => undefined);
     req.on('data', (c) => { size += c.length; if (size <= 16_384) chunks.push(c); });
     req.on('end', () => {
       let body = null;

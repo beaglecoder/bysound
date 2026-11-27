@@ -54,6 +54,7 @@ int main(int argc, char **argv) {
   int16_t *pcm = wav_read(in, &n, &rate, 0);
   if (!pcm) return 2;
   int16_t *noisy = malloc(n * sizeof *noisy + 2);
+  if (!noisy) { fputs("out of memory\n", stderr); free(pcm); return 2; }
   double rms = signal_rms(pcm, n);
   printf("%s: %u Hz, %.2f s, signal rms %.1f\n", in, rate, (double)n / rate, rms);
   int any = 0;

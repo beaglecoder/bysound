@@ -1,6 +1,6 @@
 # store-presence
 
-Presence / check-in at a shop by sound. A beacon near the till (or the door) broadcasts a tiny rotating token on the `top` band (above 18 kHz, mostly inaudible); a customer's phone listens, shows "📍 You are at Café Demo (verified, 12 s ago)" and offers a check-in.
+Presence / check-in at a shop by sound. A beacon near the till (or the door) broadcasts a tiny rotating token on the `top` channel (18–19.5 kHz, inaudible to most adults); a customer's phone listens, shows "📍 You are at Café Demo (verified, 12 s ago)" and offers a check-in.
 
 **Use cases:** loyalty check-in without a QR code to print or a Bluetooth permission; a coupon that only unlocks when you are in the shop; joining a queue ("I am here") without scanning anything.
 
@@ -14,7 +14,7 @@ Presence / check-in at a shop by sound. A beacon near the till (or the door) bro
 ## The token
 
 ```
-P1|<storeId>|<window>|<mac>        P1|cafe42|58123456|54ba1d6aad99     (31 characters, one short frame)
+P1|<storeId>|<window>|<mac>        P1|cafe42|58123456|54ba1d6aad99     (31 characters, about 2.1 s on `top`)
 window = floor(unix_time / 30)
 mac    = first 6 bytes (12 hex characters) of HMAC-SHA256(storeKey, "<storeId>|<window>")
 ```
@@ -55,8 +55,8 @@ Open the beacon on one device and the customer page on another (the microphone n
 
 See [`esp32-beacon/README.md`](esp32-beacon/README.md).
 
-## Honesty notes
+## Limits
 
 - Not tested in a real shop. The web pages were built and the token/verifier logic was checked in Node, and the ESP32 firmware builds (ESP-IDF 5.4, ESP32-S3, both time sources); it was not flashed or heard on a board.
-- Range is a few meters at best and depends entirely on the speaker (many cannot reproduce `top` loudly), the phone's microphone and the room; a counter with a person and a till in between helps nobody. Choose another band (`high`, `upper`, `mid`) if `top` does not reach.
+- Range is a few meters at best and depends entirely on the speaker (many cannot reproduce `top` loudly), the phone's microphone and the room; a counter with a person and a till in between helps nobody. Choose another channel (`high`, `upper`, `mid`) if `top` does not reach.
 - Sound reaches the whole room, including people outside a glass wall near the speaker: it is "near this beacon", not "inside the shop".
